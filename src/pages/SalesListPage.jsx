@@ -17,7 +17,7 @@ import { usePagination } from '../hooks/usePagination';
 import { exportToExcel } from '../utils/exportHelper';
 import ResponsiveTable from '../components/common/ResponsiveTable';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
-import ActionButton from '../components/ActionButton';
+import DropdownActionMenu from '../components/common/DropdownActionMenu';
 import HeaderActionButton from '../components/HeaderActionButton';
 import { Printer, CheckCircle, XCircle, RotateCcw, Download } from 'lucide-react';
 
@@ -313,6 +313,85 @@ const SalesListPage = () => {
 
   // --- RENDER KOMPONEN ---
 
+  const getSaleActions = (sale) => {
+    const actions = [
+      {
+        icon: Printer,
+        title: 'Cetak Struk',
+        variant: 'primary',
+        onClick: async () => {
+          try {
+            const saleResponse = await getSaleById(sale.id_penjualan);
+            const enrichedSale = await enrichSaleWithPaymentDetails(saleResponse.data.data);
+            
+            const productMap = products.reduce((map, prod) => {
+              map[prod.id_produk] = prod.nama_produk;
+              return map;
+            }, {});
+            
+            const enrichedItems = (saleResponse.data.data?.items || []).map((item) => ({
+              ...item,
+              nama_produk: item.nama_produk || productMap[item.id_produk] || `Produk (ID: ${item.id_produk})`,
+            }));
+            
+            const detail_pembayaran = enrichedSale?.detail_pembayaran || null;
+
+            const saleData = {
+              ...saleResponse.data.data,
+              items: enrichedItems,
+              detail_pembayaran: detail_pembayaran && detail_pembayaran.length > 0 ? detail_pembayaran : null,
+              kasir: saleResponse.data.data.User?.nama_lengkap || saleResponse.data.data.User?.nama || 'Unknown',
+              no_struk: saleResponse.data.data.kode_transaksi,
+              bayar: (detail_pembayaran || []).reduce((sum, p) => sum + Number(p.jumlah_bayar || 0), 0),
+              kembali: Math.max(0, (detail_pembayaran || []).reduce((sum, p) => sum + Number(p.jumlah_bayar || 0), 0) - Number(saleResponse.data.data.total || 0)),
+              sisa_pembayaran: Math.max(0, Number(saleResponse.data.data.total || 0) - (detail_pembayaran || []).reduce((sum, p) => sum + Number(p.jumlah_bayar || 0), 0)),
+            };
+
+            setSelectedSaleForPrint(saleData);
+            setIsModalOpen(true);
+          } catch (_err) {
+            showError('Gagal mengambil detail transaksi untuk dicetak');
+          }
+        }
+      }
+    ];
+
+    if (sale.status_pembayaran === 'pending' || sale.status_pembayaran === 'menunggu' || getPaymentStatus(sale) === 'pending') {
+      actions.push({
+        icon: CheckCircle,
+        title: 'Selesaikan Pembayaran',
+        variant: 'success',
+        onClick: () => {
+          setSelectedSaleForComplete(sale);
+          setIsCompleteModalOpen(true);
+        }
+      });
+    }
+
+    if (canVoidSales() && !sale.voided_at) {
+      actions.push({
+        icon: XCircle,
+        title: 'Void Transaksi',
+        variant: 'danger',
+        onClick: () => {
+          setSelectedSaleForVoid(sale);
+          setIsVoidModalOpen(true);
+        }
+      });
+    }
+
+    if (hasReturns(sale.id_penjualan)) {
+      actions.push({
+        icon: RotateCcw,
+        title: 'Lihat Retur',
+        variant: 'orange',
+        onClick: () => navigate(`/return?id=${sale.id_penjualan}`)
+      });
+    }
+
+    return actions;
+  };
+
   if (loading) return <div className="text-center mt-10">Loading...</div>;
   if (error) return <div className="text-center mt-10 text-red-500">{error}</div>;
 
@@ -517,82 +596,11 @@ const SalesListPage = () => {
                             '-'
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center gap-2">
-                            <ActionButton
-                              icon={Printer}
-                              variant="primary"
-                              title="Cetak struk transaksi"
-                              size="sm"
-                              onClick={async () => {
-                                try {
-                                  const saleResponse = await getSaleById(sale.id_penjualan);
-                                  const enrichedSale = await enrichSaleWithPaymentDetails(saleResponse.data.data);
-                                  
-                                  const productMap = products.reduce((map, prod) => {
-                                    map[prod.id_produk] = prod.nama_produk;
-                                    return map;
-                                  }, {});
-                                  
-                                  const enrichedItems = (saleResponse.data.data?.items || []).map((item) => ({
-                                    ...item,
-                                    nama_produk: item.nama_produk || productMap[item.id_produk] || `Produk (ID: ${item.id_produk})`,
-                                  }));
-                                  
-                                  const detail_pembayaran = enrichedSale?.detail_pembayaran || null;
-
-                                  const saleData = {
-                                    ...saleResponse.data.data,
-                                    items: enrichedItems,
-                                    detail_pembayaran: detail_pembayaran && detail_pembayaran.length > 0 ? detail_pembayaran : null,
-                                    kasir: saleResponse.data.data.User?.nama_lengkap || saleResponse.data.data.User?.nama || 'Unknown',
-                                    no_struk: saleResponse.data.data.kode_transaksi,
-                                    bayar: (detail_pembayaran || []).reduce((sum, p) => sum + Number(p.jumlah_bayar || 0), 0),
-                                    kembali: Math.max(0, (detail_pembayaran || []).reduce((sum, p) => sum + Number(p.jumlah_bayar || 0), 0) - Number(saleResponse.data.data.total || 0)),
-                                    sisa_pembayaran: Math.max(0, Number(saleResponse.data.data.total || 0) - (detail_pembayaran || []).reduce((sum, p) => sum + Number(p.jumlah_bayar || 0), 0)),
-                                  };
-
-                                  setSelectedSaleForPrint(saleData);
-                                  setIsModalOpen(true);
-                                } catch (_err) {
-                                  showError('Gagal mengambil detail transaksi untuk dicetak');
-                                }
-                              }}
-                            />
-                            {(sale.status_pembayaran === 'pending' || sale.status_pembayaran === 'menunggu' || getPaymentStatus(sale) === 'pending') && (
-                              <ActionButton
-                                icon={CheckCircle}
-                                variant="success"
-                                title="Selesaikan pembayaran pending"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedSaleForComplete(sale);
-                                  setIsCompleteModalOpen(true);
-                                }}
-                              />
-                            )}
-                            {canVoidSales() && !sale.voided_at && (
-                              <ActionButton
-                                icon={XCircle}
-                                variant="danger"
-                                title="Void transaksi ini"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedSaleForVoid(sale);
-                                  setIsVoidModalOpen(true);
-                                }}
-                              />
-                            )}
-                            {hasReturns(sale.id_penjualan) && (
-                              <ActionButton
-                                icon={RotateCcw}
-                                variant="orange"
-                                title="Lihat detail retur penjualan"
-                                size="sm"
-                                onClick={() => navigate(`/return?id=${sale.id_penjualan}`)}
-                              />
-                            )}
-                          </div>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
+                          <DropdownActionMenu
+                            actions={getSaleActions(sale)}
+                            item={sale}
+                          />
                         </td>
                       </tr>
                     ))

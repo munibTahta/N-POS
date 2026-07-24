@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getCategories, deleteCategory, bulkImportCategories } from '../services/api';
 import { useNotifications } from '../hooks/useNotifications';
 import { usePermissions } from '../hooks/usePermissions';
@@ -11,7 +11,8 @@ import { usePagination } from '../hooks/usePagination';
 import Pagination from '../components/Pagination';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import HeaderActionButton from '../components/HeaderActionButton';
-import { Plus, Download, Upload, FileText } from 'lucide-react';
+import DropdownActionMenu from '../components/common/DropdownActionMenu';
+import { Plus, Download, Upload, FileText, Pencil, Trash2 } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 
@@ -62,6 +63,7 @@ const DeleteIcon = ({ className = '' }) => (
 );
 
 const CategoriesPage = () => {
+  const navigate = useNavigate();
   const { canManageProducts } = usePermissions();
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
@@ -451,25 +453,24 @@ const CategoriesPage = () => {
                       <td className="whitespace-nowrap px-4 py-4 text-sm font-mono text-slate-900">#{cat.id_kategori}</td>
                       <td className="whitespace-nowrap px-4 py-4 text-sm font-medium text-slate-900">{cat.nama_kategori}</td>
                       <td className="px-4 py-4 max-w-xs truncate text-sm text-slate-700">{cat.deskripsi || '—'}</td>
-                      <td className="whitespace-nowrap px-4 py-4 text-sm">
-                        <div className="flex items-center gap-3">
-                          <Link
-                            to={`/kategori/edit/${cat.id_kategori}`}
-                            className="inline-flex items-center justify-center rounded-md bg-blue-100 text-blue-700 p-2 hover:bg-blue-200 transition"
-                            title="Edit kategori"
-                          >
-                            <EditIcon className="w-4 h-4" />
-                          </Link>
-                          {canManageProducts && (
-                            <button
-                              onClick={() => handleDelete(cat.id_kategori)}
-                              className="inline-flex items-center justify-center rounded-md bg-red-100 text-red-700 p-2 hover:bg-red-200 transition"
-                              title="Hapus kategori"
-                            >
-                              <DeleteIcon className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
+                      <td className="whitespace-nowrap px-4 py-4 text-sm text-center">
+                        <DropdownActionMenu
+                          item={cat}
+                          actions={[
+                            {
+                              icon: Pencil,
+                              title: 'Edit',
+                              variant: 'primary',
+                              onClick: (item) => navigate(`/kategori/edit/${item.id_kategori}`)
+                            },
+                            ...(canManageProducts ? [{
+                              icon: Trash2,
+                              title: 'Hapus',
+                              variant: 'danger',
+                              onClick: (item) => handleDelete(item.id_kategori)
+                            }] : [])
+                          ]}
+                        />
                       </td>
                     </tr>
                   ))

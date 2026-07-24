@@ -4,6 +4,8 @@ import { extractData } from '../utils/apiResponseHelper';
 import { formatCurrency } from '../utils/formatHelper';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import { SearchFilterBar, FilterPanel } from '../components/SearchFilterBar';
+import DropdownActionMenu from '../components/common/DropdownActionMenu';
+import { Eye, CheckCircle } from 'lucide-react';
 
 // SVG Icons
 const ViewIcon = ({ className = '' }) => (
@@ -287,24 +289,23 @@ const AdminReconciliationPage = () => {
                             </div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="flex gap-2 justify-center items-center">
-                              <button
-                                onClick={() => handleViewPaymentDetails(sale)}
-                                className="inline-flex items-center justify-center rounded-md bg-indigo-100 text-indigo-700 p-2 hover:bg-indigo-200 transition"
-                                title="Lihat Detail"
-                              >
-                                <ViewIcon className="w-4 h-4" />
-                              </button>
-                              {sale.sisaPembayaran > 0 && (
-                                <button
-                                  onClick={() => handleSettlePayment(sale)}
-                                  className="inline-flex items-center justify-center rounded-md bg-emerald-100 text-emerald-700 p-2 hover:bg-emerald-200 transition"
-                                  title="Lunaskan Pembayaran"
-                                >
-                                  <SettleIcon className="w-4 h-4" />
-                                </button>
-                              )}
-                            </div>
+                            <DropdownActionMenu
+                              item={sale}
+                              actions={[
+                                {
+                                  icon: Eye,
+                                  title: 'Lihat Detail',
+                                  variant: 'primary',
+                                  onClick: (item) => handleViewPaymentDetails(item)
+                                },
+                                ...(sale.sisaPembayaran > 0 ? [{
+                                  icon: CheckCircle,
+                                  title: 'Lunaskan Pembayaran',
+                                  variant: 'success',
+                                  onClick: (item) => handleSettlePayment(item)
+                                }] : [])
+                              ]}
+                            />
                           </td>
                         </tr>
                       ))
