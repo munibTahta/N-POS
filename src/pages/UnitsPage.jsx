@@ -7,7 +7,7 @@ import ResponsiveTable from '../components/common/ResponsiveTable';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts/index.jsx';
 import { SearchFilterBar } from '../components/SearchFilterBar';
 import HeaderActionButton from '../components/HeaderActionButton';
-import ActionButton from '../components/ActionButton';
+import DropdownActionMenu from '../components/common/DropdownActionMenu';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import useSearchAndFilter from '../hooks/useSearchAndFilter';
 import { useNotifications } from '../hooks/useNotifications';
@@ -358,22 +358,23 @@ const UnitsPage = () => {
                           <td className="px-4 py-4 whitespace-nowrap font-mono text-sm font-medium text-slate-900">{unit.id_satuan}</td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">{unit.nama_satuan}</td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="flex gap-2 justify-center items-center">
-                              <ActionButton
-                                icon={Edit}
-                                title="Edit satuan"
-                                onClick={() => navigate(`/satuan/edit/${unit.id_satuan}`)}
-                                variant="primary"
-                                size="sm"
-                              />
-                              <ActionButton
-                                icon={Trash2}
-                                title="Hapus satuan"
-                                onClick={() => handleDelete(unit.id_satuan)}
-                                variant="danger"
-                                size="sm"
-                              />
-                            </div>
+                            <DropdownActionMenu
+                              item={unit}
+                              actions={[
+                                {
+                                  icon: Edit,
+                                  title: 'Edit',
+                                  onClick: (u) => navigate(`/satuan/edit/${u.id_satuan}`),
+                                  variant: 'primary'
+                                },
+                                {
+                                  icon: Trash2,
+                                  title: 'Hapus',
+                                  onClick: (u) => handleDelete(u.id_satuan),
+                                  variant: 'danger'
+                                }
+                              ]}
+                            />
                           </td>
                         </tr>
                       ))

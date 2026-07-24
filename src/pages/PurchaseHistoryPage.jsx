@@ -10,6 +10,7 @@ import { SearchFilterBar, FilterPanel } from '../components/SearchFilterBar';
 import useSearchAndFilter from '../hooks/useSearchAndFilter';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import ActionButton from '../components/ActionButton';
+import DropdownActionMenu from '../components/common/DropdownActionMenu';
 import HeaderActionButton from '../components/HeaderActionButton';
 import { FileText, ArrowLeft, Eye, Printer, X, Download } from 'lucide-react';
 
@@ -373,21 +374,24 @@ const PurchaseHistoryPage = () => {
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 text-right">Rp {formatCurrency(p.total || p.grand_total || 0)}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">{getSupplierName(p)}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">{getDestinationName(p)}</td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm">
-                          <div className="flex flex-wrap gap-2">
-                            <ActionButton
-                              icon={Eye}
-                              variant="gray"
-                              title="Lihat detail pembelian"
-                              onClick={() => openDetail(p.id_pembelian || p.id)}
-                            />
-                            <ActionButton
-                              icon={Printer}
-                              variant="success"
-                              title="Cetak struk pembelian"
-                              onClick={() => handlePrint(p)}
-                            />
-                          </div>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-center">
+                          <DropdownActionMenu
+                            item={p}
+                            actions={[
+                              {
+                                icon: Eye,
+                                title: 'Lihat Detail',
+                                onClick: (item) => openDetail(item.id_pembelian || item.id),
+                                variant: 'gray'
+                              },
+                              {
+                                icon: Printer,
+                                title: 'Cetak Struk',
+                                onClick: (item) => handlePrint(item),
+                                variant: 'success'
+                              }
+                            ]}
+                          />
                         </td>
                       </tr>
                     ))

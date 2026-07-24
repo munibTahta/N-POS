@@ -27,25 +27,21 @@ const styles = `
   }
 `;
 
-const MenuCard = memo(({ to, icon, title, description, isPrimary = false, borderClass = 'border-l-blue-500', iconClass = 'text-gray-600' }) => (
+const MenuCard = memo(({ to, icon, title, description, isPrimary = false, borderClass = 'border-l-blue-500', iconClass = 'text-gray-600 dark:text-zinc-400' }) => (
   <Link
     to={to}
     className={`group block h-full ${isPrimary ? 'md:col-span-2 lg:col-span-1' : ''}`}
   >
-    <div className={`card p-4 h-full flex flex-col justify-between hover:shadow-lg hover:-translate-y-1 transition-all duration-300 border-l-2 ${borderClass} relative overflow-hidden ${
-      isPrimary ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-l-blue-600' : 'bg-white'
-    }`}>
+    <div className={`card p-4 h-full flex flex-col justify-between hover:shadow-lg hover:-translate-y-1 transition-all duration-300 border-l-2 ${borderClass} relative overflow-hidden bg-white dark:bg-zinc-900`}>
       <div>
         <div className="mb-2">
           {renderLucideIcon(icon, `${iconClass} text-3xl`)}
         </div>
-        <h2 className={`text-lg font-semibold mb-2 text-gray-900 group-hover:text-blue-600 transition-colors ${
-          isPrimary ? 'text-blue-800' : ''
-        }`}>
+        <h2 className="text-lg font-semibold mb-2 text-gray-900 dark:text-zinc-100 group-hover:text-blue-600 transition-colors">
           {title}
         </h2>
         <p
-          className="text-gray-600 text-xs leading-relaxed"
+          className="text-gray-600 dark:text-zinc-400 text-xs leading-relaxed"
           style={{
             display: '-webkit-box',
             WebkitLineClamp: 2,
@@ -340,31 +336,31 @@ const MenuPage = () => {
 
       {/* Quick Actions */}
       {hasMenuAccess('pos') && (
-        <div className="card p-8 gradient-primary">
+        <div className="card p-8 bg-slate-50 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-sm">
           <div className="flex items-center justify-center gap-2 mb-6">
-            {renderLucideIcon('Zap', 'w-6 h-6 text-yellow-500')}
-            <h2 className="text-2xl font-bold text-gray-900 text-center">Aksi Cepat</h2>
+            {renderLucideIcon('Zap', 'w-6 h-6 text-amber-500')}
+            <h2 className="text-xl font-bold text-slate-800 dark:text-zinc-100 text-center">Aksi Cepat</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Link to="/pos" className="group">
-              <div className="card p-6 hover:bg-primary-50 transition-all duration-200 border-l-4 border-l-blue-500">
+              <div className="card p-6 bg-white dark:bg-zinc-900 hover:shadow-md transition-all duration-200 border-l-4 border-l-blue-500 rounded-xl">
                 <div className="flex items-center gap-4">
-                  {renderLucideIcon('CreditCard', 'w-10 h-10 text-blue-600 group-hover:scale-110 transition-transform')}
+                  {renderLucideIcon('CreditCard', 'w-10 h-10 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform')}
                   <div>
-                    <p className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">Buka Kasir POS</p>
-                    <p className="text-gray-600 text-sm">Mulai transaksi penjualan</p>
+                    <p className="font-bold text-gray-900 dark:text-zinc-100 group-hover:text-blue-600 transition-colors">Buka Kasir POS</p>
+                    <p className="text-gray-600 dark:text-zinc-400 text-sm">Mulai transaksi penjualan</p>
                   </div>
                 </div>
               </div>
             </Link>
             {hasMenuAccess('stok/kasir') && (
               <Link to="/stok/kasir" className="group">
-                <div className="card p-6 hover:bg-success-50 transition-all duration-200 border-l-4 border-l-green-500">
+                <div className="card p-6 bg-white dark:bg-zinc-900 hover:shadow-md transition-all duration-200 border-l-4 border-l-green-500 rounded-xl">
                   <div className="flex items-center gap-4">
-                    {renderLucideIcon('Package', 'w-10 h-10 text-green-600 group-hover:scale-110 transition-transform')}
+                    {renderLucideIcon('Package', 'w-10 h-10 text-green-600 dark:text-emerald-400 group-hover:scale-110 transition-transform')}
                     <div>
-                      <p className="font-bold text-gray-900 group-hover:text-success-600 transition-colors">Cek Stok Cabang</p>
-                      <p className="text-gray-600 text-sm">Lihat ketersediaan produk</p>
+                      <p className="font-bold text-gray-900 dark:text-zinc-100 group-hover:text-success-600 transition-colors">Cek Stok Cabang</p>
+                      <p className="text-gray-600 dark:text-zinc-400 text-sm">Lihat ketersediaan produk</p>
                     </div>
                   </div>
                 </div>
@@ -375,12 +371,12 @@ const MenuPage = () => {
       )}
 
       {/* Permission Info Box */}
-      <div className="card p-6 bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
+      <div className="card p-6 bg-slate-50 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-sm">
         <div className="flex items-center gap-2 mb-4">
-          {renderLucideIcon('Lock', 'w-6 h-6 text-purple-600')}
-          <h2 className="text-xl font-bold text-purple-900">Informasi Akses Menu</h2>
+          {renderLucideIcon('Lock', 'w-5 h-5 text-purple-600 dark:text-purple-400')}
+          <h2 className="text-lg font-bold text-slate-800 dark:text-zinc-100">Informasi Akses Menu</h2>
         </div>
-        <div className="text-sm text-purple-800 space-y-3">
+        <div className="text-sm text-slate-600 dark:text-zinc-400 space-y-3">
           {(() => {
             const roleData = getRoleById(user?.id_role);
             const roleName = roleData?.nama_role || user?.role_display || user?.role || 'Unknown';
@@ -400,7 +396,7 @@ const MenuPage = () => {
 
             return (
               <p className="flex items-start gap-2">
-                {renderLucideIcon('Check', 'w-4 h-4 text-purple-600 mt-1')}
+                {renderLucideIcon('Check', 'w-4 h-4 text-purple-600 dark:text-purple-400 mt-1')}
                 <span><strong>{roleName.toUpperCase()}:</strong> {description}</span>
               </p>
             );
@@ -409,51 +405,51 @@ const MenuPage = () => {
       </div>
 
       {/* Tips */}
-      <div className="card p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+      <div className="card p-6 bg-slate-50 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-sm">
         <div className="flex items-center gap-2 mb-4">
-          {renderLucideIcon('Lightbulb', 'w-6 h-6 text-green-600')}
-          <h2 className="text-xl font-bold text-green-900">Tips Penggunaan</h2>
+          {renderLucideIcon('Lightbulb', 'w-5 h-5 text-emerald-600 dark:text-emerald-400')}
+          <h2 className="text-lg font-bold text-slate-800 dark:text-zinc-100">Tips Penggunaan</h2>
         </div>
-        <ul className="text-sm text-green-800 space-y-3">
+        <ul className="text-sm text-slate-600 dark:text-zinc-400 space-y-3">
           {hasMenuAccess('pos') && (
             <li className="flex items-start gap-2">
-              {renderLucideIcon('Check', 'w-4 h-4 text-green-600 mt-1')}
+              {renderLucideIcon('Check', 'w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-1')}
               <span>Gunakan menu <strong>Kasir POS</strong> untuk proses transaksi penjualan harian</span>
             </li>
           )}
           {hasMenuAccess('penjualan') && (
             <li className="flex items-start gap-2">
-              {renderLucideIcon('Check', 'w-4 h-4 text-green-600 mt-1')}
+              {renderLucideIcon('Check', 'w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-1')}
               <span>Periksa <strong>Riwayat Penjualan</strong> untuk pencetakan struk dan verifikasi transaksi</span>
             </li>
           )}
           {(hasMenuAccess('stok') || hasMenuAccess('stok/kasir')) && (
             <li className="flex items-start gap-2">
-              {renderLucideIcon('Check', 'w-4 h-4 text-green-600 mt-1')}
+              {renderLucideIcon('Check', 'w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-1')}
               <span>Periksa <strong>Manajemen Stok</strong> secara berkala untuk memastikan stok tersedia</span>
             </li>
           )}
           {hasMenuAccess('pengaturan') && (
             <li className="flex items-start gap-2">
-              {renderLucideIcon('Check', 'w-4 h-4 text-green-600 mt-1')}
+              {renderLucideIcon('Check', 'w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-1')}
               <span>Akses <strong>Pengaturan</strong> untuk mengubah preferensi personal Anda</span>
             </li>
           )}
           {hasMenuAccess('laporan') && (
             <li className="flex items-start gap-2">
-              {renderLucideIcon('Check', 'w-4 h-4 text-green-600 mt-1')}
+              {renderLucideIcon('Check', 'w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-1')}
               <span>Gunakan <strong>Laporan & Monitoring</strong> untuk analisis penjualan dan performa</span>
             </li>
           )}
           {hasMenuAccess('rekonsiliasi') && (
             <li className="flex items-start gap-2">
-              {renderLucideIcon('Check', 'w-4 h-4 text-green-600 mt-1')}
+              {renderLucideIcon('Check', 'w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-1')}
               <span>Lakukan <strong>Rekonsiliasi Pembayaran</strong> untuk verifikasi pembayaran yang belum lunas</span>
             </li>
           )}
           {canManage && (
             <li className="flex items-start gap-2">
-              {renderLucideIcon('Check', 'w-4 h-4 text-green-600 mt-1')}
+              {renderLucideIcon('Check', 'w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-1')}
               <span>Konfigurasikan <strong>Metode Pembayaran</strong> dan <strong>Pengaturan Sistem</strong> sesuai kebutuhan bisnis</span>
             </li>
           )}

@@ -859,16 +859,16 @@ const ReportsPage = () => {
         <FilterPanel visible={showFilterPanel} className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="flex items-center gap-2">
-              <label className="text-sm font-semibold">Dari</label>
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="p-2 border rounded flex-1" />
+              <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Dari</label>
+              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="p-2 border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-xl flex-1 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-sm font-semibold">Sampai</label>
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="p-2 border rounded flex-1" />
+              <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Sampai</label>
+              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="p-2 border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-xl flex-1 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-sm font-semibold">Cabang</label>
-              <select value={selectedBranch} onChange={e => setSelectedBranch(e.target.value)} className="p-2 border rounded flex-1">
+              <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Cabang</label>
+              <select value={selectedBranch} onChange={e => setSelectedBranch(e.target.value)} className="p-2 border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-xl flex-1 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 <option value="">Semua</option>
                 {(branches || []).map(b => (
                   <option key={b.id_cabang || b.id || b.value} value={b.id_cabang || b.id || b.value}>{b.nama_cabang || b.nama || b.label}</option>
@@ -876,16 +876,16 @@ const ReportsPage = () => {
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-sm font-semibold">Tipe Harga</label>
-              <select value={priceTypeFilter} onChange={e => setPriceTypeFilter(e.target.value)} className="p-2 border rounded flex-1">
+              <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Tipe Harga</label>
+              <select value={priceTypeFilter} onChange={e => setPriceTypeFilter(e.target.value)} className="p-2 border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-xl flex-1 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 <option value="all">Semua</option>
                 <option value="eceran">Eceran</option>
                 <option value="grosir">Grosir</option>
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-sm font-semibold">Periode</label>
-              <select value={granularity} onChange={e => setGranularity(e.target.value)} className="p-2 border rounded flex-1">
+              <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Periode</label>
+              <select value={granularity} onChange={e => setGranularity(e.target.value)} className="p-2 border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-xl flex-1 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 <option value="all">Semua</option>
                 <option value="daily">Harian</option>
                 <option value="monthly">Bulanan</option>

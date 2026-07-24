@@ -3474,12 +3474,16 @@ const PosPage = () => {
               ref={submitButtonRef}
               onClick={handleSubmit}
               disabled={isSubmitting || cart.length === 0 || isSyncLocked()}
-              className={`w-full py-3 sm:py-4 rounded-lg font-bold text-white text-base transition-all duration-200 ${
+              className={`w-full py-3 sm:py-4 rounded-xl font-bold text-white text-base transition-all duration-200 shadow-md ${
                 isSubmitting || isSyncLocked()
-                  ? 'bg-gray-500 cursor-not-allowed' 
+                  ? 'bg-slate-400 dark:bg-zinc-800 text-slate-200 dark:text-zinc-500 cursor-not-allowed' 
                   : cart.length === 0
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-gray-800 hover:bg-gray-900 active:bg-black shadow-lg hover:shadow-xl'
+                    ? 'bg-slate-300 dark:bg-zinc-800/50 text-slate-500 dark:text-zinc-500 cursor-not-allowed'
+                    : paymentAmount === 0 && !isPendingPayment
+                      ? 'bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 shadow-blue-500/20'
+                      : paymentAmount < finalTotal && !isPendingPayment
+                        ? 'bg-amber-600 dark:bg-amber-500 hover:bg-amber-700 dark:hover:bg-amber-600 shadow-amber-500/20'
+                        : 'bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-600 shadow-emerald-500/20'
               } touch-manipulation`}
               title="F12/End: Selesaikan transaksi (Ctrl+Enter juga bekerja)"
             >
