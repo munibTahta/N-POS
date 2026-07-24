@@ -159,3 +159,70 @@
 .bounce-subtle {
   animation: bounceSubtle 2s infinite;
 }
+
+/* Global Dark Mode Overrides for Hardcoded Light Classes */
+.dark {
+  color-scheme: dark;
+}
+
+.dark .bg-white {
+  background-color: #18181b !important; /* zinc-900 */
+}
+
+.dark .bg-gray-50,
+.dark .bg-slate-50,
+.dark .bg-slate-100\/50 {
+  background-color: #09090b !important; /* zinc-950 */
+}
+
+.dark .bg-gray-100,
+.dark .bg-slate-100 {
+  background-color: #27272a !important; /* zinc-800 */
+}
+
+.dark .bg-gray-200,
+.dark .bg-slate-200 {
+  background-color: #3f3f46 !important; /* zinc-700 */
+}
+
+.dark .text-gray-900,
+.dark .text-slate-900,
+.dark .text-gray-800,
+.dark .text-slate-800,
+.dark .text-gray-700,
+.dark .text-slate-700 {
+  color: #f4f4f5 !important; /* zinc-100 */
+}
+
+.dark .text-gray-600,
+.dark .text-slate-600,
+.dark .text-gray-500,
+.dark .text-slate-500 {
+  color: #a1a1aa !important; /* zinc-400 */
+}
+
+.dark .border-gray-200,
+.dark .border-slate-200,
+.dark .border-gray-300,
+.dark .border-slate-300 {
+  border-color: #27272a !important; /* zinc-800 */
+}
+
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #27272a !important;
+}
+
+/* Inputs and Selects inside dark mode */
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+  border-color: #27272a !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #71717a !important; /* zinc-500 */
+}
