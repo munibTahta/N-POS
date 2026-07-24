@@ -548,7 +548,7 @@ const SettingsPage = () => {
   const canEditBranch = canManageBranches;
 
   return (
-    <PageLayout maxWidth="5xl">
+    <PageLayout>
       <PageHeader
         title="Pengaturan Aplikasi"
         subtitle="Konfigurasi pengaturan sistem dan preferensi aplikasi Anda"
