@@ -1,0 +1,290 @@
+/**
+ * Offline Mode Indicator Styles
+ * Compact indicator with expandable details
+ */
+
+.offline-mode-indicator {
+  /* keep fixed but subtle and non-intrusive */
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  z-index: 600; /* lower z so it doesn't cover important UI */
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+}
+
+/* Base states */
+.offline-mode-indicator.online {
+  --accent-color: #10b981; /* green */
+  --bg-color: rgba(16, 185, 129, 0.05);
+  --border-color: rgba(16, 185, 129, 0.2);
+}
+
+.offline-mode-indicator.offline-working {
+  --accent-color: #f59e0b; /* amber */
+  --bg-color: rgba(245, 158, 11, 0.05);
+  --border-color: rgba(245, 158, 11, 0.2);
+}
+
+.offline-mode-indicator.offline-error {
+  --accent-color: #ef4444; /* red */
+  --bg-color: rgba(239, 68, 68, 0.05);
+  --border-color: rgba(239, 68, 68, 0.2);
+}
+
+/* Quick Status Display */
+.indicator-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid transparent;
+  border-radius: 999px; /* pill but small */
+  cursor: pointer;
+  color: var(--accent-color);
+  font-weight: 600;
+  transition: all 0.18s ease;
+  user-select: none;
+  backdrop-filter: blur(4px);
+}
+
+.indicator-status:hover {
+  background: var(--bg-color);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.indicator-status .icon {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+  background: currentColor;
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.02) inset;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.indicator-status .mode-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  display: none; /* hide label by default to be non-intrusive */
+}
+
+/* show label when user hovers or focuses the indicator */
+.offline-mode-indicator:hover .mode-label,
+.offline-mode-indicator:focus-within .mode-label {
+  display: inline-block;
+  margin-left: 6px;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Detailed Info Panel */
+.indicator-details {
+  position: absolute;
+  bottom: 100%;
+  left: 0; /* open upward from the left-aligned indicator */
+  width: 280px;
+  margin-bottom: 10px;
+  padding: 12px;
+  background: var(--details-bg, white);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  animation: slideUp 0.18s ease;
+  z-index: 620;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 12px;
+}
+
+.detail-row:last-of-type {
+  border-bottom: none;
+}
+
+.detail-row.warning {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.03);
+  padding: 8px;
+  border-radius: 4px;
+  border: none;
+}
+
+.detail-row.error {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.03);
+  padding: 8px;
+  border-radius: 4px;
+  border: none;
+}
+
+.detail-row .label {
+  color: #666;
+  font-weight: 500;
+}
+
+.detail-row .value {
+  font-weight: 600;
+  text-align: right;
+}
+
+.detail-row .value.online {
+  color: #10b981;
+}
+
+.detail-row .value.offline {
+  color: #f59e0b;
+}
+
+.detail-row .value.connected {
+  color: #10b981;
+}
+
+.detail-row .value.disconnected {
+  color: #ef4444;
+}
+
+.detail-row .value.fresh {
+  color: #10b981;
+}
+
+.detail-row .value.stale {
+  color: #f59e0b;
+}
+
+.detail-row .value.ready {
+  color: #10b981;
+}
+
+.detail-row .value.not-ready {
+  color: #ef4444;
+}
+
+/* Action Buttons */
+.indicator-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.action-btn.retry {
+  background: #ef4444;
+  color: white;
+}
+
+.action-btn.retry:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.action-btn.refresh {
+  background: #3b82f6;
+  color: white;
+}
+
+.action-btn.refresh:hover {
+  background: #2563eb;
+}
+
+.action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .offline-mode-indicator {
+    bottom: 10px;
+    right: 10px;
+  }
+
+  .indicator-status {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .indicator-details {
+    width: 240px;
+    margin-bottom: 8px;
+    padding: 12px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .offline-mode-indicator.online {
+    --bg-color: rgba(16, 185, 129, 0.1);
+    --border-color: rgba(16, 185, 129, 0.3);
+  }
+
+  .offline-mode-indicator.offline-working {
+    --bg-color: rgba(245, 158, 11, 0.1);
+    --border-color: rgba(245, 158, 11, 0.3);
+  }
+
+  .offline-mode-indicator.offline-error {
+    --bg-color: rgba(239, 68, 68, 0.1);
+    --border-color: rgba(239, 68, 68, 0.3);
+  }
+
+  .indicator-details {
+    background: #1f2937;
+    border-color: var(--border-color);
+  }
+
+  .detail-row {
+    border-bottom-color: #374151;
+  }
+
+  .detail-row.warning {
+    background: rgba(245, 158, 11, 0.1);
+  }
+
+  .detail-row.error {
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  .detail-row .label {
+    color: #9ca3af;
+  }
+
+  .detail-row .value {
+    color: inherit;
+  }
+}
