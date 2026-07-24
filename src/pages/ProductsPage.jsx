@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getProducts, deleteProduct, updateProduct, getCategories, bulkImportProducts, bulkDeleteProducts } from '../services/api';
+import { getProducts, deleteProduct, updateProduct, getCategories, bulkImportProducts, bulkDeleteProducts, getBranches } from '../services/api';
 import { Link, useNavigate } from 'react-router-dom';
 import { resolveUrl } from '../utils/resolveUrl';
 import { generateBarcodeDataUrl } from '../utils/barcodeHelper';
@@ -15,11 +15,12 @@ import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import DataTable from '../components/DataTable';
 import Pagination from '../components/Pagination';
 import HeaderActionButton from '../components/HeaderActionButton';
-import { Edit, Trash2, Printer, Eye, Plus, Download, Upload, FileText, Info } from 'lucide-react';
+import { Edit, Trash2, Printer, Eye, Plus, Download, Upload, FileText, Info, Globe, Store } from 'lucide-react';
 import useProductOfflineDB from '../hooks/useProductOfflineDB';
 import { usePagination } from '../hooks/usePagination';
 import FileViewerModal from '../components/FileViewerModal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
+import { useAuth } from '../hooks/useAuth';
 
 const ProductsPage = () => {
   const navigate = useNavigate();
@@ -35,6 +36,40 @@ const ProductsPage = () => {
   const { success: showSuccess, error: showError, warning: showWarning } = useNotifications();
   const { isSyncing, syncProgress, totalProducts: syncedProducts } = useProductOfflineDB();
   const { storeInfo } = useSettings();
+  
+  const { user } = useAuth();
+  const [activeCatalogTab, setActiveCatalogTab] = useState('global'); // 'global' or 'terpisah'
+  const [selectedBranchId, setSelectedBranchId] = useState('');
+  const [branches, setBranches] = useState([]);
+  const isGlobalAccess = user?.role === 'admin' || user?.role === 'owner';
+
+  useEffect(() => {
+    const fetchBranchesList = async () => {
+      if (isGlobalAccess) {
+        try {
+          const res = await getBranches();
+          if (res && res.data && res.data.success) {
+            setBranches(res.data.data || []);
+          } else if (Array.isArray(res)) {
+            setBranches(res);
+          } else if (res && Array.isArray(res.data)) {
+            setBranches(res.data);
+          }
+        } catch (err) {
+          console.warn('Failed to load branches for catalog filtering:', err);
+          if (window.electronAPI?.dbSelect) {
+            try {
+              const res = await window.electronAPI.dbSelect({ table: 'branches' });
+              if (res) setBranches(res);
+            } catch (sqlErr) {
+              console.error('Failed to load branches from SQLite:', sqlErr);
+            }
+          }
+        }
+      }
+    };
+    fetchBranchesList();
+  }, [isGlobalAccess]);
   
   const [modalImage, setModalImage] = useState(null);
   const [modalAlt, setModalAlt] = useState(null);
@@ -74,7 +109,11 @@ const ProductsPage = () => {
         limit,
         search: searchQuery || undefined,
         status: filterValues.status && filterValues.status !== 'all' ? filterValues.status : undefined,
-        kategori: filterValues.id_kategori || undefined
+        kategori: filterValues.id_kategori || undefined,
+        katalog_filter: activeCatalogTab,
+        id_cabang: activeCatalogTab === 'terpisah' 
+          ? (isGlobalAccess ? (selectedBranchId || undefined) : (user?.id_cabang || undefined)) 
+          : undefined
       };
       
       const response = await getProducts(params);
@@ -97,6 +136,19 @@ const ProductsPage = () => {
           let whereClause = '1=1';
           const whereValues = [];
           
+          // Apply catalog isolation in offline query
+          if (activeCatalogTab === 'terpisah') {
+            const targetBranchId = isGlobalAccess ? selectedBranchId : user?.id_cabang;
+            if (targetBranchId) {
+              whereClause += ` AND id_cabang_pemilik = ?`;
+              whereValues.push(Number(targetBranchId));
+            } else {
+              whereClause += ` AND id_cabang_pemilik IS NOT NULL`;
+            }
+          } else {
+            whereClause += ` AND id_cabang_pemilik IS NULL`;
+          }
+
           if (searchQuery) {
             whereClause += ` AND (nama_produk LIKE ? OR kode_produk LIKE ? OR merek LIKE ?)`;
             const term = `%${searchQuery}%`;
@@ -118,6 +170,13 @@ const ProductsPage = () => {
           });
           
           if (localProducts && Array.isArray(localProducts)) {
+            // Sort by urutan offline
+            localProducts.sort((a, b) => {
+              const uA = a.urutan || 0;
+              const uB = b.urutan || 0;
+              if (uA !== uB) return uA - uB;
+              return (a.nama_produk || '').localeCompare(b.nama_produk || '');
+            });
             setTotalItems(localProducts.length);
             const offset = (page - 1) * limit;
             const paginatedLocal = localProducts.slice(offset, offset + limit);
@@ -130,7 +189,7 @@ const ProductsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, searchQuery, filterValues]);
+  }, [page, limit, searchQuery, filterValues, activeCatalogTab, selectedBranchId, isGlobalAccess, user]);
 
   const fetchCategoriesAndUnits = useCallback(async () => {
     try {
@@ -303,6 +362,11 @@ const ProductsPage = () => {
   };
 
   const handleImportExcel = async (event) => {
+    if (activeCatalogTab === 'terpisah' && isGlobalAccess && !selectedBranchId) {
+      showWarning('Pilih cabang filter terlebih dahulu untuk menentukan katalog cabang tujuan impor!');
+      event.target.value = '';
+      return;
+    }
     const file = event.target.files[0];
     if (!file) return;
 
@@ -386,6 +450,10 @@ const ProductsPage = () => {
     setShowImportOptionsModal(false);
     setImportProgress({ active: true, current: 0, total: products.length, successCount: 0, failCount: 0 });
 
+    const idCabangPemilik = activeCatalogTab === 'terpisah'
+      ? (isGlobalAccess ? selectedBranchId : user?.id_cabang)
+      : null;
+
     const chunkSize = 500; // Optimal client-side chunk size
     let successCount = 0;
     let failCount = 0;
@@ -395,11 +463,11 @@ const ProductsPage = () => {
       try {
         const response = await bulkImportProducts(chunk, {
           ignoreDuplicates: options.ignoreDuplicates,
-          updateDuplicates: options.updateDuplicates
+          updateDuplicates: options.updateDuplicates,
+          id_cabang_pemilik: idCabangPemilik
         });
         
         if (response.data?.success) {
-          // stats contains info about chunks processed
           successCount += response.data.stats?.totalProcessed || chunk.length;
         } else {
           failCount += chunk.length;
@@ -415,7 +483,6 @@ const ProductsPage = () => {
         failCount
       }));
       
-      // Delay to avoid UI blocking and allow progress rendering
       await new Promise(resolve => setTimeout(resolve, 50));
     }
     
@@ -510,7 +577,7 @@ const ProductsPage = () => {
                 icon={Plus}
                 label="Tambah"
                 variant="slate"
-                to="/produk/tambah"
+                to={activeCatalogTab === 'terpisah' ? `/produk/tambah?id_cabang_pemilik=${isGlobalAccess ? (selectedBranchId || user?.id_cabang || 1) : (user?.id_cabang || 1)}` : '/produk/tambah'}
                 isLink
                 hideLabel={true}
               />
@@ -555,6 +622,92 @@ const ProductsPage = () => {
           onChange={handleImportExcel}
           style={{ display: 'none' }}
         />
+
+        {/* Segmented Tabs & Branch Catalog Selector */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-gray-200 dark:border-zinc-700 pb-4">
+          <div className="bg-gray-100 dark:bg-zinc-800 p-1 rounded-full flex gap-1 w-fit shadow-inner">
+            <button
+              onClick={() => {
+                setActiveCatalogTab('global');
+                setPage(1);
+              }}
+              className={`rounded-full px-5 py-2 text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                activeCatalogTab === 'global'
+                  ? 'bg-white dark:bg-zinc-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+              }`}
+            >
+              <Globe className="h-4 w-4" />
+              Katalog Global
+            </button>
+            <button
+              onClick={() => {
+                setActiveCatalogTab('terpisah');
+                setPage(1);
+              }}
+              className={`rounded-full px-5 py-2 text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                activeCatalogTab === 'terpisah'
+                  ? 'bg-white dark:bg-zinc-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+              }`}
+            >
+              <Store className="h-4 w-4" />
+              Katalog Cabang Terpisah
+            </button>
+          </div>
+
+          {activeCatalogTab === 'terpisah' && isGlobalAccess && (
+            <div className="flex items-center gap-2 bg-gray-50 dark:bg-zinc-800/50 p-1.5 px-3 rounded-xl border border-gray-200 dark:border-zinc-700 w-full md:w-auto">
+              <span className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Filter Cabang:</span>
+              <select
+                value={selectedBranchId}
+                onChange={(e) => {
+                  setSelectedBranchId(e.target.value);
+                  setPage(1);
+                }}
+                className="bg-transparent text-sm font-medium border-0 focus:ring-0 p-0 pr-8 text-gray-700 dark:text-zinc-300 cursor-pointer"
+              >
+                <option value="" className="bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-300">Semua Cabang</option>
+                {branches.map((b) => (
+                  <option key={b.id_cabang} value={b.id_cabang} className="bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-300">
+                    {b.nama_cabang}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        {/* Context-Aware Excel Import Warning Banner */}
+        {activeCatalogTab === 'global' ? (
+          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 text-amber-800 dark:text-amber-300 p-4 rounded-2xl flex items-start gap-3 mb-6 transition-all duration-200">
+            <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold">Katalog Global Aktif</p>
+              <p className="text-xs opacity-90 mt-0.5">Semua tindakan impor, penambahan, atau ekspor di tab ini dilakukan untuk **Katalog Global** (diakses oleh semua cabang global).</p>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900/30 text-purple-800 dark:text-purple-300 p-4 rounded-2xl flex items-start gap-3 mb-6 transition-all duration-200">
+            <Info className="h-5 w-5 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold">
+                Katalog Cabang Terpisah Aktif
+                {isGlobalAccess && selectedBranchId && ` (${branches.find(b => b.id_cabang === parseInt(selectedBranchId))?.nama_cabang || 'Cabang Terpilih'})`}
+                {!isGlobalAccess && ` (Cabang Anda)`}
+              </p>
+              <p className="text-xs opacity-90 mt-0.5">
+                {isGlobalAccess && !selectedBranchId
+                  ? '⚠️ Pilih cabang di samping kanan untuk melakukan impor excel ke cabang tertentu. Jika membiarkan "Semua Cabang", fitur tambah/impor tidak tersedia.'
+                  : `Tindakan tambah atau impor akan dimasukkan secara terisolasi ke katalog cabang **${
+                      isGlobalAccess
+                        ? branches.find(b => b.id_cabang === parseInt(selectedBranchId))?.nama_cabang || 'terpilih'
+                        : 'Anda'
+                    }**.`}
+              </p>
+            </div>
+          </div>
+        )}
 
         {importProgress.active && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
@@ -710,6 +863,29 @@ const ProductsPage = () => {
                   Lihat
                 </button>
               )
+            },
+            {
+              key: 'katalog',
+              header: 'Katalog',
+              render: (product) => {
+                const ownerId = product.id_cabang_pemilik;
+                if (!ownerId) {
+                  return (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-full border border-blue-200 dark:border-blue-800">
+                      <Globe className="h-3 w-3 shrink-0" />
+                      Global
+                    </span>
+                  );
+                }
+                const ownerBranch = branches.find(b => b.id_cabang === ownerId);
+                const branchName = ownerBranch ? ownerBranch.nama_cabang : `Cabang ${ownerId}`;
+                return (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 rounded-full border border-purple-200 dark:border-purple-800">
+                    <Store className="h-3 w-3 shrink-0" />
+                    {branchName}
+                  </span>
+                );
+              }
             },
             {
               key: 'harga_jual',

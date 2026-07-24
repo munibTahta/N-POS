@@ -1,5 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Camera, Image as ImageIcon, Save, ChevronLeft, Info } from 'lucide-react';
 import HeaderActionButton from '../components/HeaderActionButton';
@@ -14,6 +14,8 @@ const CameraBarcodeScanner = lazy(() => import('../components/CameraBarcodeScann
 
 const AddProductPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const idCabangPemilik = searchParams.get('id_cabang_pemilik');
   const [categories, setCategories] = useState([]);
   const [units, setUnits] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
@@ -84,6 +86,9 @@ const AddProductPage = () => {
     try {
       // Buat FormData untuk support file upload
       const formData = new FormData();
+      if (idCabangPemilik) {
+        formData.append('id_cabang_pemilik', idCabangPemilik);
+      }
       formData.append('kode_produk', product.kode_produk);
       formData.append('nama_produk', product.nama_produk);
       formData.append('merek', product.merek);

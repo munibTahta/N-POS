@@ -24,7 +24,7 @@ const useProductOfflineDB = () => {
    * @param {boolean} isBarcode - Whether searching by barcode
    * @returns {Promise<Array>} Products matching query
    */
-  const searchOfflineProducts = useCallback(async (query, isBarcode = false) => {
+  const searchOfflineProducts = useCallback(async (query, isBarcode = false, branchInfo = {}) => {
     try {
       if (!query || query.trim().length === 0) {
         return [];
@@ -41,7 +41,12 @@ const useProductOfflineDB = () => {
         try {
           const searchQuery = q || query;
           if (window?.electronAPI?.productDB_searchProducts) {
-            const resp = await window.electronAPI.productDB_searchProducts(searchQuery, { limit, isBarcode: ib });
+            const resp = await window.electronAPI.productDB_searchProducts(searchQuery, { 
+              limit, 
+              isBarcode: ib,
+              id_cabang: branchInfo?.id_cabang,
+              tipe_katalog: branchInfo?.tipe_katalog
+            });
             // productDB_searchProducts returns { data, total, limit, offset }
             return resp?.data || [];
           }

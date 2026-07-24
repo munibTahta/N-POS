@@ -991,7 +991,7 @@ class SyncEngine {
       const { getSales, getPurchases } = await import('./api.js');
 
       // Total steps untuk tracking progress
-      const totalSteps = 7; // Products, Stocks, Categories, Units, Suppliers, Sales, Purchases
+      const totalSteps = 8; // Products, Stocks, Categories, Units, Suppliers, Branches, Sales, Purchases
       let currentStep = 0;
 
       currentStep++;
@@ -1015,6 +1015,10 @@ class SyncEngine {
       currentStep++;
       this.updateProgress(currentStep, totalSteps, '📋 Suppliers...');
       await this.pullSuppliers();
+
+      currentStep++;
+      this.updateProgress(currentStep, totalSteps, '🏢 Branches...');
+      await this.pullBranches();
 
 
       
@@ -1450,6 +1454,8 @@ class SyncEngine {
           status: product.status,
           gambar: product.gambar,
           barcode: product.barcode,
+          id_cabang_pemilik: product.id_cabang_pemilik || null,
+          urutan: product.urutan || 0,
           created_at: product.created_at,
           updated_at: product.updated_at,
           synced: 1,
@@ -1664,6 +1670,52 @@ class SyncEngine {
       }
     } catch (error) {
       console.warn('Failed to pull suppliers:', error);
+    }
+  }
+
+  async pullBranches() {
+    try {
+      const { getBranches } = await import('./api.js');
+      const branchesResponse = await getBranches();
+      const branchesData = extractArray(branchesResponse);
+      
+      for (const branch of branchesData) {
+        if (!window.electronAPI?.dbSelect || !window.electronAPI?.dbInsert || !window.electronAPI?.dbUpdate) continue;
+
+        const existing = await window.electronAPI.dbSelect({
+          table: 'branches',
+          whereClause: 'id_cabang = ?',
+          whereValues: [branch.id_cabang || branch.id]
+        });
+
+        const data = {
+          id_cabang: branch.id_cabang || branch.id,
+          kode_cabang: branch.kode_cabang,
+          nama_cabang: branch.nama_cabang,
+          alamat: branch.alamat,
+          kota: branch.kota,
+          no_telp: branch.no_telp || branch.telepon || '',
+          status: branch.status || 'aktif',
+          tipe_katalog: branch.tipe_katalog || 'global',
+          created_at: branch.created_at || new Date().toISOString()
+        };
+
+        if (existing.length > 0) {
+          await window.electronAPI.dbUpdate({
+            table: 'branches',
+            data,
+            whereClause: 'id_cabang = ?',
+            whereValues: [branch.id_cabang || branch.id]
+          });
+        } else {
+          await window.electronAPI.dbInsert({
+            table: 'branches',
+            data
+          });
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to pull branches:', error);
     }
   }
 

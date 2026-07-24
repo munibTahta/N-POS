@@ -587,10 +587,11 @@ function registerDatabaseHandlers() {
 
   // ✅ FIX #3: Define allowed columns for each table (prevent SQL injection)
   const ALLOWED_COLUMNS = {
-    products: ['id_produk', 'kode_produk', 'nama_produk', 'id_kategori', 'id_satuan', 'harga_beli', 'harga_jual', 'harga_grosir', 'min_qty_grosir', 'stok_minimum', 'status', 'gambar', 'barcode', 'merek', 'lokasi_rak', 'deskripsi', 'foto_produk', 'created_at', 'updated_at', 'synced', 'sync_version'],
+    products: ['id_produk', 'kode_produk', 'nama_produk', 'id_kategori', 'id_satuan', 'harga_beli', 'harga_jual', 'harga_grosir', 'min_qty_grosir', 'stok_minimum', 'status', 'gambar', 'barcode', 'merek', 'lokasi_rak', 'deskripsi', 'foto_produk', 'created_at', 'updated_at', 'synced', 'sync_version', 'id_cabang_pemilik', 'urutan'],
+    branches: ['id_cabang', 'kode_cabang', 'nama_cabang', 'alamat', 'kota', 'no_telp', 'status', 'tipe_katalog', 'created_at'],
     sales: ['id_penjualan', 'kode_transaksi', 'id_cabang', 'id_pelanggan', 'id_user', 'tanggal', 'total', 'total_diskon', 'pajak', 'metode_pembayaran', 'status', 'status_pembayaran', 'catatan', 'tanggal_transaksi', 'created_at', 'updated_at', 'synced', 'sync_version', 'bayar', 'diskon'],
     sale_items: ['id', 'id_penjualan', 'id_produk', 'jumlah', 'harga_satuan', 'subtotal', 'diskon_item', 'created_at', 'tipe_harga', 'harga_produk'],
-    payment_details: ['id', 'id_penjualan', 'metode_pembayaran', 'jumlah_bayar', 'created_at'],
+    payment_details: ['id', 'id_penjualan', 'metode_pembayaran', 'shadow_pay', 'jumlah_bayar', 'created_at'],
     sync_queue: ['id', 'table_name', 'operation', 'record_id', 'data', 'status', 'error_message', 'created_at', 'updated_at', 'server_id', 'retry_count'],
     sync_metadata: ['key', 'value', 'created_at', 'updated_at'],
     categories: ['id_kategori', 'nama_kategori', 'created_at', 'updated_at', 'synced', 'sync_version'],
@@ -927,10 +928,22 @@ function registerDatabaseHandlers() {
       const limit = options.limit || 50;
       const offset = options.offset || 0;
       const status = options.status || 'aktif';
+      const id_cabang = options.id_cabang;
+      const tipe_katalog = options.tipe_katalog || 'global';
       
       // Try to search in offlineDb first
       if (offlineDb) {
         let stmt, results, totalStmt, totalResult;
+        
+        let catalogFilter = 'id_cabang_pemilik IS NULL';
+        const queryParams = [];
+        
+        if (id_cabang && tipe_katalog === 'terpisah') {
+          catalogFilter = 'id_cabang_pemilik = ?';
+          queryParams.push(id_cabang);
+        } else {
+          catalogFilter = 'id_cabang_pemilik IS NULL';
+        }
         
         if (query && query.trim()) {
           // Specific search query
@@ -939,29 +952,36 @@ function registerDatabaseHandlers() {
             SELECT * FROM products 
             WHERE (nama_produk LIKE ? OR kode_produk LIKE ? OR barcode LIKE ?)
             AND status = ?
+            AND ${catalogFilter}
+            ORDER BY urutan ASC, nama_produk ASC
             LIMIT ? OFFSET ?
           `);
-          results = stmt.all(searchPattern, searchPattern, searchPattern, status, limit, offset);
+          results = stmt.all(searchPattern, searchPattern, searchPattern, status, ...queryParams, limit, offset);
           
           totalStmt = offlineDb.prepare(`
             SELECT COUNT(*) as count FROM products 
             WHERE (nama_produk LIKE ? OR kode_produk LIKE ? OR barcode LIKE ?)
             AND status = ?
+            AND ${catalogFilter}
           `);
-          totalResult = totalStmt.get(searchPattern, searchPattern, searchPattern, status);
+          totalResult = totalStmt.get(searchPattern, searchPattern, searchPattern, status, ...queryParams);
         } else {
           // Empty query = get all active products
           stmt = offlineDb.prepare(`
             SELECT * FROM products 
             WHERE status = ?
+            AND ${catalogFilter}
+            ORDER BY urutan ASC, nama_produk ASC
             LIMIT ? OFFSET ?
           `);
-          results = stmt.all(status, limit, offset);
+          results = stmt.all(status, ...queryParams, limit, offset);
           
           totalStmt = offlineDb.prepare(`
-            SELECT COUNT(*) as count FROM products WHERE status = ?
+            SELECT COUNT(*) as count FROM products 
+            WHERE status = ?
+            AND ${catalogFilter}
           `);
-          totalResult = totalStmt.get(status);
+          totalResult = totalStmt.get(status, ...queryParams);
         }
         
         return {
@@ -2357,13 +2377,48 @@ app.whenReady().then(async () => {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Create branches table if it does not exist
+    offlineDb.exec(`
+      CREATE TABLE IF NOT EXISTS branches (
+        id_cabang INTEGER PRIMARY KEY,
+        kode_cabang TEXT NOT NULL,
+        nama_cabang TEXT,
+        alamat TEXT,
+        kota TEXT,
+        no_telp TEXT,
+        status TEXT DEFAULT 'aktif',
+        tipe_katalog TEXT DEFAULT 'global',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     try {
+      // Check if branches columns exist
+      const branchesColumns = offlineDb.prepare("PRAGMA table_info(branches)").all();
+      const hasTipeKatalog = branchesColumns.some(col => col.name === 'tipe_katalog');
+      if (!hasTipeKatalog) {
+        offlineDb.exec(`ALTER TABLE branches ADD COLUMN tipe_katalog TEXT DEFAULT 'global'`);
+      }
+
       // Check if merek column exists in products table
       const productColumns = offlineDb.prepare("PRAGMA table_info(products)").all();
+      
+      // Check if id_cabang_pemilik exists in products
+      const hasIdCabangPemilik = productColumns.some(col => col.name === 'id_cabang_pemilik');
+      if (!hasIdCabangPemilik) {
+        offlineDb.exec(`ALTER TABLE products ADD COLUMN id_cabang_pemilik INTEGER NULL`);
+      }
+
+      // Check if urutan exists in products
+      const hasUrutan = productColumns.some(col => col.name === 'urutan');
+      if (!hasUrutan) {
+        offlineDb.exec(`ALTER TABLE products ADD COLUMN urutan INTEGER DEFAULT 0`);
+      }
+
       const hasMerek = productColumns.some(col => col.name === 'merek');
       if (!hasMerek) {
         offlineDb.exec(`ALTER TABLE products ADD COLUMN merek TEXT`);
-
       }
 
       // Check if lokasi_rak column exists in products table

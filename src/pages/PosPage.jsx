@@ -406,6 +406,27 @@ const PosPage = () => {
   }, []);
 
   const idCabangPengguna = user?.id_cabang;
+  const [tipeKatalog, setTipeKatalog] = useState('global');
+
+  useEffect(() => {
+    const loadBranchTipeKatalog = async () => {
+      try {
+        if (idCabangPengguna && window.electronAPI?.dbSelect) {
+          const res = await window.electronAPI.dbSelect({
+            table: 'branches',
+            whereClause: 'id_cabang = ?',
+            whereValues: [idCabangPengguna]
+          });
+          if (res && res.length > 0) {
+            setTipeKatalog(res[0].tipe_katalog || 'global');
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load branch tipe_katalog offline:', err);
+      }
+    };
+    loadBranchTipeKatalog();
+  }, [idCabangPengguna]);
 
   /**
    * Cache stock report data untuk offline use
@@ -713,7 +734,7 @@ const PosPage = () => {
           }
           
           // Fallback to offline search
-          let offlineResults = await searchOfflineProducts(cleanQuery, false);
+          let offlineResults = await searchOfflineProducts(cleanQuery, false, { id_cabang: idCabangPengguna, tipe_katalog: tipeKatalog });
           
           if (currentSearchId !== searchIdRef.current || !isStillRelevant) return;
           
@@ -800,7 +821,7 @@ const PosPage = () => {
       clearTimeout(timeoutId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, idCabangPengguna, isOnline, searchOfflineProducts, getConnectionStatus]);
+  }, [searchTerm, idCabangPengguna, tipeKatalog, isOnline, searchOfflineProducts, getConnectionStatus]);
 
   const getProductStock = useCallback((id_produk) => {
     return stockInfo[id_produk] || 0;
@@ -1093,8 +1114,8 @@ const PosPage = () => {
         // If offline, use offline search
         if (!isOnline) {
           logger.debug('Offline mode: using offline search for barcode...');
-          // Pass isBarcodeScan=true to search ALL products without 50-item limit
-          const offlineResults = await searchOfflineProducts(cleanedBarcode, true);
+           // Pass isBarcodeScan=true to search ALL products without 50-item limit
+          const offlineResults = await searchOfflineProducts(cleanedBarcode, true, { id_cabang: idCabangPengguna, tipe_katalog: tipeKatalog });
           searchResults = offlineResults;
         } else {
           // Online: use API search
@@ -1735,7 +1756,7 @@ const PosPage = () => {
         // Validate that all products exist in offline database before saving offline transaction
         try {
           for (const cartItem of cart) {
-            const offlineProduct = await searchOfflineProducts(cartItem.kode_produk || cartItem.id_produk, true);
+            const offlineProduct = await searchOfflineProducts(cartItem.kode_produk || cartItem.id_produk, true, { id_cabang: idCabangPengguna, tipe_katalog: tipeKatalog });
             if (!offlineProduct || offlineProduct.length === 0) {
               throw new Error(`Produk ${cartItem.nama_produk} tidak ditemukan dalam database offline. Transaksi tidak dapat disimpan.`);
             }
@@ -1911,7 +1932,7 @@ const PosPage = () => {
       setIsSubmitting(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cart, user, selectedPaymentMethod, paymentAmount, finalTotal, selectedCustomer, discountAmount, posSettings, taxAmount, isPendingPayment, getConnectionStatus, idCabangPengguna, validateStockAvailability, searchOfflineProducts]);
+  }, [cart, user, selectedPaymentMethod, paymentAmount, finalTotal, selectedCustomer, discountAmount, posSettings, taxAmount, isPendingPayment, getConnectionStatus, idCabangPengguna, tipeKatalog, validateStockAvailability, searchOfflineProducts]);
 
   // Handle offline transaction confirmation
   const handleOfflineConfirm = useCallback(async () => {
