@@ -302,7 +302,7 @@ const EditProductPage = () => {
                   value={product.kode_produk}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input w-full"
                 />
                 {barcodePreview && (
                   <div className="mt-3 p-2 border border-gray-200 rounded bg-gray-50">
@@ -319,7 +319,7 @@ const EditProductPage = () => {
                   value={product.nama_produk}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input w-full"
                 />
               </div>
             </div>
@@ -331,7 +331,7 @@ const EditProductPage = () => {
                 name="merek"
                 value={product.merek}
                 onChange={handleChange}
-                className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input w-full"
               />
             </div>
           </div>
@@ -410,7 +410,7 @@ const EditProductPage = () => {
                   value={product.harga_jual}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input w-full"
                 />
               </div>
               <div>
@@ -421,7 +421,7 @@ const EditProductPage = () => {
                   value={product.harga_beli}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input w-full"
                 />
               </div>
               <div>
@@ -431,7 +431,7 @@ const EditProductPage = () => {
                   name="harga_grosir"
                   value={product.harga_grosir}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input w-full"
                 />
               </div>
             </div>
@@ -443,7 +443,7 @@ const EditProductPage = () => {
                 name="min_qty_grosir"
                 value={product.min_qty_grosir}
                 onChange={handleChange}
-                className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input w-full"
               />
               <p className="text-xs text-gray-500 mt-1">(Opsional) Jumlah minimum untuk harga grosir.</p>
             </div>
@@ -462,7 +462,7 @@ const EditProductPage = () => {
                   value={product.stok_minimum}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input w-full"
                 />
               </div>
               <div>

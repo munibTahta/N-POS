@@ -1138,3 +1138,7 @@ export const getMenuPermissionsForRole = (roleId) => {
 export const updateMenuPermissionsForRole = (roleId, menuPermissions) => {
   return apiClient.put(`/menus/role/${roleId}/permissions`, { menuPermissions });
 };
+
+export const resetDatabase = (confirmReset) => {
+  return apiClient.post('/util/reset-database', { confirmReset });
+};

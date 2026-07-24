@@ -165,26 +165,94 @@
   color-scheme: dark;
 }
 
+/* Backgrounds */
 .dark .bg-white {
   background-color: #18181b !important; /* zinc-900 */
 }
 
 .dark .bg-gray-50,
 .dark .bg-slate-50,
-.dark .bg-slate-100\/50 {
+.dark .bg-slate-100\/50,
+.dark .bg-zinc-50 {
   background-color: #09090b !important; /* zinc-950 */
 }
 
 .dark .bg-gray-100,
-.dark .bg-slate-100 {
+.dark .bg-slate-100,
+.dark .bg-zinc-100,
+.dark .bg-blue-50,
+.dark .bg-indigo-50 {
   background-color: #27272a !important; /* zinc-800 */
 }
 
 .dark .bg-gray-200,
-.dark .bg-slate-200 {
+.dark .bg-slate-200,
+.dark .bg-zinc-200 {
   background-color: #3f3f46 !important; /* zinc-700 */
 }
 
+.dark .bg-blue-100,
+.dark .bg-blue-200,
+.dark .bg-blue-50\/50,
+.dark .bg-primary-50 {
+  background-color: #1e3a8a !important; /* blue-950 */
+}
+
+.dark .bg-green-50,
+.dark .bg-green-100,
+.dark .bg-success-50 {
+  background-color: #064e3b !important; /* green-950 */
+}
+
+.dark .bg-red-50,
+.dark .bg-red-100,
+.dark .bg-danger-50 {
+  background-color: #7f1d1d !important; /* red-950 */
+}
+
+.dark .bg-yellow-50,
+.dark .bg-yellow-100,
+.dark .bg-amber-50,
+.dark .bg-amber-100,
+.dark .bg-warning-50 {
+  background-color: #78350f !important; /* amber-950 */
+}
+
+.dark .bg-purple-50,
+.dark .bg-purple-100,
+.dark .bg-accent-50 {
+  background-color: #581c87 !important; /* purple-950 */
+}
+
+/* Hover Backgrounds */
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-zinc-50:hover,
+.dark .hover\:bg-gray-100:hover,
+.dark .hover\:bg-slate-100:hover,
+.dark .hover\:bg-zinc-100:hover,
+.dark .group-hover\:bg-gray-50:hover,
+.dark .group-hover\:bg-slate-50:hover,
+.dark .hover\:bg-blue-50:hover,
+.dark .hover\:bg-primary-50:hover {
+  background-color: #27272a !important; /* zinc-800 */
+}
+
+.dark .hover\:bg-success-50:hover {
+  background-color: #064e3b !important;
+}
+
+/* Gradient Card Stops */
+.dark .from-blue-50 {
+  --tw-gradient-from: #1e3a8a !important; /* blue-950 */
+  --tw-gradient-to: #172554 !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.dark .to-indigo-50 {
+  --tw-gradient-to: #3b0764 !important; /* purple-950 */
+}
+
+/* Text Colors */
 .dark .text-gray-900,
 .dark .text-slate-900,
 .dark .text-gray-800,
@@ -201,6 +269,49 @@
   color: #a1a1aa !important; /* zinc-400 */
 }
 
+.dark .text-blue-600,
+.dark .text-blue-700,
+.dark .text-blue-800,
+.dark .text-primary-600,
+.dark .text-primary-700 {
+  color: #60a5fa !important; /* bright blue */
+}
+
+.dark .text-green-600,
+.dark .text-emerald-500,
+.dark .text-success-600 {
+  color: #4ade80 !important; /* green-400 */
+}
+
+.dark .text-red-600,
+.dark .text-danger-600 {
+  color: #f87171 !important; /* red-400 */
+}
+
+.dark .text-amber-800,
+.dark .text-warning-600,
+.dark .text-yellow-600,
+.dark .text-yellow-800 {
+  color: #fcd34d !important; /* amber-300 */
+}
+
+.dark .text-purple-600 {
+  color: #c084fc !important; /* purple-400 */
+}
+
+/* Hover Text Colors */
+.dark .hover\:text-blue-600:hover,
+.dark .group-hover\:text-blue-600:hover,
+.dark .hover\:text-primary-600:hover {
+  color: #60a5fa !important;
+}
+
+.dark .hover\:text-success-600:hover,
+.dark .group-hover\:text-success-600:hover {
+  color: #4ade80 !important;
+}
+
+/* Borders */
 .dark .border-gray-200,
 .dark .border-slate-200,
 .dark .border-gray-300,

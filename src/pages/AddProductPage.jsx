@@ -164,7 +164,7 @@ const AddProductPage = () => {
           }
         />
 
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        <PageContainer>
           <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
             {/* Row 1: Identitas Produk */}
             <div>
@@ -177,7 +177,7 @@ const AddProductPage = () => {
                     value={product.kode_produk} 
                     onChange={handleChange} 
                     required 
-                    className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input w-full"
                   />
                 </div>
                 <div className="flex items-end">
@@ -224,7 +224,7 @@ const AddProductPage = () => {
                     value={product.nama_produk} 
                     onChange={handleChange} 
                     required 
-                    className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input w-full"
                   />
                 </div>
                 
@@ -235,7 +235,7 @@ const AddProductPage = () => {
                     name="merek" 
                     value={product.merek} 
                     onChange={handleChange} 
-                    className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input w-full"
                   />
                 </div>
               </div>
@@ -302,7 +302,7 @@ const AddProductPage = () => {
                     value={product.harga_jual} 
                     onChange={handleChange} 
                     required 
-                    className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input w-full"
                     placeholder="0"
                   />
                 </div>
@@ -315,7 +315,7 @@ const AddProductPage = () => {
                     value={product.harga_beli} 
                     onChange={handleChange} 
                     required 
-                    className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input w-full"
                     placeholder="0"
                   />
                 </div>
@@ -327,7 +327,7 @@ const AddProductPage = () => {
                     name="harga_grosir" 
                     value={product.harga_grosir} 
                     onChange={handleChange} 
-                    className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input w-full"
                     placeholder="0"
                   />
                 </div>
@@ -341,7 +341,7 @@ const AddProductPage = () => {
                     name="min_qty_grosir" 
                     value={product.min_qty_grosir} 
                     onChange={handleChange} 
-                    className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input w-full"
                     placeholder="10"
                   />
                 </div>
@@ -354,7 +354,7 @@ const AddProductPage = () => {
                     value={product.stok_minimum} 
                     onChange={handleChange} 
                     required 
-                    className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input w-full"
                     placeholder="0"
                   />
                 </div>
@@ -365,7 +365,7 @@ const AddProductPage = () => {
                     name="status" 
                     value={product.status} 
                     onChange={handleChange} 
-                    className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input w-full"
                   >
                     <option value="aktif">Aktif</option>
                     <option value="nonaktif">Nonaktif</option>
@@ -403,7 +403,7 @@ const AddProductPage = () => {
               </button>
             </div>
           </form>
-        </div>
+        </PageContainer>
 
         {/* Category Info Modal */}
         <CategoryInfoModal

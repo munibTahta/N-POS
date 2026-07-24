@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { updateBranch, updateUser, getSettings, updateSetting } from '../services/api';
+import { updateBranch, updateUser, getSettings, updateSetting, resetDatabase } from '../services/api';
 import { useAuth } from '../hooks/useAuth'; // Impor useAuth untuk mendapatkan data user
 import { useSettings } from '../context/SettingsContext'; // Impor hook settings
 import { useNotifications } from '../hooks/useNotifications';
 import { useSync } from '../context/SyncContext';
 import { usePermissions } from '../hooks/usePermissions';
 import usePrinter from '../hooks/usePrinter';
-import { Printer } from 'lucide-react';
+import { Printer, Trash2 } from 'lucide-react';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 
 const SettingsPage = () => {
@@ -65,6 +65,38 @@ const SettingsPage = () => {
   const [qzCertificatePath, setQzCertificatePath] = useState('');
   const [certificateStatus, setCertificateStatus] = useState('');
   const [loadingCertificate, setLoadingCertificate] = useState(false);
+
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [confirmResetText, setConfirmResetText] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetError, setResetError] = useState('');
+
+  const handleResetDatabase = async (e) => {
+    e.preventDefault();
+    if (confirmResetText !== 'RESET_MY_DATABASE') {
+      setResetError('Konfirmasi teks salah. Harap ketik "RESET_MY_DATABASE"');
+      return;
+    }
+    
+    try {
+      setIsResetting(true);
+      setResetError('');
+      const res = await resetDatabase(confirmResetText);
+      if (res.data?.success) {
+        success('Database berhasil diinisialisasi ulang.');
+        setShowResetModal(false);
+        setConfirmResetText('');
+        // Refresh page after delay to reload configuration
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        setResetError(res.data?.message || 'Gagal reset database');
+      }
+    } catch (err) {
+      setResetError(err.response?.data?.message || err.message || 'Gagal reset database');
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   useEffect(() => {
     // remove any legacy general printer config stored locally; only one
@@ -1136,6 +1168,23 @@ const SettingsPage = () => {
                   </div>
                 </div>
               </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowResetModal(true);
+                  setConfirmResetText('');
+                  setResetError('');
+                }}
+                className="p-4 text-left rounded-lg border border-red-200 hover:border-red-300 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors flex items-center gap-3"
+              >
+                <div className="p-2 bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400 rounded-lg">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-red-600 dark:text-red-400">Inisialisasi Database</h3>
+                  <p className="text-xs text-gray-600 dark:text-zinc-400">Bersihkan data transaksi & master untuk setup awal</p>
+                </div>
+              </button>
             </div>
           </div>
         )}
@@ -1256,6 +1305,87 @@ const SettingsPage = () => {
                 <span className="bg-gray-100 px-2 py-1 rounded ml-4 mr-2">Esc</span> Selesaikan Tanpa Cetak
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Modal Inisialisasi Database */}
+      {showResetModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 animate-fade-in p-4">
+          <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-2xl w-full max-w-md border border-slate-100 dark:border-zinc-800">
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-950/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100">Inisialisasi Database</h2>
+              <p className="text-sm text-gray-500 dark:text-zinc-400 mt-2">
+                Tindakan ini akan menghapus permanen seluruh data berikut:
+              </p>
+            </div>
+
+            <div className="bg-red-50 dark:bg-red-950/20 rounded-xl p-4 mb-6 border border-red-100 dark:border-red-900/30 text-xs text-red-800 dark:text-red-300 space-y-2">
+              <p className="font-semibold">⚠️ PERINGATAN KERAS:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Seluruh Laporan & Jurnal Keuangan</li>
+                <li>Seluruh Transaksi Penjualan & Pembelian</li>
+                <li>Seluruh Data Produk & Kategori</li>
+                <li>Seluruh Pelanggan & Supplier</li>
+                <li>Catatan Riwayat Stok & Mutasi Barang</li>
+              </ul>
+              <p className="mt-2 font-medium">
+                * Akun user, cabang, role, dan konfigurasi pembayaran tetap dipertahankan.
+              </p>
+            </div>
+
+            <form onSubmit={handleResetDatabase} className="space-y-4">
+              {resetError && (
+                <div className="p-3 text-xs bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 rounded-lg text-center font-semibold">
+                  {resetError}
+                </div>
+              )}
+              
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-zinc-300 mb-2">
+                  Ketik <span className="font-mono bg-gray-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-red-600 dark:text-red-400 font-bold">RESET_MY_DATABASE</span> untuk konfirmasi:
+                </label>
+                <input
+                  type="text"
+                  value={confirmResetText}
+                  onChange={(e) => setConfirmResetText(e.target.value)}
+                  placeholder="RESET_MY_DATABASE"
+                  disabled={isResetting}
+                  className="input w-full"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowResetModal(false);
+                    setConfirmResetText('');
+                  }}
+                  disabled={isResetting}
+                  className="w-1/2 px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 text-sm font-semibold rounded-xl transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isResetting || confirmResetText !== 'RESET_MY_DATABASE'}
+                  className="w-1/2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl transition disabled:bg-gray-300 dark:disabled:bg-zinc-800 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isResetting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Memproses...
+                    </>
+                  ) : (
+                    'Ya, Reset Data'
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
