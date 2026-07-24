@@ -93,40 +93,42 @@ const SearchableSelect = React.memo(({
         type="button"
         onClick={toggleDropdown}
         disabled={disabled}
-        className={`w-full px-3 py-2 text-left text-sm border rounded flex items-center justify-between gap-2 transition
-          ${disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white hover:border-gray-400'}
-          ${value ? 'border-gray-300' : 'border-gray-300'}
+        className={`w-full px-4 py-2.5 text-left text-sm border rounded-xl flex items-center justify-between gap-2 transition-all duration-200
+          ${disabled 
+            ? 'bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500 cursor-not-allowed border-slate-250 dark:border-zinc-700' 
+            : 'bg-white dark:bg-zinc-900 border-slate-300 dark:border-zinc-700 hover:border-slate-400 dark:hover:border-zinc-500 text-slate-800 dark:text-zinc-100'
+          }
           focus:outline-none focus:ring-2 focus:ring-blue-500
         `}
       >
-        <span className={value ? 'text-gray-900' : 'text-gray-500'}>
+        <span className={value ? 'text-slate-800 dark:text-zinc-100 font-medium' : 'text-slate-400 dark:text-zinc-500'}>
           {selectedLabel}
         </span>
         <div className="flex items-center gap-1">
           {value && !disabled && (
             <X
-              className="w-4 h-4 text-gray-400 hover:text-gray-600"
+              className="w-4 h-4 text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-350"
               onClick={handleClear}
             />
           )}
           <ChevronDown
-            className={`w-4 h-4 text-gray-500 transition ${isOpen ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 text-slate-400 dark:text-zinc-500 transition ${isOpen ? 'rotate-180' : ''}`}
           />
         </div>
       </button>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-gray-300 rounded shadow-lg">
+        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
           {/* Search Input */}
-          <div className="sticky top-0 bg-white border-b border-gray-200 p-2">
+          <div className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-slate-100 dark:border-zinc-800 p-2">
             <input
               ref={searchInputRef}
               type="text"
               placeholder={searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-slate-800 dark:text-zinc-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -138,16 +140,19 @@ const SearchableSelect = React.memo(({
                   key={option.value}
                   type="button"
                   onClick={() => handleSelect(option.value)}
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-blue-50 transition
-                    ${value === option.value ? 'bg-blue-100 text-blue-900 font-semibold' : 'text-gray-900'}
+                  className={`w-full text-left px-4 py-2.5 text-sm transition hover:bg-slate-50 dark:hover:bg-zinc-800/80
+                    ${value === option.value 
+                      ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-semibold' 
+                      : 'text-slate-700 dark:text-zinc-300'
+                    }
                   `}
                 >
                   {option.label}
                 </button>
               ))
             ) : (
-              <div className="px-3 py-4 text-sm text-gray-500 text-center">
-                Tidak ada kategori yang sesuai
+              <div className="px-3 py-4 text-sm text-slate-400 dark:text-zinc-500 text-center">
+                Tidak ada data yang sesuai
               </div>
             )}
           </div>

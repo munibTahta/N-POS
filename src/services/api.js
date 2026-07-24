@@ -197,10 +197,37 @@ apiClient.interceptors.response.use(
             offline: true
           });
         }
+        let parsedData = null;
+        if (config.data) {
+          if (typeof config.data === 'string') {
+            try {
+              parsedData = JSON.parse(config.data);
+            } catch (__err) {
+              parsedData = config.data;
+            }
+          } else if (config.data instanceof FormData) {
+            parsedData = {};
+            for (const [key, value] of config.data.entries()) {
+              if (value instanceof File) {
+                parsedData[key] = {
+                  _isOfflineFile: true,
+                  name: value.name,
+                  type: value.type,
+                  size: value.size
+                };
+              } else {
+                parsedData[key] = value;
+              }
+            }
+          } else {
+            parsedData = config.data;
+          }
+        }
+
         await OfflineQueue.add(
           config.method,
           config.url,
-          config.data ? JSON.parse(config.data) : null
+          parsedData
         );
 
         // Return success response
