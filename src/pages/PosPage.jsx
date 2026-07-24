@@ -672,7 +672,7 @@ const PosPage = () => {
         
         try {
           // Quick cache check FIRST - check if we have cached results for this exact query
-          const cacheKey = `search_${cleanQuery}`;
+          const cacheKey = `search_${idCabangPengguna || 0}_${tipeKatalog || 'global'}_${cleanQuery}`;
           const cached = sessionStorage?.getItem(cacheKey);
           if (cached) {
             try {

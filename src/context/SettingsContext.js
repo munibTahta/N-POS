@@ -93,6 +93,27 @@ export const SettingsProvider = ({ children }) => {
     safeStorage.setJSON('posSettings', updatedSettings);
   }, [posSettings]);
 
+  const [theme, setTheme] = useState(() => {
+    return safeStorage.getItem('theme') || 'light';
+  });
+
+  const toggleTheme = useCallback(() => {
+    setTheme(prev => {
+      const next = prev === 'light' ? 'dark' : 'light';
+      safeStorage.setItem('theme', next);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [theme]);
+
   // Nilai yang akan dibagikan ke seluruh aplikasi
   const value = { 
     storeInfo, 
@@ -100,7 +121,9 @@ export const SettingsProvider = ({ children }) => {
     loadingSettings: loading, 
     refreshSettings: fetchSettings,
     updatePosSettings,
-    setStoreInfo // Ekspor setStoreInfo untuk update manual
+    setStoreInfo,
+    theme,
+    toggleTheme
   };
 
   return React.createElement(SettingsContext.Provider, { value: value }, children);

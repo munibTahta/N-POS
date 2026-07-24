@@ -54,6 +54,11 @@ export const AuthProvider = ({ children }) => {
     safeStorage.removeItem('user');
     safeStorage.removeItem('session_id');
     safeStorage.removeItem('apiCache');
+    try {
+      sessionStorage.clear();
+    } catch (e) {
+      console.warn('Failed to clear sessionStorage:', e);
+    }
     
     // Third: Clear API headers
     delete apiClient.defaults.headers.common['Authorization'];

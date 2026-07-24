@@ -12,6 +12,7 @@ import SyncStatusNotification from './SyncStatusNotification';
 import NavDropdown from './NavDropdown';
 import { renderLucideIcon } from '../utils/lucideIconHelper';
 import syncEngine from '../services/syncEngine';
+import { Sun, Moon } from 'lucide-react';
 // Note: OfflineStatusIndicator removed - already rendered globally in App.jsx
 
 const Layout = () => {
@@ -19,7 +20,7 @@ const Layout = () => {
   const { hasMenuAccess } = usePermissions();
   const { menus } = useMenuContext();
   const { logout } = useAuth();
-  const { storeInfo, loadingSettings } = useSettings();
+  const { storeInfo, loadingSettings, theme, toggleTheme } = useSettings();
   const { getConnectionStatus, getSyncInfo, performSync } = useSync();
   const { isSyncing, syncStatus, queueSize } = useSyncQueue();
   const { syncAllProducts } = useProductOfflineDB();
@@ -474,6 +475,19 @@ const Layout = () => {
                   )}
                 </div>
 
+                {/* Theme Toggle Button */}
+                <button
+                  onClick={toggleTheme}
+                  className="p-2.5 rounded-xl border border-gray-200 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-400 transition-colors shrink-0"
+                  title={theme === 'light' ? 'Ubah ke Mode Gelap' : 'Ubah ke Mode Terang'}
+                >
+                  {theme === 'light' ? (
+                    <Moon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  ) : (
+                    <Sun className="w-4 h-4 text-amber-500" />
+                  )}
+                </button>
+
                 {/* User Dropdown - Desktop */}
                 <div className="relative user-dropdown">
                   <button
@@ -697,6 +711,28 @@ const Layout = () => {
                             </div>
                           </div>
                         )}
+                      </div>
+
+                      {/* Theme Toggle - Mobile */}
+                      <div className="mb-4">
+                        <button
+                          onClick={toggleTheme}
+                          className="flex items-center justify-between w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            {theme === 'light' ? (
+                              <Moon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                            ) : (
+                              <Sun className="w-5 h-5 text-amber-500" />
+                            )}
+                            <span className="text-sm font-medium">
+                              {theme === 'light' ? 'Mode Gelap' : 'Mode Terang'}
+                            </span>
+                          </div>
+                          <span className="text-xs text-gray-400">
+                            {theme === 'light' ? 'Nonaktif' : 'Aktif'}
+                          </span>
+                        </button>
                       </div>
 
                       {/* User Info - Mobile */}
