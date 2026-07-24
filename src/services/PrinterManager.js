@@ -34,6 +34,9 @@ class ProfessionalPrinterManager {
    */
   _initializeFromStorage() {
     this.defaultPrinter = localStorage.getItem('defaultPrinterName') || null;
+    if (!this.defaultPrinter && !window.electronAPI) {
+      this.defaultPrinter = 'Sistem Cetak Browser (Bluetooth/Android/Wi-Fi)';
+    }
   }
 
   /**
@@ -67,7 +70,15 @@ class ProfessionalPrinterManager {
   async getPrinters() {
     try {
       if (!window.electronAPI?.getPrinters) {
-        throw new Error('Electron API tidak tersedia');
+        // Web / Android / Tablet Browser Fallback
+        this.printerList = [{
+          name: 'Sistem Cetak Browser (Bluetooth/Android/Wi-Fi)',
+          displayName: 'Sistem Cetak Browser',
+          type: 'web',
+          capabilities: { thermal: true },
+          status: 'ready'
+        }];
+        return this.printerList;
       }
 
       // Get Windows printers via Electron
@@ -183,6 +194,10 @@ class ProfessionalPrinterManager {
     const printer = printerName || this.defaultPrinter;
     if (!printer) throw new Error('Printer tidak dikonfigurasi');
 
+    if (!window.electronAPI || printer === 'Sistem Cetak Browser (Bluetooth/Android/Wi-Fi)') {
+      return await this._printWeb(saleData, storeInfo, printer);
+    }
+
     const maxRetries = 3;
     let attempt = 0;
     let lastError = null;
@@ -269,6 +284,37 @@ class ProfessionalPrinterManager {
     } catch (error) {
       console.error('[PrinterManager] Windows Print Driver error:', error);
       throw new Error(`Gagal cetak via Windows Print Driver: ${error.message}`);
+    }
+  }
+
+  async _printWeb(saleData, storeInfo, printerName) {
+    try {
+      const paperWidth = this._getPaperWidth(printerName);
+      const receiptData = this.formatter.formatReceiptFull(saleData, storeInfo, {
+        paperWidth: paperWidth
+      });
+      
+      const printWindow = window.open('', '_blank', 'width=350,height=600');
+      if (!printWindow) {
+        throw new Error('Popup blocked! Izinkan popup untuk mencetak struk.');
+      }
+      
+      printWindow.document.write(receiptData.htmlContent || `<html><body style="font-family:monospace;padding:10px;"><pre>${receiptData.content}</pre></body></html>`);
+      printWindow.document.close();
+      printWindow.focus();
+      
+      await new Promise(resolve => {
+        setTimeout(() => {
+          printWindow.print();
+          printWindow.close();
+          resolve();
+        }, 300);
+      });
+      
+      return { success: true, method: 'web-browser-print' };
+    } catch (error) {
+      console.error('[PrinterManager] Browser print error:', error);
+      throw new Error(`Gagal cetak browser: ${error.message}`);
     }
   }
 
@@ -468,7 +514,23 @@ class ProfessionalPrinterManager {
 
   async _printText(printerName, content, paperWidth = null) {
     if (!window.electronAPI?.printThermal) {
-      throw new Error('Electron thermal print API tidak tersedia');
+      const htmlContent = this._convertToHTML(content);
+      const printWindow = window.open('', '_blank', 'width=350,height=600');
+      if (!printWindow) {
+        throw new Error('Popup blocked! Izinkan popup untuk mencetak.');
+      }
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.focus();
+      
+      await new Promise(resolve => {
+        setTimeout(() => {
+          printWindow.print();
+          printWindow.close();
+          resolve();
+        }, 300);
+      });
+      return { success: true, method: 'web-browser-text-print' };
     }
     const finalPaperWidth = paperWidth || this._getPaperWidth(printerName);
     const trimmed = String(content || '').trim();
