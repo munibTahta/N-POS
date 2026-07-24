@@ -198,13 +198,13 @@ const EditProductPage = () => {
       }
       
       // Validate that selected category and unit exist
-      if (product.id_kategori && !categories.find(cat => String(cat.id_kategori) === product.id_kategori)) {
+      if (product.id_kategori && !categories.find(cat => String(cat.id_kategori) === String(product.id_kategori))) {
         showError('Kategori yang dipilih tidak valid. Silakan pilih kategori yang tersedia.');
         setIsSubmitting(false);
         return;
       }
       
-      if (product.id_satuan && !units.find(unit => String(unit.id_satuan) === product.id_satuan)) {
+      if (product.id_satuan && !units.find(unit => String(unit.id_satuan) === String(product.id_satuan))) {
         showError('Satuan yang dipilih tidak valid. Silakan pilih satuan yang tersedia.');
         setIsSubmitting(false);
         return;
