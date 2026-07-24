@@ -73,7 +73,7 @@ const EditProductPage = () => {
 
         // If still no product data, show error
         if (!prod) {
-          setError('Produk tidak ditemukan');
+          showError('Produk tidak ditemukan');
           setLoading(false);
           return;
         }
@@ -144,7 +144,7 @@ const EditProductPage = () => {
         
         setLoading(false);
       } catch (err) {
-        setError("Gagal memuat data produk.");
+        showError("Gagal memuat data produk.");
         console.error("Failed to fetch product data:", err);
         setLoading(false);
       }
@@ -179,8 +179,6 @@ const EditProductPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
     setIsSubmitting(true);
     
     try {
