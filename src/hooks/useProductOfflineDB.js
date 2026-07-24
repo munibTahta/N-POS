@@ -141,18 +141,20 @@ const useProductOfflineDB = () => {
   const getDBStats = useCallback(async () => {
     try {
       if (!window.electronAPI?.database?.getStats) {
-        return dbStats;
+        return { totalProducts: 0, lastSync: null, syncStatus: 'idle' };
       }
 
       const stats = await window.electronAPI.database.getStats();
-      setDbStats(stats);
-      setTotalProducts(stats.totalProducts);
+      if (stats) {
+        setDbStats(stats);
+        setTotalProducts(stats.totalProducts || 0);
+      }
       return stats;
     } catch (err) {
       console.error('Error getting DB stats:', err);
-      return dbStats;
+      return { totalProducts: 0, lastSync: null, syncStatus: 'failed' };
     }
-  }, [dbStats]);
+  }, []);
 
   // Initialize on mount - load stats
   useEffect(() => {

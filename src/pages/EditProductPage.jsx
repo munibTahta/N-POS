@@ -7,8 +7,11 @@ import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import SearchableSelect from '../components/SearchableSelect';
 import { ArrowLeft, Save, X } from 'lucide-react';
 import ImageUploader from '../components/ImageUploader';
+import { useNotifications } from '../hooks/useNotifications';
+import { formatRupiahNumber, parseRupiahNumber } from '../utils/numberFormat';
 
 const EditProductPage = () => {
+  const { success: showSuccess, error: showError } = useNotifications();
   const { id } = useParams();
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
@@ -34,8 +37,6 @@ const EditProductPage = () => {
   const [gambar, setGambar] = useState(null);
   const [removeGambar, setRemoveGambar] = useState(false);
   const [barcodePreview, setBarcodePreview] = useState(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -156,7 +157,7 @@ const EditProductPage = () => {
     let parsedValue;
 
     if (['harga_jual', 'harga_beli', 'harga_grosir'].includes(name)) {
-      parsedValue = value === '' ? 0 : parseFloat(value) || 0;
+      parsedValue = value === '' ? 0 : parseRupiahNumber(value);
     } else if (['stok_minimum', 'min_qty_grosir'].includes(name)) {
       parsedValue = value === '' ? 0 : parseInt(value, 10) || 0;
     } else if (['id_kategori', 'id_satuan', 'id_supplier'].includes(name)) {
@@ -185,26 +186,26 @@ const EditProductPage = () => {
     try {
       // Validate required fields
       if (!product.id_kategori || product.id_kategori === '') {
-        setError('Kategori produk harus dipilih.');
+        showError('Kategori produk harus dipilih.');
         setIsSubmitting(false);
         return;
       }
       
       if (!product.id_satuan || product.id_satuan === '') {
-        setError('Satuan produk harus dipilih.');
+        showError('Satuan produk harus dipilih.');
         setIsSubmitting(false);
         return;
       }
       
       // Validate that selected category and unit exist
       if (product.id_kategori && !categories.find(cat => String(cat.id_kategori) === product.id_kategori)) {
-        setError('Kategori yang dipilih tidak valid. Silakan pilih kategori yang tersedia.');
+        showError('Kategori yang dipilih tidak valid. Silakan pilih kategori yang tersedia.');
         setIsSubmitting(false);
         return;
       }
       
       if (product.id_satuan && !units.find(unit => String(unit.id_satuan) === product.id_satuan)) {
-        setError('Satuan yang dipilih tidak valid. Silakan pilih satuan yang tersedia.');
+        showError('Satuan yang dipilih tidak valid. Silakan pilih satuan yang tersedia.');
         setIsSubmitting(false);
         return;
       }
@@ -241,11 +242,11 @@ const EditProductPage = () => {
       }
       
       await updateProduct(id, formData);
-      setSuccess('Produk berhasil diperbarui!');
+      showSuccess('Produk berhasil diperbarui!');
       setTimeout(() => navigate('/produk'), 1500);
     } catch (err) {
       const message = err.response?.data?.message || 'Gagal memperbarui produk.';
-      setError(message);
+      showError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -275,18 +276,6 @@ const EditProductPage = () => {
 
       {/* Content Container */}
       <PageContainer>
-        {/* Error/Success Messages */}
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
-            {success}
-          </div>
-        )}
-
         {/* Form */}
         <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-6">
           {/* Basic Information Section */}
@@ -405,9 +394,9 @@ const EditProductPage = () => {
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-2">Harga Jual *</label>
                 <input
-                  type="number"
+                  type="text"
                   name="harga_jual"
-                  value={product.harga_jual}
+                  value={formatRupiahNumber(product.harga_jual)}
                   onChange={handleChange}
                   required
                   className="input w-full"
@@ -416,9 +405,9 @@ const EditProductPage = () => {
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-2">Harga Beli *</label>
                 <input
-                  type="number"
+                  type="text"
                   name="harga_beli"
-                  value={product.harga_beli}
+                  value={formatRupiahNumber(product.harga_beli)}
                   onChange={handleChange}
                   required
                   className="input w-full"
@@ -427,9 +416,9 @@ const EditProductPage = () => {
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-2">Harga Grosir</label>
                 <input
-                  type="number"
+                  type="text"
                   name="harga_grosir"
-                  value={product.harga_grosir}
+                  value={formatRupiahNumber(product.harga_grosir)}
                   onChange={handleChange}
                   className="input w-full"
                 />
@@ -501,25 +490,24 @@ const EditProductPage = () => {
           </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-end sm:justify-end gap-3 pt-6 border-t border-gray-200">
+        <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
+          <Link
+            to="/produk"
+            className="inline-flex items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 text-xs sm:text-sm font-semibold px-6 py-2 hover:bg-gray-200 dark:hover:bg-zinc-700 transition"
+            title="Batal dan kembali ke daftar produk"
+          >
+            <X className="w-4 h-4 mr-2" />
+            Batal
+          </Link>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center justify-center rounded-full bg-blue-600 text-white text-xs sm:text-sm font-semibold px-6 py-2 hover:bg-blue-700 disabled:bg-gray-400 transition"
+            className="inline-flex items-center justify-center rounded-full bg-blue-600 dark:bg-blue-500 text-white text-xs sm:text-sm font-semibold px-6 py-2 hover:bg-blue-700 dark:hover:bg-blue-600 transition disabled:bg-gray-400 transition"
             title="Simpan perubahan produk"
           >
-            <Save className="w-4 h-4" />
-            <span className="hidden sm:inline ml-2">{isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
-            <span className="sm:hidden">{isSubmitting ? '...' : 'Simpan'}</span>
+            <Save className="w-4 h-4 mr-2" />
+            {isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
           </button>
-          <Link
-            to="/produk"
-            className="inline-flex items-center justify-center rounded-full bg-slate-500 text-white text-xs sm:text-sm font-semibold px-6 py-2 hover:bg-slate-600 transition"
-            title="Batal dan kembali ke daftar produk"
-          >
-            <X className="w-4 h-4" />
-            <span className="hidden sm:inline ml-2">Batal</span>
-          </Link>
         </div>
       </form>
       </PageContainer>

@@ -8,11 +8,14 @@ import { addProduct, getCategories, getUnits, getSuppliers, createLogAktivitas }
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import CategoryInfoModal from '../components/CategoryInfoModal';
 import ImageUploader from '../components/ImageUploader';
+import { useNotifications } from '../hooks/useNotifications';
+import { formatRupiahNumber, parseRupiahNumber } from '../utils/numberFormat';
 
 // Lazy load barcode scanner
 const CameraBarcodeScanner = lazy(() => import('../components/CameraBarcodeScanner'));
 
 const AddProductPage = () => {
+  const { success: showSuccess, error: showError } = useNotifications();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const idCabangPemilik = searchParams.get('id_cabang_pemilik');
@@ -43,8 +46,7 @@ const AddProductPage = () => {
     // Pastikan nilai numerik disimpan dengan benar
     let parsedValue;
     if (['harga_jual', 'harga_beli', 'harga_grosir'].includes(name)) {
-      // Untuk field harga, gunakan parseFloat untuk mendukung desimal
-      parsedValue = value === '' ? '' : (isNaN(parseFloat(value)) ? 0 : parseFloat(value));
+      parsedValue = value === '' ? '' : parseRupiahNumber(value);
     } else if (['min_qty_grosir', 'stok_minimum', 'id_kategori', 'id_satuan', 'id_supplier'].includes(name)) {
       // Untuk field numerik lainnya, gunakan parseInt
       parsedValue = value === '' ? '' : (isNaN(parseInt(value, 10)) ? 0 : parseInt(value, 10));
@@ -72,7 +74,7 @@ const AddProductPage = () => {
         setUnits(unitResponse.data.data || []);
         setSuppliers(supplierResponse.data.data || []);
       } catch (err) {
-        toast.error("Gagal memuat data master untuk form.");
+        showError("Gagal memuat data master untuk form.");
         console.error("Error fetching master data:", err); // Log error untuk debugging
       }
     };
@@ -117,7 +119,7 @@ const AddProductPage = () => {
         console.warn('Failed to log product creation audit:', auditError);
       }
       
-      toast.success('Produk berhasil ditambahkan!', { autoClose: 3000 });
+      showSuccess('Produk berhasil ditambahkan!');
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('resetProductsPageState'));
         navigate('/produk');
@@ -129,7 +131,7 @@ const AddProductPage = () => {
       } else if (err.request) {
         errorMessage = "Tidak dapat terhubung ke server. Periksa koneksi internet Anda.";
       }
-      toast.error(errorMessage);
+      showError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -297,9 +299,9 @@ const AddProductPage = () => {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Harga Jual (Rp) *</label>
                   <input 
-                    type="number" 
+                    type="text" 
                     name="harga_jual" 
-                    value={product.harga_jual} 
+                    value={formatRupiahNumber(product.harga_jual)} 
                     onChange={handleChange} 
                     required 
                     className="input w-full"
@@ -310,9 +312,9 @@ const AddProductPage = () => {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Harga Beli (Rp) *</label>
                   <input 
-                    type="number" 
+                    type="text" 
                     name="harga_beli" 
-                    value={product.harga_beli} 
+                    value={formatRupiahNumber(product.harga_beli)} 
                     onChange={handleChange} 
                     required 
                     className="input w-full"
@@ -323,9 +325,9 @@ const AddProductPage = () => {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Harga Grosir (Rp)</label>
                   <input 
-                    type="number" 
+                    type="text" 
                     name="harga_grosir" 
-                    value={product.harga_grosir} 
+                    value={formatRupiahNumber(product.harga_grosir)} 
                     onChange={handleChange} 
                     className="input w-full"
                     placeholder="0"
@@ -386,17 +388,17 @@ const AddProductPage = () => {
             </div>
 
             {/* Buttons */}
-            <div className="flex gap-3 pt-4 border-t">
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
               <Link 
                 to="/produk" 
-                className="px-6 py-2 bg-gray-300 text-gray-700 rounded-full hover:bg-gray-400 transition text-sm font-semibold"
+                className="px-6 py-2 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-700 transition text-sm font-semibold"
               >
                 Batal
               </Link>
               <button 
                 type="submit" 
                 disabled={isSubmitting}
-                className="inline-flex items-center justify-center px-6 py-2 rounded-full bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center px-6 py-2 rounded-full bg-blue-600 dark:bg-blue-500 text-white text-sm font-semibold hover:bg-blue-700 dark:hover:bg-blue-600 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 <Save className="w-4 h-4 mr-2" />
                 {isSubmitting ? 'Menyimpan...' : 'Simpan Produk'}
