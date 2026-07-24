@@ -537,9 +537,19 @@ const ProductsPage = () => {
         try {
           await deleteProduct(id);
           setAllProducts(allProducts.filter(p => p.id_produk !== id));
-        } catch (_err) {
-          setError('Gagal menghapus produk.');
-          showError('Gagal menghapus produk');
+          showSuccess('Produk berhasil dihapus');
+        } catch (err) {
+          const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || '';
+          if (
+            errMsg.toLowerCase().includes('foreign key') || 
+            errMsg.toLowerCase().includes('constraint') || 
+            errMsg.toLowerCase().includes('fail') ||
+            err.response?.status === 500
+          ) {
+            showError('Tidak dapat menghapus: Produk ini sudah digunakan dalam transaksi penjualan, pembelian, atau memiliki data stok aktif. Silakan ubah status produk menjadi "Nonaktif" melalui menu Edit.');
+          } else {
+            showError(`Gagal menghapus produk: ${errMsg || 'Terjadi kesalahan'}`);
+          }
         } finally {
           setConfirmDialog(prev => ({ ...prev, isOpen: false }));
         }
