@@ -1310,8 +1310,17 @@ const SettingsPage = () => {
       )}
       {/* Modal Inisialisasi Database */}
       {showResetModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-2xl w-full max-w-md border border-slate-100 dark:border-zinc-800">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 animate-fade-in p-4"
+          onClick={() => {
+            setShowResetModal(false);
+            setConfirmResetText('');
+          }}
+        >
+          <div 
+            className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-2xl w-full max-w-md border border-slate-100 dark:border-zinc-800"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="text-center mb-6">
               <div className="w-12 h-12 bg-red-100 dark:bg-red-950/50 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />

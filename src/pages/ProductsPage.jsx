@@ -495,6 +495,13 @@ const ProductsPage = () => {
     }, 5000);
   };
 
+  const handleBulkPrintBarcodes = () => {
+    const selectedProducts = allProducts.filter(p => selectedIds.includes(p.id_produk));
+    if (selectedProducts.length === 0) return;
+    setProductsToPrint(selectedProducts);
+    setIsBarcodePrintModalOpen(true);
+  };
+
   const handleBulkDelete = () => {
     if (selectedIds.length === 0) return;
     
@@ -571,12 +578,22 @@ const ProductsPage = () => {
         title="Manajemen Produk"
         actions={
           <div className="flex gap-2">
+            {selectedIds.length > 0 && (
+              <button
+                type="button"
+                onClick={handleBulkPrintBarcodes}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-xl shadow transition"
+              >
+                <Printer className="h-4 w-4" />
+                Cetak Barcode ({selectedIds.length})
+              </button>
+            )}
             {selectedIds.length > 0 && hasPermission('MANAGE_PRODUCTS') && (
               <button
                 type="button"
                 onClick={handleBulkDelete}
                 disabled={isDeletingBulk}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded shadow transition"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-xl shadow transition"
               >
                 <Trash2 className="h-4 w-4" />
                 Hapus ({selectedIds.length})
@@ -985,8 +1002,14 @@ const ProductsPage = () => {
       {editingCategory && (<EditCategoryModal product={editingCategory} categories={categories} selectedCategoryId={selectedCategoryId} setSelectedCategoryId={setSelectedCategoryId} onClose={handleCloseEditCategory} onSave={handleSaveCategory} />)}
       <CategoryInfoModal isOpen={showCategoryInfoModal} onClose={() => setShowCategoryInfoModal(false)} />
       {showImportOptionsModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 animate-fade-in">
-          <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md border border-slate-100">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 animate-fade-in p-4"
+          onClick={() => { setShowImportOptionsModal(false); setExcelDataToImport(null); }}
+        >
+          <div 
+            className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-2xl w-full max-w-md border border-slate-100 dark:border-zinc-800"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-xl font-bold text-slate-900 mb-2">Pengaturan Impor Excel</h2>
             <p className="text-sm text-slate-500 mb-4">
               File Excel memiliki <strong className="text-slate-800">{excelDataToImport?.length}</strong> baris produk yang valid.
@@ -1055,9 +1078,53 @@ const ProductsPage = () => {
         </PageLayout>
       );
     };
-
 const EditCategoryModal = ({ product, categories, selectedCategoryId, setSelectedCategoryId, onClose, onSave }) => {
-  return (<div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"><div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md"><h2 className="text-2xl font-bold mb-4">Edit Kategori Produk</h2><p className="mb-2"><strong>Produk:</strong> {product.nama_produk}</p><p className="mb-4"><strong>Kode:</strong> {product.kode_produk}</p><div className="mb-4"><label className="block font-medium mb-2">Kategori</label><select value={selectedCategoryId} onChange={(e) => setSelectedCategoryId(e.target.value)} className="w-full p-2 border rounded"><option value="">Pilih Kategori</option>{categories.map(cat => (<option key={cat.id_kategori} value={cat.id_kategori}>{cat.nama_kategori}</option>))}</select></div><div className="flex justify-end gap-4"><button type="button" onClick={onClose} className="bg-gray-300 px-4 py-2 rounded">Batal</button><button type="button" onClick={onSave} className="bg-blue-500 text-white px-4 py-2 rounded">Simpan</button></div></div></div>);
+  return (
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 animate-fade-in"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-2xl w-full max-w-md border border-slate-100 dark:border-zinc-800"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 mb-4">Edit Kategori Produk</h2>
+        <div className="space-y-1 mb-4 text-sm text-gray-600 dark:text-zinc-400 bg-slate-50 dark:bg-zinc-950/30 p-3 rounded-xl">
+          <p><strong>Produk:</strong> {product.nama_produk}</p>
+          <p><strong>Kode:</strong> {product.kode_produk}</p>
+        </div>
+        <div className="mb-6">
+          <label className="block text-xs font-semibold text-gray-700 dark:text-zinc-300 mb-2">Kategori</label>
+          <select 
+            value={selectedCategoryId} 
+            onChange={(e) => setSelectedCategoryId(e.target.value)} 
+            className="input w-full"
+          >
+            <option value="">Pilih Kategori</option>
+            {categories.map(cat => (
+              <option key={cat.id_kategori} value={cat.id_kategori}>{cat.nama_kategori}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex justify-end gap-3 pt-2">
+          <button 
+            type="button" 
+            onClick={onClose} 
+            className="px-6 py-2.5 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-700 transition text-sm font-semibold"
+          >
+            Batal
+          </button>
+          <button 
+            type="button" 
+            onClick={onSave} 
+            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition text-sm font-semibold"
+          >
+            Simpan
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const ProductThumb = ({ gambarPath, altText, onClick }) => {
