@@ -15,7 +15,7 @@ import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import DataTable from '../components/DataTable';
 import Pagination from '../components/Pagination';
 import HeaderActionButton from '../components/HeaderActionButton';
-import { Edit, Trash2, Printer, Eye, Plus, Download, Upload, FileText, Info, Globe, Store } from 'lucide-react';
+import { Edit, Trash2, Printer, Eye, Plus, Download, Upload, FileText, Info, Globe, Store, Power } from 'lucide-react';
 import useProductOfflineDB from '../hooks/useProductOfflineDB';
 import { usePagination } from '../hooks/usePagination';
 import FileViewerModal from '../components/FileViewerModal';
@@ -90,7 +90,7 @@ const ProductsPage = () => {
   const [limit, setLimit] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterValues, setFilterValues] = useState({ status: '', kategori: '' });
+  const [filterValues, setFilterValues] = useState({ status: 'aktif', kategori: '' });
 
   const [selectedIds, setSelectedIds] = useState([]);
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
@@ -946,6 +946,25 @@ const ProductsPage = () => {
               size: 'sm'
             },
             {
+              icon: Power,
+              title: (product) => product.status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan',
+              onClick: async (product) => {
+                try {
+                  const newStatus = product.status === 'aktif' ? 'nonaktif' : 'aktif';
+                  const formData = new FormData();
+                  formData.append('status', newStatus);
+                  await updateProduct(product.id_produk, formData);
+                  showSuccess(`Produk ${product.nama_produk} berhasil ${newStatus === 'aktif' ? 'diaktifkan' : 'dinonaktifkan'}!`);
+                  fetchProducts();
+                } catch (__err) {
+                  showError('Gagal mengubah status produk.');
+                }
+              },
+              variant: (product) => product.status === 'aktif' ? 'warning' : 'success',
+              size: 'sm',
+              disabled: (_product) => !hasPermission('MANAGE_PRODUCTS')
+            },
+            {
               icon: Trash2,
               title: 'Hapus',
               onClick: (product) => handleDelete(product.id_produk),
@@ -971,6 +990,7 @@ const ProductsPage = () => {
               key: 'status',
               label: 'Status',
               type: 'select',
+              defaultValue: 'aktif',
               options: [
                 { value: 'all', label: 'Semua Status' },
                 { value: 'aktif', label: 'Aktif' },
