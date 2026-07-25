@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { updateBranch, updateUser, getSettings, updateSetting, resetDatabase } from '../services/api';
 import { useAuth } from '../hooks/useAuth'; // Impor useAuth untuk mendapatkan data user
@@ -7,8 +7,9 @@ import { useNotifications } from '../hooks/useNotifications';
 import { useSync } from '../context/SyncContext';
 import { usePermissions } from '../hooks/usePermissions';
 import usePrinter from '../hooks/usePrinter';
-import { Printer, Trash2 } from 'lucide-react';
+import { Printer, Trash2, Database, RefreshCw, AlertTriangle, CheckCircle, HardDrive } from 'lucide-react';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import CacheManager from '../utils/CacheManager';
 
 const SettingsPage = () => {
   const { user, refreshUser } = useAuth(); // Dapatkan data user yang sedang login dan fungsi refresh
@@ -942,9 +943,14 @@ const SettingsPage = () => {
             </div>
           )}
 
-        {/* API & Sistem Configuration */}
-        {canEditBranch && (
-          <div className="py-6 border-b border-gray-200">
+          {/* ============================================================
+               CACHE MANAGEMENT SECTION
+          ============================================================ */}
+          <CacheManagementSection onSuccess={success} onError={error} />
+
+          {/* API & Sistem Configuration */}
+          {canEditBranch && (
+            <div className="py-6 border-b border-gray-200">
             <button
               type="button"
               onClick={() => setShowSystemConfig(!showSystemConfig)}
@@ -1340,6 +1346,7 @@ const SettingsPage = () => {
                 />
               </div>
 
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
@@ -1372,6 +1379,254 @@ const SettingsPage = () => {
         </div>
       )}
     </PageLayout>
+  );
+};
+
+const CacheManagementSection = ({ onSuccess, onError }) => {
+  const [stats, setStats] = useState({
+    apiCacheSize: 0,
+    localStorageSize: '0 KB',
+    draftsCount: 0,
+    logsCount: 0,
+    routeCacheCount: 0,
+  });
+  const [isClearing, setIsClearing] = useState(false);
+
+  const calculateStats = useCallback(() => {
+    // API Cache
+    const apiCache = CacheManager.getStats ? CacheManager.getStats().size : 0;
+
+    // LocalStorage analysis
+    let drafts = 0;
+    let logs = 0;
+    let routes = 0;
+    let totalBytes = 0;
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      const val = localStorage.getItem(key) || '';
+      totalBytes += key.length + val.length;
+
+      if (key.includes('Draft')) drafts++;
+      if (key === 'app_logs') {
+        try {
+          const parsed = JSON.parse(val);
+          logs = Array.isArray(parsed) ? parsed.length : 0;
+        } catch (_) {
+          logs = 1;
+        }
+      }
+      if (key.startsWith('route_cache_')) routes++;
+    }
+
+    setStats({
+      apiCacheSize: apiCache,
+      localStorageSize: (totalBytes / 1024).toFixed(2) + ' KB',
+      draftsCount: drafts,
+      logsCount: logs,
+      routeCacheCount: routes,
+    });
+  }, []);
+
+  useEffect(() => {
+    calculateStats();
+    // Refresh stats every 5 seconds
+    const interval = setInterval(calculateStats, 5000);
+    return () => clearInterval(interval);
+  }, [calculateStats]);
+
+  const handleClearApiCache = () => {
+    CacheManager.clear();
+    calculateStats();
+    onSuccess('Cache API berhasil dibersihkan');
+  };
+
+  const handleClearDrafts = () => {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.includes('Draft')) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    calculateStats();
+    onSuccess('Draft form berhasil dibersihkan');
+  };
+
+  const handleClearLogs = () => {
+    localStorage.removeItem('app_logs');
+    calculateStats();
+    onSuccess('Log aplikasi berhasil dibersihkan');
+  };
+
+  const handleClearRouteCache = () => {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('route_cache_')) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    calculateStats();
+    onSuccess('Cache rute berhasil dibersihkan');
+  };
+
+  const handleClearAll = () => {
+    setIsClearing(true);
+    try {
+      // Clear memory cache
+      CacheManager.clear();
+
+      // Clear safe localStorage keys
+      const safeKeysToClear = [
+        'lastProductSync',
+        'productCacheMetadata',
+        'fullSyncMetrics',
+        'lastFullSync',
+        'lastOfflineSync',
+        'app_logs'
+      ];
+
+      safeKeysToClear.forEach(key => localStorage.removeItem(key));
+
+      // Clear dynamic keys
+      const dynamicKeys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.includes('Draft') || key.startsWith('route_cache_'))) {
+          dynamicKeys.push(key);
+        }
+      }
+      dynamicKeys.forEach(k => localStorage.removeItem(k));
+
+      calculateStats();
+      onSuccess('Semua cache aman berhasil dibersihkan. Sesi login dan transaksi offline tetap dipertahankan.');
+    } catch (err) {
+      onError('Gagal membersihkan cache: ' + err.message);
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
+  return (
+    <div className="md-section-card">
+      <div className="md-section-header flex items-center justify-between">
+        <h2 className="md-section-title">
+          <Database className="w-5 h-5 text-purple-500" />
+          Manajemen Cache &amp; Storage
+        </h2>
+        <span className="text-xs font-semibold px-2 py-1 rounded bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300">
+          Total Penyimpanan: {stats.localStorageSize}
+        </span>
+      </div>
+      <div className="md-section-body">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card 1: API Cache */}
+          <div className="p-4 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/40 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-gray-500 dark:text-zinc-400">Cache API (RAM)</span>
+                <RefreshCw className="w-4 h-4 text-blue-500" />
+              </div>
+              <p className="text-2xl font-bold text-gray-900 dark:text-zinc-100">{stats.apiCacheSize} <span className="text-sm font-normal text-gray-500">item</span></p>
+              <p className="text-xs text-gray-500 mt-1">Menyimpan data prapemuatan respons API sementara.</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleClearApiCache}
+              className="mt-4 w-full md-btn-secondary text-xs py-1.5 justify-center flex items-center gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Hapus Cache API
+            </button>
+          </div>
+
+          {/* Card 2: Draft Forms */}
+          <div className="p-4 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/40 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-gray-500 dark:text-zinc-400">Draft Form</span>
+                <HardDrive className="w-4 h-4 text-amber-500" />
+              </div>
+              <p className="text-2xl font-bold text-gray-900 dark:text-zinc-100">{stats.draftsCount} <span className="text-sm font-normal text-gray-500">draf</span></p>
+              <p className="text-xs text-gray-500 mt-1">Data formulir yang disimpan sementara sebelum disubmit.</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleClearDrafts}
+              className="mt-4 w-full md-btn-secondary text-xs py-1.5 justify-center flex items-center gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Hapus Draft
+            </button>
+          </div>
+
+          {/* Card 3: Route Cache */}
+          <div className="p-4 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/40 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-gray-500 dark:text-zinc-400">Cache Navigasi Rute</span>
+                <RefreshCw className="w-4 h-4 text-emerald-500" />
+              </div>
+              <p className="text-2xl font-bold text-gray-900 dark:text-zinc-100">{stats.routeCacheCount} <span className="text-sm font-normal text-gray-500">halaman</span></p>
+              <p className="text-xs text-gray-500 mt-1">Mempercepat pemuatan rute halaman yang sering dikunjungi.</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleClearRouteCache}
+              className="mt-4 w-full md-btn-secondary text-xs py-1.5 justify-center flex items-center gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Hapus Cache Rute
+            </button>
+          </div>
+
+          {/* Card 4: App Logs */}
+          <div className="p-4 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/40 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-gray-500 dark:text-zinc-400">Log Aplikasi</span>
+                <Database className="w-4 h-4 text-indigo-500" />
+              </div>
+              <p className="text-2xl font-bold text-gray-900 dark:text-zinc-100">{stats.logsCount} <span className="text-sm font-normal text-gray-500">entri</span></p>
+              <p className="text-xs text-gray-500 mt-1">Catatan kejadian penting dan error di dalam sistem.</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleClearLogs}
+              className="mt-4 w-full md-btn-secondary text-xs py-1.5 justify-center flex items-center gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Hapus Log
+            </button>
+          </div>
+        </div>
+
+        <div className="p-4 rounded-xl border border-purple-200 dark:border-purple-900/40 bg-purple-50 dark:bg-purple-950/20 mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-purple-950 dark:text-purple-200">Ingin Mengoptimalkan Penyimpanan?</p>
+              <p className="text-xs text-purple-700 dark:text-purple-300">
+                Pembersihan menyeluruh akan menghapus semua log, cache rute, data sync produk, dan draf.
+                Sesi login dan transaksi offline Anda tetap <span className="font-bold text-emerald-600 dark:text-emerald-400">AMAN</span>.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleClearAll}
+            disabled={isClearing}
+            className="md-btn bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white text-xs py-2 shrink-0 flex items-center gap-1.5"
+          >
+            {isClearing ? 'Membersihkan...' : 'Bersihkan Semua Cache Aman'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
