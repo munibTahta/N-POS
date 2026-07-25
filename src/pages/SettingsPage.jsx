@@ -568,139 +568,142 @@ const SettingsPage = () => {
         {/* Form Content */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Informasi Toko & Struk Section */}
-          <div className="pb-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-              </svg>
-              Informasi Toko &amp; Konfigurasi Struk
-            </h2>
-            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${!canEditBranch ? 'opacity-50 pointer-events-none' : ''}`}>
-              {/* Kolom Kiri */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Toko</label>
-                <input type="text" name="cabang.nama_cabang" value={settings.cabang?.nama_cabang || ''} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled={!canEditBranch} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Telepon Toko</label>
-                <input type="text" name="cabang.no_telp" value={settings.cabang?.no_telp || ''} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled={!canEditBranch} />
-              </div>
-
-              {/* Kolom Kanan */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Header Struk</label>
-                <input type="text" name="cabang.struk_header" value={settings.cabang?.struk_header || ''} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled={!canEditBranch} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Footer Struk</label>
-                <input type="text" name="cabang.struk_footer" value={settings.cabang?.struk_footer || ''} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled={!canEditBranch} />
-              </div>
+          <div className="md-section-card">
+            <div className="md-section-header">
+              <h2 className="md-section-title">
+                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+                </svg>
+                Informasi Toko &amp; Konfigurasi Struk
+              </h2>
             </div>
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Alamat Toko</label>
-              <textarea name="cabang.alamat" value={settings.cabang?.alamat || ''} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" rows="3" disabled={!canEditBranch}></textarea>
+            <div className="md-section-body">
+              <div className={`grid grid-cols-1 md:grid-cols-2 gap-5 ${!canEditBranch ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div className="md-field">
+                  <label className="md-label">Nama Toko</label>
+                  <input type="text" name="cabang.nama_cabang" value={settings.cabang?.nama_cabang || ''} onChange={handleChange} className="md-input" disabled={!canEditBranch} placeholder="Nama toko Anda" />
+                </div>
+                <div className="md-field">
+                  <label className="md-label">Telepon Toko</label>
+                  <input type="text" name="cabang.no_telp" value={settings.cabang?.no_telp || ''} onChange={handleChange} className="md-input" disabled={!canEditBranch} placeholder="+62-21-xxxxxxx" />
+                </div>
+                <div className="md-field">
+                  <label className="md-label">Header Struk</label>
+                  <input type="text" name="cabang.struk_header" value={settings.cabang?.struk_header || ''} onChange={handleChange} className="md-input" disabled={!canEditBranch} placeholder="Selamat Datang!" />
+                </div>
+                <div className="md-field">
+                  <label className="md-label">Footer Struk</label>
+                  <input type="text" name="cabang.struk_footer" value={settings.cabang?.struk_footer || ''} onChange={handleChange} className="md-input" disabled={!canEditBranch} placeholder="Terima Kasih!" />
+                </div>
+              </div>
+              <div className="md-field">
+                <label className="md-label">Alamat Toko</label>
+                <textarea name="cabang.alamat" value={settings.cabang?.alamat || ''} onChange={handleChange} className="md-input" rows="3" disabled={!canEditBranch} placeholder="Alamat lengkap toko"></textarea>
+              </div>
             </div>
           </div>
 
           {/* Printer Configuration Section */}
-          <div className="py-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-              <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-              </svg>
-              Konfigurasi Printer
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Printer Kasir Default</label>
-                <div className="flex gap-2 items-start">
-                <select
-                  name="printer.nama"
-                  value={settings.printer?.nama || ''}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    const selected = printers.find(p => p.name === val);
-                    setSettings(prev => ({
-                      ...prev,
-                      printer: {
-                        ...prev.printer,
-                        nama: val,
-                        portName: selected?.portName || ''
-                      }
-                    }));
-                    setHasUnsavedChanges(true);
-                  }}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">-- Pilih Printer --</option>
-                  {printers.map(p => (
-                    <option key={p.name} value={p.name}>
-                        {p.displayName} {p.isDefault ? '(Default)' : ''} {p.status === 0 ? '' : '(Offline)'}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={handleTestPrint}
-                  className="inline-flex items-center justify-center rounded-lg px-3 py-2 bg-indigo-600 text-white text-xs sm:text-sm font-medium hover:bg-indigo-700 transition-colors disabled:bg-gray-400 disabled:text-gray-200"
-                  disabled={!settings.printer?.nama}
-                  title="Test Print"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                  </svg>
-                  <span className="hidden sm:inline ml-2">Test Cetak</span>
-                </button>
+          <div className="md-section-card">
+            <div className="md-section-header">
+              <h2 className="md-section-title">
+                <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Konfigurasi Printer
+              </h2>
+            </div>
+            <div className="md-section-body">
+              <div className="md-field">
+                <label className="md-label">Printer Kasir Default</label>
+                <div className="flex gap-2 items-center">
+                  <select
+                    name="printer.nama"
+                    value={settings.printer?.nama || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const selected = printers.find(p => p.name === val);
+                      setSettings(prev => ({
+                        ...prev,
+                        printer: {
+                          ...prev.printer,
+                          nama: val,
+                          portName: selected?.portName || ''
+                        }
+                      }));
+                      setHasUnsavedChanges(true);
+                    }}
+                    className="md-select flex-1"
+                  >
+                    <option value="">-- Pilih Printer --</option>
+                    {printers.map(p => (
+                      <option key={p.name} value={p.name}>
+                          {p.displayName} {p.isDefault ? '(Default)' : ''} {p.status === 0 ? '' : '(Offline)'}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleTestPrint}
+                    className="md-btn-primary shrink-0"
+                    disabled={!settings.printer?.nama}
+                    title="Test Print"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    <span className="hidden sm:inline">Test Cetak</span>
+                  </button>
+                </div>
               </div>
-              <div className="mb-4 mt-4">
-                <label className="block text-gray-700">Lebar Kertas Struk</label>
+              <div className="md-field">
+                <label className="md-label">Lebar Kertas Struk</label>
                 <select
                   name="printer.paperWidth"
                   value={settings.printer?.paperWidth || ''}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="md-select"
                 >
                   <option value="">Deteksi otomatis dari printer</option>
-                  
                   <optgroup label="Thermal Printer (ESC/POS)">
                     <option value="58mm">58mm - Thermal (Compact)</option>
                     <option value="80mm">80mm - Thermal (Standard)</option>
                     <option value="100mm">100mm - Thermal (Wide)</option>
                   </optgroup>
-                  
                   <optgroup label="Regular Printer (Inkjet/Laser)">
                     <option value="A5">A5 - Compact (148mm)</option>
                     <option value="Letter">Letter - USA Standard (8.5")</option>
                     <option value="A4">A4 - International (210mm)</option>
                   </optgroup>
                 </select>
-                <p className="text-xs text-gray-500 mt-2">
-                  Pilih override jika printer Anda tidak terdeteksi otomatis. Gunakan 58/80mm untuk thermal, dan A4/Letter untuk reguler.
-                </p>
+                <p className="md-helper">Pilih override jika printer Anda tidak terdeteksi otomatis. Gunakan 58/80mm untuk thermal, dan A4/Letter untuk reguler.</p>
               </div>
               {printerError && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex items-start gap-2">
+                <div className="md-error-box">
                   <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                   </svg>
                   <span>{printerError}</span>
                 </div>
               )}
-              <div className="mt-4 p-4 rounded border bg-slate-50">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <p className="text-sm font-semibold">Troubleshooting Printer</p>
-                    
-                  </div>
-                  <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${qzTrayAvailable === null ? 'bg-slate-100 text-slate-700' : qzTrayAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                    {qzTrayAvailable === null ? 'Belum dicek' : qzTrayAvailable ? 'Aktif' : 'Tidak aktif'}
+              <div className="p-4 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/50">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Troubleshooting Printer</p>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                    qzTrayAvailable === null
+                      ? 'bg-slate-100 text-slate-600 dark:bg-zinc-700 dark:text-zinc-300'
+                      : qzTrayAvailable
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                      : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                  }`}>
+                    {qzTrayAvailable === null ? 'Belum dicek' : qzTrayAvailable ? '● Aktif' : '● Tidak aktif'}
                   </span>
                 </div>
-                <div className="mt-3 flex gap-2">
+                <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={checkQzTrayAvailability}
-                    className="px-3 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 text-sm flex items-center gap-2"
+                    className="md-btn-secondary text-sm"
                     disabled={checkingQzTray}
                     title="Periksa status QZ Tray"
                     aria-label="Periksa status QZ Tray"
@@ -708,14 +711,14 @@ const SettingsPage = () => {
                     <svg className={`w-4 h-4 ${checkingQzTray ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    <span className="hidden sm:inline ml-2">Periksa Status</span>
+                    <span className="hidden sm:inline">Periksa Status</span>
                   </button>
                 </div>
                 {qzTrayStatus && (
-                  <p className={`text-sm mt-2 ${qzTrayAvailable ? 'text-green-700' : 'text-red-700'}`}>{qzTrayStatus}</p>
+                  <p className={`text-sm mt-2 ${qzTrayAvailable ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>{qzTrayStatus}</p>
                 )}
                 {!qzTrayAvailable && qzTrayAvailable !== null && (
-                  <div className="mt-2 text-sm text-red-600">
+                  <div className="mt-2 text-sm text-red-600 dark:text-red-400">
                     <p>Pastikan QZ Tray berjalan dan printer terdeteksi di QZ Tray.</p>
                     <p>Jika belum, jalankan QZ Tray lalu klik "Periksa QZ Tray" kembali.</p>
                   </div>
@@ -723,48 +726,52 @@ const SettingsPage = () => {
               </div>
 
               {/* QZ Tray Certificate Management - Toggle */}
-              <div className="mt-4">
+              <div>
                 <button
                   type="button"
                   onClick={() => setShowQzTrayCertificate(!showQzTrayCertificate)}
-                  className="w-full flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                  className="w-full flex items-center justify-between p-3 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    <svg className={`w-5 h-5 transition-transform ${showQzTrayCertificate ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className={`w-4 h-4 text-blue-600 dark:text-blue-400 transition-transform ${showQzTrayCertificate ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                     </svg>
-                    <span className="font-medium text-blue-900">QZ Tray Certificate</span>
+                    <span className="font-semibold text-sm text-blue-800 dark:text-blue-200">QZ Tray Certificate</span>
                   </div>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-xs text-blue-600 dark:text-blue-400">
                     {showQzTrayCertificate ? 'Sembunyikan' : 'Tampilkan'} konfigurasi sertifikat
                   </span>
                 </button>
 
                 {showQzTrayCertificate && (
-                  <div className="mt-2 p-4 rounded border bg-blue-50">
-                    <div className="flex items-center justify-between mb-2">
+                  <div className="mt-2 p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20">
+                    <div className="flex items-start justify-between mb-3">
                       <div>
-                        <p className="text-sm font-semibold">QZ Tray Certificate</p>
-                        <p className="text-xs text-gray-600">Kelola sertifikat digital untuk koneksi aman QZ Tray</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-zinc-100">QZ Tray Certificate</p>
+                        <p className="text-xs text-gray-500 dark:text-zinc-400">Kelola sertifikat digital untuk koneksi aman QZ Tray</p>
                       </div>
-                      <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${certificateStatus.includes('berhasil') ? 'bg-green-100 text-green-800' : certificateStatus.includes('Error') || certificateStatus.includes('tidak') ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>
+                      <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                        certificateStatus.includes('berhasil')
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                          : certificateStatus.includes('Error') || certificateStatus.includes('tidak')
+                          ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                          : 'bg-gray-100 text-gray-700 dark:bg-zinc-700 dark:text-zinc-300'
+                      }`}>
                         {certificateStatus || 'Belum dimuat'}
                       </span>
-                      {qzCertificatePath && (
-                        <p className="text-xs text-slate-600 mt-1">Lokasi file: {qzCertificatePath}</p>
-                      )}
                     </div>
+                    {qzCertificatePath && (
+                      <p className="text-xs text-gray-500 dark:text-zinc-500 mb-3">Lokasi file: {qzCertificatePath}</p>
+                    )}
 
-                    <div className="mt-3 space-y-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Digital Certificate
-                        </label>
+                    <div className="space-y-3">
+                      <div className="md-field">
+                        <label className="md-label">Digital Certificate</label>
                         <textarea
                           value={qzCertificate}
                           onChange={(e) => setQzCertificate(e.target.value)}
                           placeholder="Paste certificate content here (-----BEGIN CERTIFICATE----- ... -----END CERTIFICATE-----)"
-                          className="w-full h-32 p-2 border border-gray-300 rounded-md text-xs font-mono"
+                          className="md-input font-mono text-xs h-32"
                           disabled={loadingCertificate}
                         />
                       </div>
@@ -773,7 +780,7 @@ const SettingsPage = () => {
                         <button
                           type="button"
                           onClick={loadQzCertificate}
-                          className="px-3 py-2 bg-blue-200 text-blue-800 rounded hover:bg-blue-300 text-sm flex items-center gap-2"
+                          className="md-btn-secondary text-sm"
                           disabled={loadingCertificate}
                           title="Load the current QZ Tray certificate from disk"
                         >
@@ -786,7 +793,7 @@ const SettingsPage = () => {
                         <button
                           type="button"
                           onClick={generateNewCertificate}
-                          className="px-3 py-2 bg-green-200 text-green-800 rounded hover:bg-green-300 text-sm flex items-center gap-2"
+                          className="md-btn-success text-sm"
                           disabled={loadingCertificate}
                           title="Generate a new self-signed QZ Tray certificate"
                         >
@@ -799,7 +806,7 @@ const SettingsPage = () => {
                         <button
                           type="button"
                           onClick={saveQzCertificate}
-                          className="px-3 py-2 bg-purple-200 text-purple-800 rounded hover:bg-purple-300 text-sm flex items-center gap-2"
+                          className="md-btn-primary text-sm"
                           disabled={loadingCertificate || !qzCertificate.trim()}
                           title="Save the current certificate text to disk"
                         >
@@ -810,9 +817,9 @@ const SettingsPage = () => {
                         </button>
                       </div>
 
-                      <div className="text-xs text-gray-600 bg-gray-100 p-2 rounded">
-                        <p><strong>Cara menggunakan:</strong></p>
-                        <ol className="list-decimal list-inside mt-1 space-y-1">
+                      <div className="text-xs text-gray-600 dark:text-zinc-400 bg-gray-100 dark:bg-zinc-800 p-3 rounded-lg">
+                        <p className="font-semibold mb-1">Cara menggunakan:</p>
+                        <ol className="list-decimal list-inside space-y-1">
                           <li>Klik "Generate Certificate" untuk membuat sertifikat self-signed baru dan menyimpannya ke folder aplikasi.</li>
                           <li>Klik "Load Certificate" untuk memuat ulang sertifikat yang tersimpan ke dalam area teks.</li>
                           <li>Klik "Save Certificate" setelah menempelkan atau mengedit isi sertifikat agar tersimpan ke disk.</li>
@@ -820,7 +827,7 @@ const SettingsPage = () => {
                           <li>Gunakan tombol "Check Status" untuk memeriksa apakah QZ Tray terhubung dan mengenali sertifikat.</li>
                           <li>Jika QZ Tray meminta persetujuan sertifikat, pilih "Allow" atau "Approve" agar sertifikat disimpan secara permanen.</li>
                         </ol>
-                        <p className="mt-2 text-slate-700">Catatan: private key disimpan secara lokal oleh aplikasi dan tidak boleh dibagikan.</p>
+                        <p className="mt-2 text-gray-700 dark:text-zinc-300">Catatan: private key disimpan secara lokal oleh aplikasi dan tidak boleh dibagikan.</p>
                       </div>
                     </div>
                   </div>
@@ -828,146 +835,112 @@ const SettingsPage = () => {
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Pengaturan POS */}
-        <div className="py-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-            <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-            </svg>
-            Pengaturan POS
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="flex items-start gap-3">
-              <input 
-                type="checkbox" 
-                name="showPaymentSelector" 
-                checked={posSettingsForm.showPaymentSelector} 
-                onChange={handlePosSettingsChange} 
-                className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
-              />
-              <label className="text-sm text-gray-700 leading-6">
-                <span className="font-medium">Tampilkan Pemilih Metode Pembayaran</span>
-                <p className="text-xs text-gray-600 mt-0.5">Aktifkan pemilihan metode pembayaran di kasir</p>
-              </label>
+          {/* Pengaturan POS */}
+          <div className="md-section-card">
+            <div className="md-section-header">
+              <h2 className="md-section-title">
+                <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+                Pengaturan POS
+              </h2>
             </div>
-            <div className="flex items-start gap-3">
-              <input 
-                type="checkbox" 
-                name="showCustomerSearch" 
-                checked={posSettingsForm.showCustomerSearch} 
-                onChange={handlePosSettingsChange} 
-                className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
-              />
-              <label className="text-sm text-gray-700 leading-6">
-                <span className="font-medium">Tampilkan Pencarian Pelanggan</span>
-                <p className="text-xs text-gray-600 mt-0.5">Aktifkan fitur pencarian dan tracking pelanggan</p>
-              </label>
-            </div>
-            <div className="flex items-start gap-3">
-              <input 
-                type="checkbox" 
-                name="showVoucherInput" 
-                checked={posSettingsForm.showVoucherInput} 
-                onChange={handlePosSettingsChange} 
-                className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
-              />
-              <label className="text-sm text-gray-700 leading-6">
-                <span className="font-medium">Tampilkan Input Voucher</span>
-                <p className="text-xs text-gray-600 mt-0.5">Aktifkan input kode voucher dan diskon</p>
-              </label>
-            </div>
-            <div className="flex items-start gap-3">
-              <input 
-                type="checkbox" 
-                name="enablePPN" 
-                checked={posSettingsForm.enablePPN} 
-                onChange={handlePosSettingsChange} 
-                className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
-              />
-              <label className="text-sm text-gray-700 leading-6">
-                <span className="font-medium">Aktifkan Kalkulator PPN</span>
-                <p className="text-xs text-gray-600 mt-0.5">Aktifkan perhitungan pajak otomatis</p>
-              </label>
-            </div>
-            <div className="flex items-start gap-3">
-              <input 
-                type="checkbox" 
-                name="allowOversellSync" 
-                checked={posSettingsForm.allowOversellSync || false} 
-                onChange={handlePosSettingsChange} 
-                className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
-              />
-              <label className="text-sm text-gray-700 leading-6">
-                <span className="font-medium">Loloskan Transaksi Oversell saat Sync</span>
-                <p className="text-xs text-gray-600 mt-0.5">Ijinkan sinkronisasi penjualan offline meskipun stok di server kurang</p>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Pengaturan Sistem */}
-        {canEditBranch && (
-          <div className="py-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-              <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Pengaturan Sistem
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Pajak Default (%)</label>
-                <input 
-                  type="number" 
-                  name="pajak_default_persen" 
-                  value={systemSettings.pajak_default_persen} 
-                  onChange={handleSystemSettingsChange} 
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                  min="0" 
-                  max="100" 
-                  step="0.01"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Conversion Rate Loyalitas (Rp/Poin)</label>
-                <input 
-                  type="number" 
-                  name="conversion_rate_loyalitas" 
-                  value={systemSettings.conversion_rate_loyalitas} 
-                  onChange={handleSystemSettingsChange} 
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                  min="1"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Poin Kadaluarsa (Bulan)</label>
-                <input 
-                  type="number" 
-                  name="poin_kadaluarsa_bulan" 
-                  value={systemSettings.poin_kadaluarsa_bulan} 
-                  onChange={handleSystemSettingsChange} 
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                  min="1"
-                />
-              </div>
-              <div className="flex items-start gap-3">
-                <input 
-                  type="checkbox" 
-                  name="loyalitas_aktif" 
-                  checked={systemSettings.loyalitas_aktif} 
-                  onChange={handleSystemSettingsChange} 
-                  className="mt-1 rounded border-gray-300 text-amber-600 focus:ring-2 focus:ring-amber-500"
-                />
-                <label className="text-sm text-gray-700 leading-6">
-                  <span className="font-medium">Aktifkan Sistem Loyalitas</span>
-                  <p className="text-xs text-gray-600 mt-0.5">Aktifkan fitur point loyalitas untuk pelanggan</p>
-                </label>
+            <div className="md-section-body">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  { name: 'showPaymentSelector', label: 'Tampilkan Pemilih Metode Pembayaran', desc: 'Aktifkan pemilihan metode pembayaran di kasir' },
+                  { name: 'showCustomerSearch', label: 'Tampilkan Pencarian Pelanggan', desc: 'Aktifkan fitur pencarian dan tracking pelanggan' },
+                  { name: 'showVoucherInput', label: 'Tampilkan Input Voucher', desc: 'Aktifkan input kode voucher dan diskon' },
+                  { name: 'enablePPN', label: 'Aktifkan Kalkulator PPN', desc: 'Aktifkan perhitungan pajak otomatis' },
+                  { name: 'allowOversellSync', label: 'Loloskan Transaksi Oversell saat Sync', desc: 'Ijinkan sinkronisasi penjualan offline meskipun stok di server kurang' },
+                ].map(({ name, label, desc }) => (
+                  <label key={name} className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors">
+                    <input
+                      type="checkbox"
+                      name={name}
+                      checked={posSettingsForm[name] || false}
+                      onChange={handlePosSettingsChange}
+                      className="mt-0.5 rounded border-gray-300 dark:border-zinc-600 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                    />
+                    <div>
+                      <span className="text-sm font-semibold text-gray-800 dark:text-zinc-200 block">{label}</span>
+                      <span className="text-xs text-gray-500 dark:text-zinc-500">{desc}</span>
+                    </div>
+                  </label>
+                ))}
               </div>
             </div>
           </div>
-        )}
+
+          {/* Pengaturan Sistem */}
+          {canEditBranch && (
+            <div className="md-section-card">
+              <div className="md-section-header">
+                <h2 className="md-section-title">
+                  <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Pengaturan Sistem
+                </h2>
+              </div>
+              <div className="md-section-body">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="md-field">
+                    <label className="md-label">Pajak Default (%)</label>
+                    <input
+                      type="number"
+                      name="pajak_default_persen"
+                      value={systemSettings.pajak_default_persen}
+                      onChange={handleSystemSettingsChange}
+                      className="md-input"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      placeholder="11"
+                    />
+                  </div>
+                  <div className="md-field">
+                    <label className="md-label">Conversion Rate Loyalitas (Rp/Poin)</label>
+                    <input
+                      type="number"
+                      name="conversion_rate_loyalitas"
+                      value={systemSettings.conversion_rate_loyalitas}
+                      onChange={handleSystemSettingsChange}
+                      className="md-input"
+                      min="1"
+                      placeholder="1000"
+                    />
+                  </div>
+                  <div className="md-field">
+                    <label className="md-label">Poin Kadaluarsa (Bulan)</label>
+                    <input
+                      type="number"
+                      name="poin_kadaluarsa_bulan"
+                      value={systemSettings.poin_kadaluarsa_bulan}
+                      onChange={handleSystemSettingsChange}
+                      className="md-input"
+                      min="1"
+                      placeholder="12"
+                    />
+                  </div>
+                  <label className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors">
+                    <input
+                      type="checkbox"
+                      name="loyalitas_aktif"
+                      checked={systemSettings.loyalitas_aktif}
+                      onChange={handleSystemSettingsChange}
+                      className="mt-0.5 rounded border-gray-300 dark:border-zinc-600 text-amber-600 focus:ring-2 focus:ring-amber-500"
+                    />
+                    <div>
+                      <span className="text-sm font-semibold text-gray-800 dark:text-zinc-200 block">Aktifkan Sistem Loyalitas</span>
+                      <span className="text-xs text-gray-500 dark:text-zinc-500">Aktifkan fitur point loyalitas untuk pelanggan</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
 
         {/* API & Sistem Configuration */}
         {canEditBranch && (

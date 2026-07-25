@@ -330,10 +330,217 @@
 .dark textarea {
   background-color: #18181b !important;
   color: #f4f4f5 !important;
-  border-color: #27272a !important;
+  border-color: #3f3f46 !important;
 }
 
 .dark input::placeholder,
 .dark textarea::placeholder {
   color: #71717a !important; /* zinc-500 */
 }
+
+/* Fix: error/red boxes need READABLE contrast in dark mode */
+.dark .bg-red-50,
+.dark .bg-red-100 {
+  background-color: #2d1010 !important;
+}
+.dark .text-red-700,
+.dark .text-red-600,
+.dark .text-danger-600 {
+  color: #fca5a5 !important; /* red-300 — readable on dark bg */
+}
+.dark .border-red-200,
+.dark .border-red-300 {
+  border-color: #7f1d1d !important;
+}
+
+/* Fix: buttons with bg-gray-200 in dark mode */
+.dark .bg-gray-200.text-gray-800,
+.dark .bg-gray-200 {
+  background-color: #3f3f46 !important;
+}
+
+/* Fix: blue info/certificate boxes */
+.dark .bg-blue-50,
+.dark .bg-blue-100 {
+  background-color: #172554 !important;
+}
+.dark .border-blue-200,
+.dark .border-blue-300 {
+  border-color: #1e40af !important;
+}
+.dark .text-blue-900 {
+  color: #bfdbfe !important; /* blue-200 */
+}
+
+/* Fix: green boxes */
+.dark .bg-green-50,
+.dark .bg-green-100 {
+  background-color: #052e16 !important;
+}
+.dark .text-green-700,
+.dark .text-green-800 {
+  color: #86efac !important; /* green-300 */
+}
+.dark .border-green-200,
+.dark .border-green-300 {
+  border-color: #14532d !important;
+}
+
+/* Fix: amber/yellow boxes */
+.dark .bg-amber-50,
+.dark .bg-yellow-50,
+.dark .bg-amber-100,
+.dark .bg-yellow-100 {
+  background-color: #1c1200 !important;
+}
+.dark .text-amber-700,
+.dark .text-yellow-700,
+.dark .text-amber-800,
+.dark .text-yellow-800 {
+  color: #fcd34d !important;
+}
+
+/* Fix: slate containers */
+.dark .bg-slate-50,
+.dark .bg-slate-100 {
+  background-color: #18181b !important;
+}
+.dark .border-slate-200,
+.dark .border-slate-300 {
+  border-color: #3f3f46 !important;
+}
+
+/* Fix: Dividers in dark mode */
+.dark .border-gray-200,
+.dark .border-gray-300 {
+  border-color: #27272a !important;
+}
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #27272a !important;
+}
+
+/* ============================================================
+   Material Design Form Components
+   Apply: className="md-input" / "md-label" / "md-field" / "md-section-card"
+   ============================================================ */
+@layer components {
+  /* MD Input - Material Design style */
+  .md-input {
+    @apply w-full px-4 py-3 text-sm rounded-xl border border-gray-300 dark:border-zinc-600
+           bg-white dark:bg-zinc-900
+           text-gray-900 dark:text-zinc-100
+           placeholder-gray-400 dark:placeholder-zinc-500
+           focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500
+           dark:focus:border-blue-400 dark:focus:ring-blue-400/30
+           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* MD Select - consistent with input */
+  .md-select {
+    @apply w-full px-4 py-3 text-sm rounded-xl border border-gray-300 dark:border-zinc-600
+           bg-white dark:bg-zinc-900
+           text-gray-900 dark:text-zinc-100
+           focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500
+           dark:focus:border-blue-400 dark:focus:ring-blue-400/30
+           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer;
+  }
+
+  /* MD Label */
+  .md-label {
+    @apply block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5;
+  }
+
+  /* MD Field group */
+  .md-field {
+    @apply space-y-1.5;
+  }
+
+  /* MD Helper text */
+  .md-helper {
+    @apply text-xs text-gray-500 dark:text-zinc-500 mt-1;
+  }
+
+  /* MD Section card */
+  .md-section-card {
+    @apply bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-700 shadow-sm;
+  }
+
+  /* MD Section header */
+  .md-section-header {
+    @apply px-6 py-4 border-b border-gray-200 dark:border-zinc-700;
+  }
+
+  /* MD Section title */
+  .md-section-title {
+    @apply text-base font-semibold text-gray-900 dark:text-zinc-100 flex items-center gap-2;
+  }
+
+  /* MD Section body */
+  .md-section-body {
+    @apply px-6 py-5 space-y-5;
+  }
+
+  /* MD Button variants (Material style - raised) */
+  .md-btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl
+           transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2
+           dark:focus:ring-offset-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm;
+  }
+  .md-btn-primary {
+    @apply md-btn bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white focus:ring-blue-500
+           hover:shadow-md;
+  }
+  .md-btn-secondary {
+    @apply md-btn bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-600
+           text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-700
+           focus:ring-gray-400;
+  }
+  .md-btn-danger {
+    @apply md-btn bg-red-600 hover:bg-red-700 active:bg-red-800 text-white focus:ring-red-500;
+  }
+  .md-btn-success {
+    @apply md-btn bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white focus:ring-emerald-500;
+  }
+  .md-btn-ghost {
+    @apply md-btn bg-transparent hover:bg-gray-100 dark:hover:bg-zinc-800
+           text-gray-600 dark:text-zinc-400 focus:ring-gray-400;
+  }
+
+  /* MD Error box */
+  .md-error-box {
+    @apply flex items-start gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-950/30
+           border border-red-200 dark:border-red-800
+           text-red-700 dark:text-red-300 text-sm;
+  }
+
+  /* MD Info box */
+  .md-info-box {
+    @apply flex items-start gap-2 p-3 rounded-xl bg-blue-50 dark:bg-blue-950/30
+           border border-blue-200 dark:border-blue-800
+           text-blue-700 dark:text-blue-300 text-sm;
+  }
+
+  /* MD Warning box */
+  .md-warning-box {
+    @apply flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30
+           border border-amber-200 dark:border-amber-800
+           text-amber-700 dark:text-amber-300 text-sm;
+  }
+
+  /* MD table row hover */
+  .md-table-row {
+    @apply hover:bg-gray-50 dark:hover:bg-zinc-800/60 transition-colors;
+  }
+
+  /* MD table header */
+  .md-table-th {
+    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide
+           text-gray-500 dark:text-zinc-400 bg-gray-50 dark:bg-zinc-900/60;
+  }
+
+  /* MD table cell */
+  .md-table-td {
+    @apply px-4 py-4 text-sm text-gray-700 dark:text-zinc-300;
+  }
+}
+
