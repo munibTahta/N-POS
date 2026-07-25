@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { SearchFilterBar } from './SearchFilterBar';
 import { FilterPanel, FilterPanelGrid, FilterField } from './FilterPanel';
 import Pagination from './Pagination';
@@ -144,13 +144,34 @@ const DataTable = ({
   };
 
   // Handle search term changes
+  const searchDebounceRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) {
+        clearTimeout(searchDebounceRef.current);
+      }
+    };
+  }, []);
+
   const handleSearchTermChange = (term) => {
     setSearchTerm(term);
     if (!serverSide) {
       setPage(1);
     }
     if (onSearchChange) {
-      onSearchChange(term);
+      if (serverSide) {
+        // Debounce server-side search so we don't trigger a fetch (and the
+        // loading state that comes with it) on every single keystroke.
+        if (searchDebounceRef.current) {
+          clearTimeout(searchDebounceRef.current);
+        }
+        searchDebounceRef.current = setTimeout(() => {
+          onSearchChange(term);
+        }, 400);
+      } else {
+        onSearchChange(term);
+      }
     }
     if (onFilterChange) {
       onFilterChange({ searchTerm: term, filterValues });
@@ -166,6 +187,9 @@ const DataTable = ({
     setFilterValues(clearedFilters);
     setSearchTerm('');
     if (serverSide) {
+      if (searchDebounceRef.current) {
+        clearTimeout(searchDebounceRef.current);
+      }
       if (onSearchChange) onSearchChange('');
       if (onFilterValueChange) onFilterValueChange(clearedFilters);
     } else {

@@ -75,6 +75,7 @@ const ProductsPage = () => {
   const [modalAlt, setModalAlt] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [error, setError] = useState(null);
   const [removingImageIds, setRemovingImageIds] = useState([]);
 
@@ -188,6 +189,7 @@ const ProductsPage = () => {
       }
     } finally {
       setLoading(false);
+      setInitialLoadDone(true);
     }
   }, [page, limit, searchQuery, filterValues, activeCatalogTab, selectedBranchId, isGlobalAccess, user]);
 
@@ -564,7 +566,7 @@ const ProductsPage = () => {
     });
   };
 
-  if (loading) {
+  if (loading && !initialLoadDone) {
     return <div className="text-center mt-10">Loading...</div>;
   }
 
@@ -604,9 +606,21 @@ const ProductsPage = () => {
                 icon={Plus}
                 label="Tambah"
                 variant="slate"
-                to={activeCatalogTab === 'terpisah' ? `/produk/tambah?id_cabang_pemilik=${isGlobalAccess ? (selectedBranchId || user?.id_cabang || 1) : (user?.id_cabang || 1)}` : '/produk/tambah'}
-                isLink
+                to={
+                  activeCatalogTab === 'terpisah' && isGlobalAccess && !selectedBranchId
+                    ? undefined
+                    : activeCatalogTab === 'terpisah'
+                    ? `/produk/tambah?id_cabang_pemilik=${isGlobalAccess ? selectedBranchId : user?.id_cabang}`
+                    : '/produk/tambah'
+                }
+                isLink={!(activeCatalogTab === 'terpisah' && isGlobalAccess && !selectedBranchId)}
                 hideLabel={true}
+                disabled={activeCatalogTab === 'terpisah' && isGlobalAccess && !selectedBranchId}
+                title={
+                  activeCatalogTab === 'terpisah' && isGlobalAccess && !selectedBranchId
+                    ? 'Pilih cabang terlebih dahulu untuk menambah produk'
+                    : 'Tambah produk'
+                }
               />
             )}
             <HeaderActionButton
