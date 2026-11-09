@@ -86,7 +86,6 @@ dist
 
 # Gatsby files
 .cache/
-public
 
 # vuepress v2.x temp and cache directory
 .temp
@@ -125,3 +124,19 @@ build/
 pos.7z
 N-POS_*.zip
 N-POS_*.7z
+e2e/shots/
+test-results/
+playwright-report/
+
+# Rahasia & sertifikat (jangan di-commit)
+certs/
+certificates/
+*.p12
+*.pfx
+*.pem
+*.key
+
+# Cadangan manual
+*.bak
+*.bak-*
+*.backup
