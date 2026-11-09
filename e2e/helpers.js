@@ -1,0 +1,37 @@
+export const cats = Array.from({ length: 30 }, (_, i) => ({ id_kategori: i + 1, nama_kategori: `KAT${i + 1}` }));
+export const prods = Array.from({ length: 24 }, (_, i) => ({
+  id_produk: i + 1, kode_produk: `P${i + 1}`, nama_produk: `Produk contoh ${i + 1}`,
+  harga_jual: 10000 + i * 500, id_kategori: (i % 30) + 1, status: 'aktif',
+}));
+
+/** Login palsu + mock seluruh API eksternal. `log` menampung URL request ke /produk. */
+export async function setupPos(page, log = [], opts = {}) {
+  const idCabang = opts.idCabang ?? 1;
+  const productList = opts.products ?? prods;
+  await page.addInitScript((idCab) => {
+    const b = (o) => btoa(JSON.stringify(o)).replace(/=/g, '');
+    localStorage.setItem('authToken', `${b({ alg: 'none' })}.${b({ id: 1, exp: 4102444800 })}.x`);
+    localStorage.setItem('session_id', 's');
+    localStorage.setItem('user', JSON.stringify({ id_pengguna: 1, id_role: 1, nama: 'admin', username: 'admin', role: 'admin', nama_role: 'admin', id_cabang: idCab }));
+  }, idCabang);
+  await page.route(/^(?!http:\/\/localhost:5199).*/, (route) => {
+    const url = route.request().url();
+    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/(src|node_modules|@|assets)/.test(url)) return route.continue();
+    if (route.request().resourceType() === 'document' || /fonts\.g/.test(url)) return route.continue();
+    if (/menu-permission|permission/.test(url)) return route.fulfill({ json: { success: true, data: { menuPermissions: [{ menu_key: 'pos', dapat_akses: true }] } } });
+    if (/\/role/.test(url)) return route.fulfill({ json: { success: true, data: [{ id_role: 1, nama_role: 'admin', permissions: { all: true } }] } });
+    if (/\/laporan\/stok/.test(url)) {
+      const data = prods.map((p, i) => ({ id_produk: p.id_produk, detail_lokasi: { cabang: [{ id_cabang: 1, stok: i % 5 === 0 ? 0 : i % 7 === 0 ? 3 : 25 }] } }));
+      return route.fulfill({ json: { success: true, data } });
+    }
+    if (/\/produk/.test(url)) {
+      log.push(url);
+      if (opts.failProducts && opts.failProducts()) return route.fulfill({ status: 500, json: { success: false, message: 'boom' } });
+    }
+    if (opts.cabang && /\/cabang(\/|\?|$)/.test(url)) {
+      return route.fulfill({ json: { success: true, data: /\/cabang\/\d+/.test(url) ? opts.cabang : [opts.cabang] } });
+    }
+    const data = /kategori/.test(url) ? cats : /produk/.test(url) ? productList : [];
+    return route.fulfill({ json: { success: true, data, pagination: { total: data.length } } });
+  });
+}
