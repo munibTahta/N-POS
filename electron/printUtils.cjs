@@ -3,7 +3,7 @@
  * Provides printer detection and utility functions without PosPrinter dependency
  */
 
-const { BrowserWindow } = require('electron');
+// 'electron' dimuat malas (hanya saat mencetak HTML) agar fungsi murni modul ini bisa diuji tanpa binari Electron (CI).
 const path = require('node:path');
 const fs = require('node:fs');
 const os = require('os');
@@ -85,6 +85,7 @@ const printHTML = async (printerName, htmlContent, broadcastDebugFn) => {
     }
 
     return new Promise((resolve, reject) => {
+      const { BrowserWindow } = require('electron');
       const printWin = new BrowserWindow({
         width: 800,
         height: 600,
