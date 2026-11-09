@@ -240,13 +240,17 @@ export const AuthProvider = ({ children }) => {
         // X-Session-Id removed for CORS optimization per API v1.5.7 - Bearer token sufficient
         return;
       } catch (sessionError) {
-        // Check if it's a 409 Conflict (duplicate login)
-        if (sessionError.response?.status === 409) {
-          // Hanya satu login aktif per user - tampilkan error dan minta logout
-          throw new Error('Anda sudah login di device lain.\n\nSilakan logout terlebih dahulu dari device lain, kemudian coba login kembali.');
+        // 409 = kredensial benar tetapi masih ada sesi aktif dari IP yang sama (mis. tab ditutup tanpa logout).
+        // Perilaku yang dipertahankan: lanjut ke login cadangan di bawah, bukan memblokir kasir sampai sesi lama kedaluwarsa.
+        // (Dulu cabang ini mati karena galat fetch tidak membawa status; jangan "dihidupkan" menjadi blokir.)
+        // Penolakan yang sah (kredensial salah/dilarang/dibatasi laju) bukan alasan memakai jalur login lama:
+        // mengulang hanya menggandakan percobaan gagal (pembatas laju server menghitung keduanya) dan menyembunyikan pesan aslinya.
+        const sessionStatus = sessionError.response?.status;
+        if (sessionStatus === 400 || sessionStatus === 401 || sessionStatus === 403 || sessionStatus === 429) {
+          throw sessionError;
         }
 
-        // Fallback to old login system
+        // Fallback to old login system (endpoint sesi tidak tersedia: 404/5xx/jaringan)
         try {
           const response = await apiLogin(credentials);
           const responseData = response.data.data;

@@ -45,7 +45,14 @@ const LoginPage = () => {
       } else if (err.response) {
         // Server merespons dengan status error (4xx, 5xx)
         const responseData = err.response.data;
-        errorMessage = responseData.message || responseData.error || "Username atau password salah.";
+        errorMessage = responseData?.message || responseData?.error || "Username atau password salah.";
+        if (err.response.status === 429) {
+          // Pembatas laju server: beri tahu berapa lama harus menunggu (header Retry-After, detik)
+          const secs = Number(err.response.headers?.['retry-after']);
+          if (Number.isFinite(secs) && secs > 0) {
+            errorMessage = `${errorMessage} Coba lagi dalam ${secs >= 90 ? `${Math.ceil(secs / 60)} menit` : `${Math.ceil(secs)} detik`}.`;
+          }
+        }
       } else if (err.request) {
         // Request dikirim tapi tidak ada respons (masalah jaringan atau DevTools blocking)
         if (!navigator.onLine) {

@@ -213,3 +213,10 @@ Urutan di bawah adalah urutan kerja yang disarankan; tiap fase bisa dikerjakan b
 - Repo lokal di `/home/nusasoft-toko/htdocs/toko.nusasoft.my.id` (cabang `main`, belum ada remote). Berisi `README`, `.gitignore`, tes unit (`npm test`), pemeriksa sintaks (`npm run check`), dan workflow CI GitHub Actions.
 - Rahasia tidak ikut: `.env`, `config/config.json`, unggahan, arsip. Berkas contoh (`.env.example`, `config/config.example.json`) memakai placeholder.
 - Sebelum dibersihkan, `.env.example`, `API_DOCUMENTATION.md`, `config/config.json`, dan tiga skrip `test-*.js` memuat nilai ASLI (password DB, JWT secret, API key). Karena sudah terlihat di berkas-berkas itu, **ganti** rahasia tersebut (lihat daftar tindakan di laporan).
+
+### Pembatas laju & login (sisi klien)
+
+- Backend membatasi login (8 kegagalan per akun+IP dan 40 per IP / 15 menit, hanya 4xx yang dihitung) dan membatasi global longgar per IP. Respons 429 membawa `Retry-After`, diekspos lewat CORS.
+- Klien: `RetryManager` tidak mengulang 429 bila `Retry-After` > 5 detik; `LoginPage` menampilkan "Coba lagi dalam N menit".
+- `SessionAuthManager` kini melempar galat berbentuk axios (`error.response.{status,data,headers}`). Login memakai `/session/login`; **hanya** bila endpoint itu tidak tersedia (404/5xx/jaringan) atau 409 (sesi lama aktif dari IP yang sama) dipakai login cadangan `/auth/login`. 400/401/403/429 langsung ditampilkan (dulu setiap password salah mengirim dua permintaan, sehingga pembatas menghitung ganda).
+- Catatan: cabang 409 dulu tidak pernah aktif (galat fetch tanpa status). Sengaja tidak dihidupkan menjadi blokir agar kasir yang menutup tab tanpa logout tidak terkunci.
