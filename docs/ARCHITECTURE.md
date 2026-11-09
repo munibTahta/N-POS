@@ -100,3 +100,37 @@ Express + Sequelize + MySQL, berjalan di pm2 sebagai `n-toko`.
 - **Error**: `errorHandler` memakai status dari error, memetakan error Sequelize (409/400/503), menyembunyikan pesan dan stack untuk 5xx kecuali `NODE_ENV=development`. Rute `/api` yang tidak dikenal dibalas JSON 404. `unhandledRejection` dicatat, `uncaughtException` mengakhiri proses agar pm2 memulai ulang.
 - **Katalog**: lihat bagian 3b. Riwayat 5.541 baris penjualan diverifikasi 0 pelanggaran terhadap aturan katalog.
 - **Perlu keputusan**: pajak tetap 10% di `createPenjualan`; kuantitas pecahan (total memakai `parseFloat`, detail `parseInt`); kebijakan stok minus; `id_user` dipercaya dari body; indeks unik duplikat (lihat `backups/databases/drop-duplicate-indexes.sql`).
+
+## 9. Rekomendasi pengembangan dan skala
+
+Berdasarkan temuan audit (ukuran file, skema ganda, indeks duplikat, kunci di installer, tanpa CI, backend tanpa git).
+Urutan di bawah adalah urutan kerja yang disarankan; tiap fase bisa dikerjakan bertahap karena `e2e/` sudah menjadi jaring pengaman.
+
+### Fase 0: segera (hari ini sampai minggu ini)
+- Rotasi sertifikat dan kunci QZ Tray; keluarkan kunci privat dari installer (tanda tangan permintaan cetak dilakukan backend).
+- `.gitattributes` dengan `* text=auto eol=lf` dan Prettier. Repo ini campuran CRLF/LF sehingga satu edit bisa menjadi diff satu file penuh (terjadi saat pekerjaan ini).
+- CI (GitHub Actions) pada setiap PR: `npm run lint`, `npm run build`, `npm run test:e2e`. Targetkan 0 error ESLint (sisa 23).
+- Backend: jalankan `backups/databases/drop-duplicate-indexes.sql`, set `NODE_ENV=production` di pm2, taruh backend di git.
+
+### Fase 1: struktur dan kemudahan perawatan (1-2 bulan)
+- **Pecah `PosPage.jsx` (±4.000 baris)** menjadi hook dan komponen: `useProductBrowse` (jelajah, debounce, fallback offline), `useCart`, `usePayment`, `useBarcodeScanner`, `useCatalogGuard`; panel `ProductPanel`, `CartPanel`, `PaymentPanel`. Target < 400 baris per file.
+- **Pecah `electron/main.cjs` (±3.500 baris)** menjadi `db/` (skema + migrasi), `ipc/` (handler per domain), `printing/`, `window/`.
+- **Satu database SQLite** dengan migrasi berversi (`PRAGMA user_version`), menggantikan `offline.db` + `product_offline.db`. Tutup celah handler `product-db-clear-all` yang belum ada.
+- **Struktur per fitur**: `src/features/{pos,products,customers,reports,...}` berisi page, komponen, hook, dan akses API fitur itu; `src/shared/` untuk yang dipakai bersama. Saat ini 58 komponen dan 40 hook berada rata dalam satu folder.
+- **Server state dengan TanStack Query** (cache, retry, dedupe, stale-while-revalidate, persister offline) menggantikan loader manual (`useDataLoader`, `usePageData`, cache `sessionStorage`, penjaga race `searchIdRef`).
+- **Aturan desain otomatis**: ESLint melarang `<button className="bg-*">` mentah; wajib varian dari `DESIGN_SYSTEM.md`.
+
+### Fase 2: kontrak dan integrasi (2-4 bulan)
+- **Backend**: migrasi nyata (umzug/sequelize-cli), bukan `sync({alter})` (penyebab 57 indeks duplikat); validasi input per rute (zod/joi); `helmet`, rate limiting, log terstruktur dengan request-id (pino); `/api/v1` berversi.
+- **Kontrak API**: hasilkan OpenAPI dari kode/skema dan buat tipe klien dari sana. `API_DOCUMENTATION.md` (±10.000 baris, ditulis manual) cepat usang.
+- **TypeScript bertahap**: mulai dari `services/api`, model data, dan hook; `tsconfig.json` sudah ada.
+- **Otorisasi di server**: izin per peran diperiksa middleware dari tabel `role_menu_permissions`, bukan hanya `protect`. Total, pajak, dan harga dihitung ulang di server; `id_user` diambil dari token.
+- **Kredensial per klien**: ganti `VITE_API_KEY` tunggal (terbaca siapa pun di bundel) dengan token per perangkat atau client-credentials berscope, yang bisa dicabut.
+- **Pembayaran dan integrasi luar**: QRIS/e-wallet lewat webhook bertanda tangan + kunci idempoten (pola `kode_transaksi` sudah ada); webhook keluar untuk akuntansi/ERP; ekspor terjadwal.
+
+### Fase 3: skala besar
+- **Sinkronisasi delta**: unduh perubahan sejak `updated_at` terakhir, bukan seluruh ±9.000 produk; kebijakan konflik tertulis (stok: server yang menentukan); antrean keluar (outbox) dengan status terlihat di UI.
+- **Data**: partisi bulanan untuk `audit_trail`, `log_aktivitas`, `log_stok`, `jurnal_*`; pagination berbasis kursor untuk penjualan; indeks gabungan untuk daftar produk (`status`, `id_cabang_pemilik`, `nama_produk`).
+- **Beban kerja berat** (jurnal, laporan, ekspor) lewat antrean (BullMQ) dan cache master data (Redis); WebSocket yang sudah ada dipakai untuk stok real-time.
+- **Observabilitas**: aktifkan Sentry (`utils/sentry.js` sudah ada) di klien dan backend, monitor uptime, dan uji pemulihan cadangan secara berkala.
+- **Multi-tenant** bila akan dijual sebagai layanan: `tenant_id` di semua tabel atau skema per tenant, ditentukan sebelum jumlah data membesar.
