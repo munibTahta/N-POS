@@ -34,6 +34,7 @@ import ConfirmDialog from '../components/common/ConfirmDialog';
 import { usePosKeyboardShortcuts } from '../features/pos/hooks/usePosKeyboardShortcuts';
 import { usePosCheckout } from '../features/pos/hooks/usePosCheckout';
 import { useProductBrowse } from '../features/pos/hooks/useProductBrowse';
+import { useCart } from '../features/pos/hooks/useCart';
 import { usePosCartActions } from '../features/pos/hooks/usePosCartActions';
 
 // Fallback components for when dynamic imports fail
@@ -90,7 +91,7 @@ const PosPage = () => {
 
   const [products, setProducts] = useState([]);
   const [stockInfo, setStockInfo] = useState({});
-  const [cart, setCart] = useState([]);
+  const { cart, setCart, cartQtyMap, manualPricingOverrides, setManualPricingOverrides, getProductPricing, saveCartSnapshot, handleUndo, handleSetManualPricing, handleRemoveFromCart } = useCart({ showSuccess, showError });
   const [searchTerm, setSearchTerm] = useState('');
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState('all'); // 'all' | id_kategori (string)
@@ -138,10 +139,6 @@ const PosPage = () => {
     return `OFFLINE-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   }, []);
   
-  // Use ref-based bounded stack instead of state for snapshot management (memory optimization)
-  const snapshotStackRef = useRef([]);
-  const MAX_SNAPSHOTS = 5;
-
   const readUsage = () => {
     try { return JSON.parse(localStorage.getItem('pos_product_usage') || '{}'); } catch (_e) { return {}; }
   };
@@ -168,12 +165,6 @@ const PosPage = () => {
   }, [cart.length, isDesktop]);
 
   const closeCart = useCallback(() => setCartOpen(false), []);
-
-  const cartQtyMap = useMemo(() => {
-    const m = {};
-    cart.forEach(i => { m[i.id_produk] = i.jumlah; });
-    return m;
-  }, [cart]);
 
   const idCabangPengguna = user?.id_cabang;
   const [tipeKatalog, setTipeKatalog] = useState('global');
@@ -410,7 +401,6 @@ const PosPage = () => {
     }
   }, [showCameraScanner]);
   const [isOpeningCashDrawer, setIsOpeningCashDrawer] = useState(false);
-  const [manualPricingOverrides, setManualPricingOverrides] = useState({}); // { productId: 'eceran' | 'grosir' | 'auto' }
   const barcodeInputRef = useRef(null);
   const pendingPaymentRef = useRef(false);
   // Stable transaction code across retries of the same checkout attempt.
@@ -431,8 +421,6 @@ const PosPage = () => {
     return () => {
       // Clear all managed timeouts
       manager.clearAll();
-      // Clear snapshot stack to prevent memory leak
-      snapshotStackRef.current = [];
       if (pendingErrorTimeoutRef.current) {
         clearTimeout(pendingErrorTimeoutRef.current);
       }
@@ -720,7 +708,7 @@ const PosPage = () => {
 
   useProductBrowse({ activeCategory, browseRetry, getConnectionStatus, idCabangPengguna, isOnline, readUsage, searchIdRef, searchOfflineProducts, searchTerm, setBrowseError, setBrowseLoading, setProducts, showError, stockInfo, tipeKatalog });
 
-  const { debugGetProductPricing, getProductStock, handleAddToCart, handleBarcodeScan, handleUndo, saveCartSnapshot } = usePosCartActions({ MAX_SNAPSHOTS, barcodeInputRef, belongsToCatalog, cart, idCabangPengguna, isOnline, lastScanTimeRef, loading, manualPricingOverrides, products, recordUsage, searchInputRef, searchOfflineProducts, setCart, setProducts, setSearchTerm, setSelectedProductIndex, showError, showErrorDebounced, showSuccess, snapshotStackRef, stockInfo, timeoutManager, tipeKatalog });
+  const { getProductStock, handleAddToCart, handleBarcodeScan, handleUpdateQuantity } = usePosCartActions({ barcodeInputRef, belongsToCatalog, getProductPricing, idCabangPengguna, isOnline, lastScanTimeRef, loading, products, recordUsage, saveCartSnapshot, searchInputRef, searchOfflineProducts, setCart, setProducts, setSearchTerm, setSelectedProductIndex, showErrorDebounced, showSuccess, stockInfo, timeoutManager, tipeKatalog });
 
   useEffect(() => {
     barcodeInputRef.current?.focus();
@@ -875,130 +863,6 @@ const PosPage = () => {
     return paymentAmount > finalTotal ? paymentAmount - finalTotal : 0;
   }, [paymentAmount, finalTotal]);
 
-  const handleUpdateQuantity = useCallback((productId, newQuantity) => {
-    saveCartSnapshot();
-    const currentStock = getProductStock(productId);
-
-    if (newQuantity > currentStock) {
-      const productInStock = products.find(p => p.id_produk === productId);
-      const nama = productInStock ? productInStock.nama_produk : 'Unknown';
-      showErrorDebounced(`Stok untuk produk ${nama} tidak mencukupi.`);
-      return;
-    }
-
-    if (newQuantity <= 0) {
-      // Remove item from cart
-      setCart(prevCart => prevCart.filter(item => item.id_produk !== productId));
-      return;
-    }
-
-    let shouldShowWholesaleMessage = false;
-    let wholesaleProductName = '';
-    let wholesalePrice = 0;
-
-    setCart(prevCart => {
-      const updatedCart = prevCart.map(item => {
-        if (item.id_produk === productId) {
-          const oldPricing = debugGetProductPricing(item, item.jumlah);
-          const pricing = debugGetProductPricing(item, newQuantity);
-          
-          // Check if price changed to wholesale
-          if (!oldPricing.isWholesale && pricing.isWholesale) {
-            shouldShowWholesaleMessage = true;
-            wholesaleProductName = item.nama_produk;
-            wholesalePrice = pricing.price;
-          }
-          
-          return { 
-            ...item, 
-            jumlah: newQuantity,
-            harga_satuan: pricing.price,
-            tipe_harga: pricing.priceType,
-            subtotal: newQuantity * pricing.price 
-          };
-        }
-        return item;
-      });
-      return updatedCart;
-    });
-
-    // Show wholesale message after state update
-    if (shouldShowWholesaleMessage) {
-      showSuccess(`Harga grosir aktif! ${wholesaleProductName} sekarang ${formatCurrency(wholesalePrice)} per item.`);
-    }
-  }, [getProductStock, products, showErrorDebounced, showSuccess, debugGetProductPricing, saveCartSnapshot]);
-
-  const handleSetManualPricing = useCallback((productId, pricingType) => {
-    // Calculate new override value
-    const newOverride = pricingType === 'auto' ? undefined : pricingType;
-    
-    setManualPricingOverrides(prev => {
-      const newOverrides = { ...prev };
-      if (pricingType === 'auto') {
-        // Remove override for auto mode
-        delete newOverrides[productId];
-      } else {
-        // Set manual override
-        newOverrides[productId] = pricingType;
-      }
-      return newOverrides;
-    });
-
-    // Update cart with new pricing using the new override value
-    setCart(prevCart => {
-      return prevCart.map(item => {
-        if (item.id_produk === productId) {
-          // Create a temporary pricing function with the new override
-          const tempPricingFunc = (product, quantity) => {
-            const hargaJual = Number(product.harga_jual || 0);
-            const hargaGrosir = Number(product.harga_grosir || 0);
-            const minQtyGrosir = Number(product.min_qty_grosir || 0);
-            const override = newOverride; // Use the new override value
-
-            let price, priceType, isWholesale;
-
-            if (override === 'eceran') {
-              price = hargaJual;
-              priceType = 'eceran';
-              isWholesale = false;
-            } else if (override === 'grosir') {
-              price = hargaGrosir > 0 ? hargaGrosir : hargaJual;
-              priceType = 'grosir';
-              isWholesale = true;
-            } else {
-              // Auto mode - check if wholesale pricing applies
-              isWholesale = hargaGrosir > 0 && minQtyGrosir > 0 && quantity >= minQtyGrosir;
-              price = isWholesale ? hargaGrosir : hargaJual;
-              priceType = isWholesale ? 'grosir' : 'eceran';
-            }
-
-            return { price, priceType, isWholesale };
-          };
-          
-          const pricing = tempPricingFunc(item, item.jumlah);
-          return {
-            ...item,
-            harga_satuan: pricing.price,
-            tipe_harga: pricing.priceType,
-            subtotal: item.jumlah * pricing.price
-          };
-        }
-        return item;
-      });
-    });
-  }, []);
-
-  const handleRemoveFromCart = useCallback((productId) => {
-    saveCartSnapshot();
-    setCart(prevCart => prevCart.filter(item => item.id_produk !== productId));
-    // Also remove manual pricing override for this product
-    setManualPricingOverrides(prev => {
-      const newOverrides = { ...prev };
-      delete newOverrides[productId];
-      return newOverrides;
-    });
-  }, [saveCartSnapshot]);
-
   const { handleOfflineConfirm, handleSubmit } = usePosCheckout({ cart, createTemporarySaleId, discountAmount, finalTotal, getConnectionStatus, getProductStock, idCabangPengguna, isPendingPayment, isSyncLocked, paymentAmount, pendingPaymentRef, pendingTransactionCodeRef, posSettings, searchOfflineProducts, selectedCustomer, selectedPaymentMethod, setAppliedVoucher, setCart, setIsPendingPayment, setIsSubmitting, setLastTransaction, setManualPricingOverrides, setPaymentAmount, setSaleDataForPrint, setSelectedCustomer, setSelectedPaymentMethod, setShowOfflineWarning, setShowPaymentModal, setShowPrintModal, setStockInfo, setTaxAmount, showError, showSuccess, taxAmount, tipeKatalog, user });
 
   // Handle discount dialog apply
@@ -1043,7 +907,7 @@ const PosPage = () => {
     };
   }, []);
 
-  usePosKeyboardShortcuts({ appliedVoucher, cart, cartFocusedIndex, customerSearchRef, debugGetProductPricing, filteredProducts, finalTotal, focusedSection, getNextProductIndex, getProductStock, handleAddToCart, handleRemoveFromCart, handleSubmit, handleUndo, handleUpdateQuantity, lastTransaction, navigate, paymentAmount, paymentAmountInputRef, pendingCheckboxRef, posSettings, products, searchInputRef, searchTerm, selectedPaymentMethod, selectedProductIndex, setAppliedVoucher, setCart, setCartFocusedIndex, setConfirmDialog, setCurrentKeyboardHint, setFocusedSection, setIsOpeningCashDrawer, setManualPricingOverrides, setPaymentAmount, setSaleDataForPrint, setSearchTerm, setSelectedCustomer, setSelectedProductIndex, setShowCameraScanner, setShowCustomerPopup, setShowDiscountDialog, setShowPaymentModal, setShowPrintModal, setShowShortcutsModal, showCameraScanner, showCustomerPopup, showError, showPaymentModal, showPrintModal, showShortcutsModal, showSuccess, submitButtonRef, taxAmount });
+  usePosKeyboardShortcuts({ appliedVoucher, cart, cartFocusedIndex, customerSearchRef, getProductPricing, filteredProducts, finalTotal, focusedSection, getNextProductIndex, getProductStock, handleAddToCart, handleRemoveFromCart, handleSubmit, handleUndo, handleUpdateQuantity, lastTransaction, navigate, paymentAmount, paymentAmountInputRef, pendingCheckboxRef, posSettings, products, searchInputRef, searchTerm, selectedPaymentMethod, selectedProductIndex, setAppliedVoucher, setCart, setCartFocusedIndex, setConfirmDialog, setCurrentKeyboardHint, setFocusedSection, setIsOpeningCashDrawer, setManualPricingOverrides, setPaymentAmount, setSaleDataForPrint, setSearchTerm, setSelectedCustomer, setSelectedProductIndex, setShowCameraScanner, setShowCustomerPopup, setShowDiscountDialog, setShowPaymentModal, setShowPrintModal, setShowShortcutsModal, showCameraScanner, showCustomerPopup, showError, showPaymentModal, showPrintModal, showShortcutsModal, showSuccess, submitButtonRef, taxAmount });
 
   // Auto-focus to payment input when payment modal opens
   useEffect(() => {

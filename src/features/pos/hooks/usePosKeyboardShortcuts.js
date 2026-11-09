@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-export function usePosKeyboardShortcuts({ appliedVoucher, cart, cartFocusedIndex, customerSearchRef, debugGetProductPricing, filteredProducts, finalTotal, focusedSection, getNextProductIndex, getProductStock, handleAddToCart, handleRemoveFromCart, handleSubmit, handleUndo, handleUpdateQuantity, lastTransaction, navigate, paymentAmount, paymentAmountInputRef, pendingCheckboxRef, posSettings, products, searchInputRef, searchTerm, selectedPaymentMethod, selectedProductIndex, setAppliedVoucher, setCart, setCartFocusedIndex, setConfirmDialog, setCurrentKeyboardHint, setFocusedSection, setIsOpeningCashDrawer, setManualPricingOverrides, setPaymentAmount, setSaleDataForPrint, setSearchTerm, setSelectedCustomer, setSelectedProductIndex, setShowCameraScanner, setShowCustomerPopup, setShowDiscountDialog, setShowPaymentModal, setShowPrintModal, setShowShortcutsModal, showCameraScanner, showCustomerPopup, showError, showPaymentModal, showPrintModal, showShortcutsModal, showSuccess, submitButtonRef, taxAmount }) {
+export function usePosKeyboardShortcuts({ appliedVoucher, cart, cartFocusedIndex, customerSearchRef, getProductPricing, filteredProducts, finalTotal, focusedSection, getNextProductIndex, getProductStock, handleAddToCart, handleRemoveFromCart, handleSubmit, handleUndo, handleUpdateQuantity, lastTransaction, navigate, paymentAmount, paymentAmountInputRef, pendingCheckboxRef, posSettings, products, searchInputRef, searchTerm, selectedPaymentMethod, selectedProductIndex, setAppliedVoucher, setCart, setCartFocusedIndex, setConfirmDialog, setCurrentKeyboardHint, setFocusedSection, setIsOpeningCashDrawer, setManualPricingOverrides, setPaymentAmount, setSaleDataForPrint, setSearchTerm, setSelectedCustomer, setSelectedProductIndex, setShowCameraScanner, setShowCustomerPopup, setShowDiscountDialog, setShowPaymentModal, setShowPrintModal, setShowShortcutsModal, showCameraScanner, showCustomerPopup, showError, showPaymentModal, showPrintModal, showShortcutsModal, showSuccess, submitButtonRef, taxAmount }) {
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -608,7 +608,7 @@ export function usePosKeyboardShortcuts({ appliedVoucher, cart, cartFocusedIndex
         setCart(prevCart =>
           prevCart.map((item, index) => {
             if (index === prevCart.length - 1) {
-              const pricing = debugGetProductPricing(item, quantity);
+              const pricing = getProductPricing(item, quantity);
               return { 
                 ...item, 
                 jumlah: quantity, 
@@ -679,7 +679,7 @@ export function usePosKeyboardShortcuts({ appliedVoucher, cart, cartFocusedIndex
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedPaymentMethod, cart, products, filteredProducts, handleAddToCart, handleSubmit, posSettings, taxAmount, appliedVoucher, finalTotal, paymentAmount, searchTerm, getProductStock, showError, showSuccess, debugGetProductPricing, showCustomerPopup, showCameraScanner, showShortcutsModal, showPaymentModal, showPrintModal, focusedSection, selectedProductIndex, cartFocusedIndex, handleRemoveFromCart, handleUpdateQuantity, handleUndo, getNextProductIndex, lastTransaction, navigate, customerSearchRef, paymentAmountInputRef, pendingCheckboxRef, searchInputRef, setAppliedVoucher, setCart, setCartFocusedIndex, setConfirmDialog, setCurrentKeyboardHint, setFocusedSection, setIsOpeningCashDrawer, setManualPricingOverrides, setPaymentAmount, setSaleDataForPrint, setSearchTerm, setSelectedCustomer, setSelectedProductIndex, setShowCameraScanner, setShowCustomerPopup, setShowDiscountDialog, setShowPaymentModal, setShowPrintModal, setShowShortcutsModal, submitButtonRef]);
+  }, [selectedPaymentMethod, cart, products, filteredProducts, handleAddToCart, handleSubmit, posSettings, taxAmount, appliedVoucher, finalTotal, paymentAmount, searchTerm, getProductStock, showError, showSuccess, getProductPricing, showCustomerPopup, showCameraScanner, showShortcutsModal, showPaymentModal, showPrintModal, focusedSection, selectedProductIndex, cartFocusedIndex, handleRemoveFromCart, handleUpdateQuantity, handleUndo, getNextProductIndex, lastTransaction, navigate, customerSearchRef, paymentAmountInputRef, pendingCheckboxRef, searchInputRef, setAppliedVoucher, setCart, setCartFocusedIndex, setConfirmDialog, setCurrentKeyboardHint, setFocusedSection, setIsOpeningCashDrawer, setManualPricingOverrides, setPaymentAmount, setSaleDataForPrint, setSearchTerm, setSelectedCustomer, setSelectedProductIndex, setShowCameraScanner, setShowCustomerPopup, setShowDiscountDialog, setShowPaymentModal, setShowPrintModal, setShowShortcutsModal, submitButtonRef]);
 }
 
 export default usePosKeyboardShortcuts;

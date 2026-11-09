@@ -55,7 +55,8 @@ React UI (src/)  ──REST──▶  Backend API (terpisah, VITE_API_BASE_URL)
 | `features/pos/hooks/useProductBrowse.js` | jelajah, pencarian ber-debounce, fallback offline, penjaga race | 233 |
 | `features/pos/components/{ProductPanel,CartPanel,PaymentModal,CustomerPopup}.jsx` | panel produk, keranjang, modal bayar, pilih pelanggan | 268/411/175/36 |
 | `features/pos/lazyComponents.jsx` | komponen lazy + fallback | - |
-| `features/pos/hooks/usePosCartActions.js` | tambah ke keranjang, scan barcode, undo, harga grosir | 371 |
+| `features/pos/hooks/useCart.js` | pemilik state keranjang, override harga, undo, hapus/atur harga manual | 178 |
+| `features/pos/hooks/usePosCartActions.js` | tambah ke keranjang, ubah jumlah, scan barcode (butuh stok/produk) | 357 |
 | `pages/PosPage.jsx` | state, handler keranjang/scan, dan JSX | 2.625 |
 
 Pemindahan dilakukan dengan `scripts/extract-hook.cjs` (analisis scope, bukan salin-tempel) dan dibuktikan ekuivalen:

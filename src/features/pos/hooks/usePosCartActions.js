@@ -3,90 +3,12 @@ import { formatCurrency } from '../../../utils/formatHelper';
 import { logger } from '../../../utils/logger';
 import { getProducts } from '../../../services/api';
 
-export function usePosCartActions({ MAX_SNAPSHOTS, barcodeInputRef, belongsToCatalog, cart, idCabangPengguna, isOnline, lastScanTimeRef, loading, manualPricingOverrides, products, recordUsage, searchInputRef, searchOfflineProducts, setCart, setProducts, setSearchTerm, setSelectedProductIndex, showError, showErrorDebounced, showSuccess, snapshotStackRef, stockInfo, timeoutManager, tipeKatalog }) {
+export function usePosCartActions({ barcodeInputRef, belongsToCatalog, getProductPricing, idCabangPengguna, isOnline, lastScanTimeRef, loading, products, recordUsage, saveCartSnapshot, searchInputRef, searchOfflineProducts, setCart, setProducts, setSearchTerm, setSelectedProductIndex, showErrorDebounced, showSuccess, stockInfo, timeoutManager, tipeKatalog }) {
   const getProductStock = useCallback((id_produk) => {
     return stockInfo[id_produk] || 0;
   }, [stockInfo]);
 
-  // Helper function to determine pricing based on wholesale conditions
-  const debugGetProductPricing = useCallback((product, quantity) => {
-    const hargaJual = Number(product.harga_jual || 0);
-    const hargaGrosir = Number(product.harga_grosir || 0);
-    const minQtyGrosir = Number(product.min_qty_grosir || 0);
-    const override = manualPricingOverrides[product.id_produk];
-
-    let price, priceType, isWholesale;
-
-    if (override === 'eceran') {
-      price = hargaJual;
-      priceType = 'eceran';
-      isWholesale = false;
-    } else if (override === 'grosir') {
-      price = hargaGrosir > 0 ? hargaGrosir : hargaJual;
-      priceType = 'grosir';
-      isWholesale = true;
-    } else {
-      // Auto mode - check if wholesale pricing applies
-      isWholesale = hargaGrosir > 0 && minQtyGrosir > 0 && quantity >= minQtyGrosir;
-      price = isWholesale ? hargaGrosir : hargaJual;
-      priceType = isWholesale ? 'grosir' : 'eceran';
-    }
-
-    const result = { price, priceType, isWholesale };
-    
-    return result;
-  }, [manualPricingOverrides]);
-
   const cartLockRef = useRef(false);
-
-  // Save cart snapshot for undo (Ctrl+Z) - bounded stack prevents memory leak
-  const saveCartSnapshot = useCallback(() => {
-    // Create compressed snapshot with only essential data
-    const snapshot = {
-      items: cart.map(item => ({
-        id_produk: item.id_produk,
-        jumlah: item.jumlah,
-        harga_satuan: item.harga_satuan,
-        tipe_harga: item.tipe_harga,
-        nama_produk: item.nama_produk,
-        subtotal: item.subtotal
-      })),
-      timestamp: Date.now()
-    };
-    
-    snapshotStackRef.current.push(snapshot);
-    
-    // Keep only last N snapshots (bounded memory)
-    while (snapshotStackRef.current.length > MAX_SNAPSHOTS) {
-      snapshotStackRef.current.shift(); // Remove oldest
-    }
-  }, [cart, MAX_SNAPSHOTS, snapshotStackRef]);
-
-  // Undo last action (restore from snapshot)
-  const handleUndo = useCallback(() => {
-    if (snapshotStackRef.current.length > 0) {
-      const previousSnapshot = snapshotStackRef.current.pop();
-      
-      const restoredCart = previousSnapshot.items.map((item, idx) => {
-        const original = cart[idx];
-        if (original) {
-          return { 
-            ...original, 
-            jumlah: item.jumlah,
-            harga_satuan: item.harga_satuan,
-            tipe_harga: item.tipe_harga,
-            subtotal: item.subtotal
-          };
-        }
-        return item;
-      });
-      
-      setCart(restoredCart);
-      showSuccess('Aksi dibatalkan');
-    } else {
-      showError('Tidak ada aksi untuk di-undo');
-    }
-  }, [cart, showSuccess, showError, setCart, snapshotStackRef]);
 
   const handleAddToCart = useCallback((product, fromBarcodeScan = false, skipSearchFocus = false) => {
     // Prevent race conditions with mutex lock
@@ -124,8 +46,8 @@ export function usePosCartActions({ MAX_SNAPSHOTS, barcodeInputRef, belongsToCat
             hasInsufficientStock = true;
             return prevCart;
           }
-          const oldPricing = debugGetProductPricing(product, existingItem.jumlah);
-          const pricing = debugGetProductPricing(product, newQuantity);
+          const oldPricing = getProductPricing(product, existingItem.jumlah);
+          const pricing = getProductPricing(product, newQuantity);
           
           // Check if price changed to wholesale
           if (!oldPricing.isWholesale && pricing.isWholesale) {
@@ -145,7 +67,7 @@ export function usePosCartActions({ MAX_SNAPSHOTS, barcodeInputRef, belongsToCat
               : item
           );
         }
-        const pricing = debugGetProductPricing(product, 1);
+        const pricing = getProductPricing(product, 1);
         
         // Check if new item qualifies for wholesale pricing
         if (pricing.isWholesale) {
@@ -202,7 +124,60 @@ export function usePosCartActions({ MAX_SNAPSHOTS, barcodeInputRef, belongsToCat
         cartLockRef.current = false;
       }, 100);
     }
-  }, [getProductStock, showErrorDebounced, showSuccess, debugGetProductPricing, saveCartSnapshot, recordUsage, belongsToCatalog, searchInputRef, setCart, setSearchTerm, setSelectedProductIndex]);
+  }, [getProductStock, showErrorDebounced, showSuccess, getProductPricing, saveCartSnapshot, recordUsage, belongsToCatalog, searchInputRef, setCart, setSearchTerm, setSelectedProductIndex]);
+
+  const handleUpdateQuantity = useCallback((productId, newQuantity) => {
+    saveCartSnapshot();
+    const currentStock = getProductStock(productId);
+
+    if (newQuantity > currentStock) {
+      const productInStock = products.find(p => p.id_produk === productId);
+      const nama = productInStock ? productInStock.nama_produk : 'Unknown';
+      showErrorDebounced(`Stok untuk produk ${nama} tidak mencukupi.`);
+      return;
+    }
+
+    if (newQuantity <= 0) {
+      // Remove item from cart
+      setCart(prevCart => prevCart.filter(item => item.id_produk !== productId));
+      return;
+    }
+
+    let shouldShowWholesaleMessage = false;
+    let wholesaleProductName = '';
+    let wholesalePrice = 0;
+
+    setCart(prevCart => {
+      const updatedCart = prevCart.map(item => {
+        if (item.id_produk === productId) {
+          const oldPricing = getProductPricing(item, item.jumlah);
+          const pricing = getProductPricing(item, newQuantity);
+          
+          // Check if price changed to wholesale
+          if (!oldPricing.isWholesale && pricing.isWholesale) {
+            shouldShowWholesaleMessage = true;
+            wholesaleProductName = item.nama_produk;
+            wholesalePrice = pricing.price;
+          }
+          
+          return { 
+            ...item, 
+            jumlah: newQuantity,
+            harga_satuan: pricing.price,
+            tipe_harga: pricing.priceType,
+            subtotal: newQuantity * pricing.price 
+          };
+        }
+        return item;
+      });
+      return updatedCart;
+    });
+
+    // Show wholesale message after state update
+    if (shouldShowWholesaleMessage) {
+      showSuccess(`Harga grosir aktif! ${wholesaleProductName} sekarang ${formatCurrency(wholesalePrice)} per item.`);
+    }
+  }, [getProductStock, products, showErrorDebounced, showSuccess, getProductPricing, saveCartSnapshot, setCart]);
 
   // Track input timing to detect rapid scanner input vs manual typing
   const handleBarcodeScan = useCallback(async (barcode) => {
@@ -376,7 +351,7 @@ export function usePosCartActions({ MAX_SNAPSHOTS, barcodeInputRef, belongsToCat
     }, 100);
   }, [products, loading, isOnline, idCabangPengguna, tipeKatalog, searchOfflineProducts, handleAddToCart, showErrorDebounced, stockInfo, barcodeInputRef, lastScanTimeRef, setProducts, setSearchTerm, setSelectedProductIndex, timeoutManager]);
 
-  return { cartLockRef, debugGetProductPricing, getProductStock, handleAddToCart, handleBarcodeScan, handleUndo, saveCartSnapshot };
+  return { getProductStock, handleAddToCart, handleBarcodeScan, handleUpdateQuantity };
 }
 
 export default usePosCartActions;
