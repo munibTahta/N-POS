@@ -65,7 +65,9 @@ export default defineConfig(({ mode }) => ({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
-          ui: ['axios', 'chart.js', 'react-chartjs-2', 'jsbarcode'],
+          ui: ['axios'],
+          // chart.js dan jsbarcode sengaja tidak dikelompokkan manual: manualChunks membuatnya ikut
+          // di-preload saat startup. Biarkan Rollup menaruhnya di chunk halaman yang memakainya (lazy).
           qrcode: ['html5-qrcode'],
           excel: ['exceljs'],
           utils: ['jwt-decode', 'file-saver'],

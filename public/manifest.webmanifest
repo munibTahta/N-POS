@@ -1,0 +1,17 @@
+{
+  "name": "N-POS Aplikasi Kasir",
+  "short_name": "N-POS",
+  "description": "Aplikasi kasir multi-cabang dengan mode offline.",
+  "lang": "id",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#050b42",
+  "theme_color": "#050b42",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
