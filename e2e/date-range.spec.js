@@ -39,7 +39,8 @@ test.describe('filter rentang tanggal cepat dan tanggal relatif', () => {
 
   test('Riwayat Penjualan: chip cepat menyaring daftar dan tanggal tampil relatif', async ({ page }) => {
     const sale = (id, d) => ({ id_penjualan: id, kode_transaksi: `TRX-${id}`, tanggal: d.toISOString(), total: 10000 * id, status_pembayaran: 'lunas', id_cabang: 1, Cabang: { nama_cabang: 'Pusat' } });
-    const sales = [sale(1, daysAgo(0, 0)), sale(2, daysAgo(1)), sale(3, daysAgo(3)), sale(4, daysAgo(60))];
+    const dueIn = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+    const sales = [sale(1, daysAgo(0, 0)), sale(2, daysAgo(1)), sale(3, daysAgo(3)), sale(4, daysAgo(60)), { ...sale(5, daysAgo(10)), tanggal_jatuh_tempo: dueIn(-2) }, { ...sale(6, daysAgo(10)), tanggal_jatuh_tempo: dueIn(2) }];
     await setupPos(page, [], {
       onApi: (route, req) => {
         if (/\/penjualan(\?|$)/.test(req.url()) && req.method() === 'GET') {
@@ -72,6 +73,16 @@ test.describe('filter rentang tanggal cepat dan tanggal relatif', () => {
     await expect(page.getByText('TRX-4', { exact: true })).toBeVisible();
     await expect(page.locator('[data-age-badge="warn"]').first()).toHaveText('Belum lunas 3 hari');
     await expect(page.locator('[data-age-badge="danger"]').first()).toHaveText('Belum lunas 60 hari');
+
+    // Jatuh tempo menggantikan usia: lewat 2 hari = merah, 2 hari lagi = kuning; filter "Lewat jatuh tempo"
+    await expect(page.locator('[data-badge-kind="due"][data-age-badge="danger"]')).toHaveText('Lewat 2 hari');
+    await expect(page.locator('[data-badge-kind="due"][data-age-badge="warn"]')).toHaveText('Jatuh tempo 2 hari lagi');
+    await page.getByRole('button', { name: /Filter/ }).click();
+    await page.locator('select:has(option[value="overdue"])').selectOption('overdue');
+    await page.waitForTimeout(500);
+    await expect(page.getByText('TRX-5', { exact: true })).toBeVisible();
+    await expect(page.getByText('TRX-6', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('TRX-4', { exact: true })).toHaveCount(0);
   });
 
   test('Audit Trail: bawaan 7 hari, log berstempel epoch ikut tersaring', async ({ page }) => {

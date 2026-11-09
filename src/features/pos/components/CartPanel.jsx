@@ -6,8 +6,9 @@ import { Suspense } from 'react';
 import { InputVoucher } from '../lazyComponents';
 import PaymentMethodSelector from '../../../components/PaymentMethodSelector';
 import PaymentAmountInput from '../../../components/PaymentAmountInput';
+import DueDatePicker from './DueDatePicker';
 
-export function CartPanel({ appliedVoucher, cart, cartFocusedIndex, change, discountAmount, finalTotal, focusedSection, handleRemoveFromCart, handleSetManualPricing, handleSubmit, handleUpdateQuantity, isOpeningCashDrawer, isPendingPayment, isSubmitting, isSyncLocked, manualPricingOverrides, paymentAmount, paymentAmountInputRef, paymentFee, paymentPanelRef, pendingCheckboxRef, pendingPaymentRef, posSettings, selectedCustomer, selectedPaymentMethod, setAppliedVoucher, setCartFocusedIndex, setFocusedSection, setIsOpeningCashDrawer, setIsPendingPayment, setPaymentAmount, setSelectedCustomer, setSelectedPaymentMethod, setShowCustomerPopup, setTaxAmount, showError, showPaymentModal, showSuccess, stockInfo, submitButtonRef, subtotal, taxAmount }) {
+export function CartPanel({ dueDate, setDueDate, appliedVoucher, cart, cartFocusedIndex, change, discountAmount, finalTotal, focusedSection, handleRemoveFromCart, handleSetManualPricing, handleSubmit, handleUpdateQuantity, isOpeningCashDrawer, isPendingPayment, isSubmitting, isSyncLocked, manualPricingOverrides, paymentAmount, paymentAmountInputRef, paymentFee, paymentPanelRef, pendingCheckboxRef, pendingPaymentRef, posSettings, selectedCustomer, selectedPaymentMethod, setAppliedVoucher, setCartFocusedIndex, setFocusedSection, setIsOpeningCashDrawer, setIsPendingPayment, setPaymentAmount, setSelectedCustomer, setSelectedPaymentMethod, setShowCustomerPopup, setTaxAmount, showError, showPaymentModal, showSuccess, stockInfo, submitButtonRef, subtotal, taxAmount }) {
   return (
     <>
 <div 
@@ -348,6 +349,7 @@ export function CartPanel({ appliedVoucher, cart, cartFocusedIndex, change, disc
                   </label>
                 </div>
               )}
+              {paymentAmount < finalTotal && (isPendingPayment || paymentAmount > 0) && <DueDatePicker value={dueDate} onChange={setDueDate} />}
             </div>
           )}
         </div>

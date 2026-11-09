@@ -199,3 +199,10 @@ Urutan di bawah adalah urutan kerja yang disarankan; tiap fase bisa dikerjakan b
 - Bawaan periode per halaman: Riwayat Penjualan = Hari ini; Laporan Keuangan dan Transaksi Keuangan = Bulan ini; Audit Trail dan Log Aktivitas = 7 hari terakhir (log bisa sangat banyak). Semua halaman punya chip "Semua".
 - `parseFlexibleDate` / `formatDateTimeID` (utils/dateRange.js) menggantikan dua salinan parser tanggal di halaman log (mendukung ISO, epoch detik/milidetik, string angka).
 - `AgeBadge`: usia piutang pada penjualan Pending (abu < 3 hari, kuning >= 3, merah >= 7). Data belum punya kolom jatuh tempo; usia dihitung dari tanggal transaksi. Bila kolom jatuh tempo ditambahkan di backend, ganti sumbernya.
+
+### Jatuh tempo piutang
+
+- Backend: kolom `penjualan.tanggal_jatuh_tempo` (DATE, nullable, berindeks). `POST /penjualan` menerima `tanggal_jatuh_tempo` (YYYY-MM-DD; divalidasi di `utils/dueDate.js`: format valid, tidak lebih awal dari kemarin, maksimal 1 tahun) dan hanya menyimpannya bila masih ada sisa tagihan. `PUT /penjualan/:id/jatuh-tempo` (terproteksi, tercatat di audit trail) mengatur/menghapusnya; `GET /penjualan?lewat_jatuh_tempo=true` memfilter piutang yang lewat.
+- Kasir: pemilih jatuh tempo (+7/+14/+30 hari atau tanggal kustom) muncul bila "Pembayaran Nanti" dicentang atau pembayaran baru sebagian. Online dikirim ke server; offline ikut disimpan di data transaksi dan diteruskan saat sinkronisasi (`syncEngine`).
+- Tampilan: `AgeBadge` memakai jatuh tempo bila ada ("Lewat 3 hari" merah, "Jatuh tempo hari ini/2 hari lagi" kuning, "Jatuh tempo 12 Okt" abu); tanpa jatuh tempo kembali ke usia piutang. Riwayat Penjualan punya filter "Lewat jatuh tempo"; halaman Pembayaran Pending punya tombol "Atur jatuh tempo".
+- Migrasi skema dilakukan manual (backend tidak memakai `sync()`): `ALTER TABLE penjualan ADD COLUMN tanggal_jatuh_tempo DATE NULL AFTER sisa_pembayaran` + indeks `idx_penjualan_jatuh_tempo`. Cadangan skema ada di `/home/nusasoft-toko/backups/due-date-*`.

@@ -165,7 +165,7 @@ const CategoriesPage = () => {
     filterFns: {
       category: (item, value) => {
         if (!value) return true;
-        return item.id_kategori === value;
+        return String(item.id_kategori) === String(value);
       },
     },
     debounceDelay: 300,

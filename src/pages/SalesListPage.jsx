@@ -23,7 +23,7 @@ import { Printer, CheckCircle, XCircle, RotateCcw, Download } from 'lucide-react
 import DateRangeFilter from '../components/common/DateRangeFilter';
 import RelativeDate from '../components/common/RelativeDate';
 import AgeBadge from '../components/common/AgeBadge';
-import { getPresetRange, isDateInRange, todayISO } from '../utils/dateRange';
+import { dueStatus, getPresetRange, isDateInRange, todayISO } from '../utils/dateRange';
 
 const SalesListPage = () => {
   const { user, canVoidSales } = usePermissions();
@@ -139,15 +139,19 @@ const SalesListPage = () => {
       paymentMethod: filterPaymentMethod === 'all' ? '' : filterPaymentMethod,
     },
     filterFns: {
-      status: (sale, key, value) => {
+      status: (sale, value) => {
         if (!value) return true;
+        if (value === 'overdue') {
+          // Piutang yang tanggal jatuh temponya sudah lewat (hari lokal)
+          return getPaymentStatus(sale) === 'pending' && dueStatus(sale.tanggal_jatuh_tempo)?.state === 'overdue';
+        }
         return getPaymentStatus(sale) === value;
       },
-      branch: (sale, key, value) => {
+      branch: (sale, value) => {
         if (!value) return true;
         return sale.Cabang?.nama_cabang === value;
       },
-      paymentMethod: (sale, key, value) => {
+      paymentMethod: (sale, value) => {
         if (!value) return true;
         return Array.isArray(sale.detail_pembayaran) &&
                sale.detail_pembayaran.some(p => p.metodePembayaran?.nama_metode === value);
@@ -480,6 +484,7 @@ const SalesListPage = () => {
                       <option value="all">Semua Status</option>
                       <option value="lunas">Lunas</option>
                       <option value="pending">Pending</option>
+                      <option value="overdue">Lewat jatuh tempo</option>
                     </select>
                   </div>
                   <div>
@@ -596,7 +601,7 @@ const SalesListPage = () => {
                               Lunas
                             </span>
                           )}
-                          {getPaymentStatus(sale) === 'pending' && <AgeBadge value={sale.tanggal} className="ml-2" />}
+                          {getPaymentStatus(sale) === 'pending' && <AgeBadge value={sale.tanggal} dueDate={sale.tanggal_jatuh_tempo} className="ml-2" />}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {hasReturns(sale.id_penjualan) ? (

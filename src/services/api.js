@@ -491,6 +491,11 @@ export const recordPayment = (id_penjualan, paymentData) => {
   return apiClient.post(`/penjualan/${id_penjualan}/bayar`, paymentData);
 };
 
+// Atur (YYYY-MM-DD) atau hapus (null) tanggal jatuh tempo penjualan yang belum lunas.
+export const setSaleDueDate = (id_penjualan, tanggal_jatuh_tempo) => {
+  return apiClient.put(`/penjualan/${id_penjualan}/jatuh-tempo`, { tanggal_jatuh_tempo });
+};
+
 export const createPaymentPending = (id_penjualan, paymentData) => {
   return apiClient.post(`/penjualan/${id_penjualan}/bayar/pending`, paymentData);
 };

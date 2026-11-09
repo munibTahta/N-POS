@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseFlexibleDate, formatDateTimeID, ageInDays, toDateInputValue, toISODate, todayISO, parseISODate, getPresetRange, detectPreset, normalizeRange, isDateInRange, rangeDays, formatRelativeDate, formatShortDate, formatFullDate } from '../dateRange.js';
+import { addDaysISO, dueStatus, parseFlexibleDate, formatDateTimeID, ageInDays, toDateInputValue, toISODate, todayISO, parseISODate, getPresetRange, detectPreset, normalizeRange, isDateInRange, rangeDays, formatRelativeDate, formatShortDate, formatFullDate } from '../dateRange.js';
 
 // Rabu, 14 Okt 2026 15:30 waktu lokal
 const NOW = new Date(2026, 9, 14, 15, 30);
@@ -105,4 +105,23 @@ test('formatDateTimeID dan ageInDays', () => {
   assert.equal(ageInDays(new Date(2026, 9, 7, 23, 0), NOW), 7);
   assert.equal(ageInDays(null, NOW), null);
   assert.equal(ageInDays(new Date(2026, 9, 20), NOW), -6);
+});
+
+test('addDaysISO dan dueStatus', () => {
+  assert.equal(addDaysISO(7, NOW), '2026-10-21');
+  assert.equal(addDaysISO(0, NOW), '2026-10-14');
+  assert.equal(addDaysISO(30, NOW), '2026-11-13');
+  assert.deepEqual(dueStatus('2026-10-10', NOW), { state: 'overdue', days: 4 });
+  assert.deepEqual(dueStatus('2026-10-13', NOW), { state: 'overdue', days: 1 });
+  assert.deepEqual(dueStatus('2026-10-14', NOW), { state: 'today', days: 0 });
+  assert.deepEqual(dueStatus('2026-10-16', NOW), { state: 'soon', days: 2 });
+  assert.deepEqual(dueStatus('2026-10-30', NOW), { state: 'later', days: 16 });
+  assert.equal(dueStatus(null, NOW), null);
+  assert.equal(dueStatus('xx', NOW), null);
+});
+
+test('parseFlexibleDate: tanggal murni = hari lokal di semua zona waktu', () => {
+  const d = parseFlexibleDate('2026-10-14');
+  assert.equal(toISODate(d), '2026-10-14');
+  assert.equal(d.getHours(), 0);
 });

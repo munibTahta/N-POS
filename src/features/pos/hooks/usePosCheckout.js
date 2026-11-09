@@ -8,7 +8,7 @@ import { extractData } from '../../../utils/apiResponseHelper';
 import { formatCurrency } from '../../../utils/formatHelper';
 import { unstable_batchedUpdates } from 'react-dom';
 
-export function usePosCheckout({ cart, createTemporarySaleId, discountAmount, finalTotal, getConnectionStatus, getProductStock, idCabangPengguna, isPendingPayment, isSyncLocked, paymentAmount, pendingPaymentRef, pendingTransactionCodeRef, posSettings, searchOfflineProducts, selectedCustomer, selectedPaymentMethod, setAppliedVoucher, setCart, setIsPendingPayment, setIsSubmitting, setLastTransaction, setManualPricingOverrides, setPaymentAmount, setSaleDataForPrint, setSelectedCustomer, setSelectedPaymentMethod, setShowOfflineWarning, setShowPaymentModal, setShowPrintModal, setStockInfo, setTaxAmount, showError, showSuccess, taxAmount, tipeKatalog, user }) {
+export function usePosCheckout({ dueDate, setDueDate, cart, createTemporarySaleId, discountAmount, finalTotal, getConnectionStatus, getProductStock, idCabangPengguna, isPendingPayment, isSyncLocked, paymentAmount, pendingPaymentRef, pendingTransactionCodeRef, posSettings, searchOfflineProducts, selectedCustomer, selectedPaymentMethod, setAppliedVoucher, setCart, setIsPendingPayment, setIsSubmitting, setLastTransaction, setManualPricingOverrides, setPaymentAmount, setSaleDataForPrint, setSelectedCustomer, setSelectedPaymentMethod, setShowOfflineWarning, setShowPaymentModal, setShowPrintModal, setStockInfo, setTaxAmount, showError, showSuccess, taxAmount, tipeKatalog, user }) {
   const validateStockAvailability = useCallback(async (retryCount = 0) => {
     const MAX_RETRIES = 2;
 
@@ -246,6 +246,10 @@ export function usePosCheckout({ cart, createTemporarySaleId, discountAmount, fi
     if (selectedPaymentMethod?.biaya_tambahan > 0) {
       saleData.biaya_tambahan = Number(selectedPaymentMethod.biaya_tambahan);
     }
+    // Jatuh tempo hanya dikirim untuk transaksi yang belum lunas (server juga mengabaikannya bila sisa = 0).
+    if (dueDate && (isPendingPayment || pendingPaymentRef.current || paymentAmount < finalTotal)) {
+      saleData.tanggal_jatuh_tempo = dueDate;
+    }
 
     try {
       setIsSubmitting(true);
@@ -332,7 +336,8 @@ export function usePosCheckout({ cart, createTemporarySaleId, discountAmount, fi
           bayar: paymentAmount,
           kembalian: (isPendingPayment || pendingPaymentRef.current || paymentAmount < finalTotal) ? 0 : paymentAmount - finalTotal,
           sisa_pembayaran: (isPendingPayment || pendingPaymentRef.current || paymentAmount < finalTotal) ? finalTotal - paymentAmount : 0,
-          status_pembayaran: (isPendingPayment || pendingPaymentRef.current || paymentAmount < finalTotal) ? 'pending' : 'lunas'
+          status_pembayaran: (isPendingPayment || pendingPaymentRef.current || paymentAmount < finalTotal) ? 'pending' : 'lunas',
+          ...(saleData.tanggal_jatuh_tempo ? { tanggal_jatuh_tempo: saleData.tanggal_jatuh_tempo } : {})
         };
 
         // Prepare items and payments
@@ -418,6 +423,7 @@ export function usePosCheckout({ cart, createTemporarySaleId, discountAmount, fi
         setSelectedPaymentMethod(null);
         setPaymentAmount(0);
         setIsPendingPayment(false);
+        setDueDate('');
       });
       pendingPaymentRef.current = false;
       pendingTransactionCodeRef.current = null;
@@ -483,7 +489,7 @@ export function usePosCheckout({ cart, createTemporarySaleId, discountAmount, fi
       setIsSubmitting(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cart, user, selectedPaymentMethod, paymentAmount, finalTotal, selectedCustomer, discountAmount, posSettings, taxAmount, isPendingPayment, getConnectionStatus, idCabangPengguna, tipeKatalog, validateStockAvailability, searchOfflineProducts]);
+  }, [dueDate, setDueDate, cart, user, selectedPaymentMethod, paymentAmount, finalTotal, selectedCustomer, discountAmount, posSettings, taxAmount, isPendingPayment, getConnectionStatus, idCabangPengguna, tipeKatalog, validateStockAvailability, searchOfflineProducts]);
 
   // Handle offline transaction confirmation
   const handleOfflineConfirm = useCallback(async () => {
@@ -507,7 +513,8 @@ export function usePosCheckout({ cart, createTemporarySaleId, discountAmount, fi
         bayar: paymentAmount,
         kembalian: (isPendingPayment || pendingPaymentRef.current || paymentAmount < finalTotal) ? 0 : paymentAmount - finalTotal,
         sisa_pembayaran: (isPendingPayment || pendingPaymentRef.current || paymentAmount < finalTotal) ? finalTotal - paymentAmount : 0,
-        status_pembayaran: (isPendingPayment || pendingPaymentRef.current || paymentAmount < finalTotal) ? 'pending' : 'lunas'
+        status_pembayaran: (isPendingPayment || pendingPaymentRef.current || paymentAmount < finalTotal) ? 'pending' : 'lunas',
+        ...(dueDate && (isPendingPayment || pendingPaymentRef.current || paymentAmount < finalTotal) ? { tanggal_jatuh_tempo: dueDate } : {})
       };
 
       const items = cart.map(item => ({
@@ -562,6 +569,7 @@ export function usePosCheckout({ cart, createTemporarySaleId, discountAmount, fi
         setTaxAmount(0);
         setPaymentAmount(0);
         setIsPendingPayment(false);
+        setDueDate('');
       });
       
       perfMonitor.mark('complete');
@@ -573,7 +581,7 @@ export function usePosCheckout({ cart, createTemporarySaleId, discountAmount, fi
     } finally {
       setIsSubmitting(false);
     }
-  }, [cart, user, selectedCustomer, finalTotal, paymentAmount, selectedPaymentMethod, discountAmount, posSettings, taxAmount, isPendingPayment, showError, showSuccess, createTemporarySaleId, pendingPaymentRef, setAppliedVoucher, setCart, setIsPendingPayment, setIsSubmitting, setLastTransaction, setPaymentAmount, setSaleDataForPrint, setSelectedCustomer, setShowOfflineWarning, setShowPaymentModal, setShowPrintModal, setTaxAmount]);
+  }, [dueDate, setDueDate, cart, user, selectedCustomer, finalTotal, paymentAmount, selectedPaymentMethod, discountAmount, posSettings, taxAmount, isPendingPayment, showError, showSuccess, createTemporarySaleId, pendingPaymentRef, setAppliedVoucher, setCart, setIsPendingPayment, setIsSubmitting, setLastTransaction, setPaymentAmount, setSaleDataForPrint, setSelectedCustomer, setShowOfflineWarning, setShowPaymentModal, setShowPrintModal, setTaxAmount]);
 
   return { handleOfflineConfirm, handleSubmit };
 }

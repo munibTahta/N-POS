@@ -1,8 +1,9 @@
 import { formatCurrency } from '../../../utils/formatHelper';
 import PaymentMethodSelector from '../../../components/PaymentMethodSelector';
 import PaymentAmountInput from '../../../components/PaymentAmountInput';
+import DueDatePicker from './DueDatePicker';
 
-export function PaymentModal({ cart, change, finalTotal, handleSubmit, isOpeningCashDrawer, isPendingPayment, isSubmitting, isSyncLocked, paymentAmount, paymentAmountInputRef, paymentModalRef, pendingCheckboxRef, pendingPaymentRef, selectedPaymentMethod, setIsOpeningCashDrawer, setIsPendingPayment, setPaymentAmount, setSelectedPaymentMethod, showError, showPaymentModal, showSuccess, submitButtonRef }) {
+export function PaymentModal({ dueDate, setDueDate, cart, change, finalTotal, handleSubmit, isOpeningCashDrawer, isPendingPayment, isSubmitting, isSyncLocked, paymentAmount, paymentAmountInputRef, paymentModalRef, pendingCheckboxRef, pendingPaymentRef, selectedPaymentMethod, setIsOpeningCashDrawer, setIsPendingPayment, setPaymentAmount, setSelectedPaymentMethod, showError, showPaymentModal, showSuccess, submitButtonRef }) {
   return (
 showPaymentModal && (
         <div data-payment-modal ref={paymentModalRef} className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50 p-4">
@@ -109,6 +110,7 @@ showPaymentModal && (
                     </label>
                   </div>
                 )}
+                {paymentAmount < finalTotal && (isPendingPayment || paymentAmount > 0) && <DueDatePicker value={dueDate} onChange={setDueDate} />}
 
                   {/* Action Buttons - Same as main layout */}
                 <div className="pt-4 space-y-2">

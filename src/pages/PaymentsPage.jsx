@@ -9,6 +9,7 @@ import useSearchAndFilter from '../hooks/useSearchAndFilter';
 import { useNotifications } from '../hooks/useNotifications';
 import RelativeDate from '../components/common/RelativeDate';
 import AgeBadge from '../components/common/AgeBadge';
+import DueDateEditor from '../components/common/DueDateEditor';
 
 // SVG Icons
 const ViewIcon = ({ className = '' }) => (
@@ -197,8 +198,14 @@ const PaymentsPage = () => {
                               <div className="text-slate-600">
                                 <span className="font-medium">Tanggal:</span>{' '}
                                 <RelativeDate value={item.tanggal_pembayaran || item.created_at || item.tanggal || item.createdAt || item.updated_at || item.penjualan?.tanggal} />
-                                <AgeBadge value={item.penjualan?.tanggal || item.tanggal || item.created_at} className="ml-2" />
+                                <AgeBadge value={item.penjualan?.tanggal || item.tanggal || item.created_at} dueDate={item.penjualan?.tanggal_jatuh_tempo || item.tanggal_jatuh_tempo} className="ml-2" />
                               </div>
+                              <DueDateEditor
+                                className="md:col-span-2"
+                                saleId={item.id_penjualan || item.penjualan?.id_penjualan}
+                                current={item.penjualan?.tanggal_jatuh_tempo || item.tanggal_jatuh_tempo || ''}
+                                onSaved={() => fetchPending()}
+                              />
                               <div className="text-slate-600">
                                 <span className="font-medium">Metode:</span> {item.metodePembayaran?.nama_metode || item.nama_metode || 'N/A'}
                               </div>

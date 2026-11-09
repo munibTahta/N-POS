@@ -164,6 +164,8 @@ export function parseFlexibleDate(value) {
   if (typeof value === 'number') return Number.isFinite(value) ? fromEpoch(value) : null;
   if (typeof value === 'string') {
     if (/^\d+$/.test(value.trim())) return fromEpoch(parseInt(value, 10));
+    // Tanggal murni (tanpa jam) = hari LOKAL, bukan tengah malam UTC (di zona waktu negatif akan bergeser sehari).
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value.trim())) return parseISODate(value.trim());
     const d = new Date(value);
     return Number.isNaN(d.getTime()) ? null : d;
   }
@@ -182,4 +184,20 @@ export function ageInDays(value, now = new Date()) {
   const d = parseFlexibleDate(value);
   if (!d) return null;
   return Math.round((startOfDay(now) - startOfDay(d)) / 86400000);
+}
+
+/** 'YYYY-MM-DD' untuk `n` hari dari hari ini (lokal). */
+export const addDaysISO = (n, now = new Date()) => toISODate(addDays(startOfDay(now), n));
+
+/**
+ * Status jatuh tempo terhadap hari ini: { state: 'overdue' | 'today' | 'soon' | 'later', days }.
+ * `days` = jumlah hari terlewat (overdue) atau tersisa (soon/later). 'soon' = 1..soonDays hari lagi. Null bila tanggal tidak valid.
+ */
+export function dueStatus(due, now = new Date(), soonDays = 3) {
+  const d = parseFlexibleDate(due);
+  if (!d) return null;
+  const diff = Math.round((startOfDay(d) - startOfDay(now)) / 86400000); // >0 = masih ke depan
+  if (diff < 0) return { state: 'overdue', days: -diff };
+  if (diff === 0) return { state: 'today', days: 0 };
+  return { state: diff <= soonDays ? 'soon' : 'later', days: diff };
 }

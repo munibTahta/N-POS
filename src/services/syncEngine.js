@@ -584,6 +584,7 @@ class SyncEngine {
         pajak: saleData.pajak || 0,
         status_pembayaran: saleStatus,
         catatan: saleData.catatan || null,
+        ...(saleData.tanggal_jatuh_tempo ? { tanggal_jatuh_tempo: saleData.tanggal_jatuh_tempo } : {}),
         items: saleItems.map(item => ({
           id_produk: item.id_produk,
           jumlah: item.jumlah,
