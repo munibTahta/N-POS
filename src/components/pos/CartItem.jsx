@@ -48,18 +48,16 @@ const CartItem = React.memo(({ item, onUpdateQuantity, onRemove, stock, onSetMan
 
   return (
     <div className={`flex items-center justify-between p-3 border-b transition-all ${
-      isFocused 
-        ? 'bg-gray-800 text-white border-gray-700 shadow-md ring-2 ring-gray-600'
+      isFocused
+        ? 'bg-blue-50 border-blue-200 ring-2 ring-inset ring-blue-500/60'
         : 'bg-white hover:bg-gray-50'
     }`}>
       <div className="flex-1 min-w-0">
-        <h4 className={`font-medium text-sm sm:text-base truncate ${isFocused ? 'text-white' : 'text-gray-900'}`}>{item.nama_produk}</h4>
-        <p className={`text-xs sm:text-sm ${isFocused ? 'text-gray-200' : 'text-gray-600'}`}>
+        <h4 className={`font-medium text-sm sm:text-base truncate text-gray-900`}>{item.nama_produk}</h4>
+        <p className={`text-xs sm:text-sm text-gray-600`}>
           {formatCurrency(item.harga_satuan)} x {item.jumlah}
           {item.tipe_harga === 'grosir' && (
-            <span className={`ml-1 px-1 py-0.5 text-xs rounded ${
-              isFocused ? 'bg-gray-700 text-yellow-300' : 'bg-blue-100 text-blue-800'
-            }`}>GROSIR</span>
+            <span className="ml-1 px-1 py-0.5 text-xs rounded bg-blue-100 text-blue-800">GROSIR</span>
           )}
         </p>
         
@@ -69,11 +67,7 @@ const CartItem = React.memo(({ item, onUpdateQuantity, onRemove, stock, onSetMan
             <button
               onClick={() => onSetManualPricing(item.id_produk, 'auto')}
               className={`px-2 py-0.5 text-xs rounded transition-colors ${
-                isFocused
-                  ? manualPricingOverride !== 'eceran' && manualPricingOverride !== 'grosir'
-                    ? 'bg-gray-700 text-white border border-gray-500'
-                    : 'bg-gray-600 text-gray-300 border border-gray-500'
-                  : manualPricingOverride !== 'eceran' && manualPricingOverride !== 'grosir'
+                manualPricingOverride !== 'eceran' && manualPricingOverride !== 'grosir'
                     ? 'bg-blue-100 text-blue-800'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
@@ -84,11 +78,7 @@ const CartItem = React.memo(({ item, onUpdateQuantity, onRemove, stock, onSetMan
             <button
               onClick={() => onSetManualPricing(item.id_produk, 'eceran')}
               className={`px-2 py-0.5 text-xs rounded transition-colors ${
-                isFocused
-                  ? manualPricingOverride === 'eceran'
-                    ? 'bg-green-700 text-white border border-green-500'
-                    : 'bg-gray-600 text-gray-300 border border-gray-500'
-                  : manualPricingOverride === 'eceran'
+                manualPricingOverride === 'eceran'
                     ? 'bg-green-100 text-green-800'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
@@ -99,11 +89,7 @@ const CartItem = React.memo(({ item, onUpdateQuantity, onRemove, stock, onSetMan
             <button
               onClick={() => onSetManualPricing(item.id_produk, 'grosir')}
               className={`px-2 py-0.5 text-xs rounded transition-colors ${
-                isFocused
-                  ? manualPricingOverride === 'grosir'
-                    ? 'bg-purple-700 text-white border border-purple-500'
-                    : 'bg-gray-600 text-gray-300 border border-gray-500'
-                  : manualPricingOverride === 'grosir'
+                manualPricingOverride === 'grosir'
                     ? 'bg-purple-100 text-purple-800'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
@@ -114,7 +100,7 @@ const CartItem = React.memo(({ item, onUpdateQuantity, onRemove, stock, onSetMan
           </div>
         )}
         {stock !== undefined && item.jumlah > stock && (
-          <p className={`text-xs ${isFocused ? 'text-yellow-300' : 'text-red-600'}`}>Stok tidak mencukupi!</p>
+          <p className={`text-xs text-red-600`}>Stok tidak mencukupi!</p>
         )}
       </div>
 
@@ -122,9 +108,7 @@ const CartItem = React.memo(({ item, onUpdateQuantity, onRemove, stock, onSetMan
         <button
           onClick={() => handleQuantityChange(-1)}
           className={`w-6 h-6 sm:w-7 sm:h-7 rounded flex items-center justify-center text-xs sm:text-sm font-bold transition-colors touch-manipulation ${
-            isFocused 
-              ? 'bg-gray-700 hover:bg-gray-600 text-white border border-gray-600'
-              : 'bg-gray-200 hover:bg-gray-300'
+            'bg-gray-200 hover:bg-gray-300'
           }`}
           disabled={item.jumlah <= 1}
         >
@@ -137,9 +121,7 @@ const CartItem = React.memo(({ item, onUpdateQuantity, onRemove, stock, onSetMan
           onBlur={handleQuantityInputBlur}
           onKeyDown={handleQuantityInputKeyDown}
           className={`w-8 sm:w-9 text-center text-xs sm:text-sm font-medium rounded px-0.5 py-0.5 focus:outline-none ${
-            isFocused
-              ? 'bg-gray-700 text-white border border-gray-600 focus:ring-1 focus:ring-gray-400'
-              : 'border border-gray-300 focus:ring-1 focus:ring-blue-500'
+            'border border-gray-300 bg-white focus:ring-1 focus:ring-blue-500'
           }`}
           min="1"
           max={stock}
@@ -147,9 +129,7 @@ const CartItem = React.memo(({ item, onUpdateQuantity, onRemove, stock, onSetMan
         <button
           onClick={() => handleQuantityChange(1)}
           className={`w-6 h-6 sm:w-7 sm:h-7 rounded flex items-center justify-center text-xs sm:text-sm font-bold transition-colors touch-manipulation ${
-            isFocused 
-              ? 'bg-gray-700 hover:bg-gray-600 text-white border border-gray-600'
-              : 'bg-gray-200 hover:bg-gray-300'
+            'bg-gray-200 hover:bg-gray-300'
           }`}
           disabled={item.jumlah >= stock}
         >
@@ -158,13 +138,11 @@ const CartItem = React.memo(({ item, onUpdateQuantity, onRemove, stock, onSetMan
       </div>
 
       <div className="text-right ml-2 sm:ml-4">
-        <p className={`font-medium text-sm sm:text-base ${isFocused ? 'text-white' : 'text-gray-900'}`}>{formatCurrency(item.harga_satuan * item.jumlah)}</p>
+        <p className={`font-medium text-sm sm:text-base text-gray-900`}>{formatCurrency(item.harga_satuan * item.jumlah)}</p>
         <button
           onClick={() => onRemove(item.id_produk)}
           className={`text-xs sm:text-sm mt-1 touch-manipulation transition-colors ${
-            isFocused 
-              ? 'text-red-300 hover:text-red-100'
-              : 'text-red-500 hover:text-red-700'
+            'text-red-500 hover:text-red-700'
           }`}
         >
           Hapus
