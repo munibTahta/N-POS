@@ -53,6 +53,7 @@ React UI (src/)  ──REST──▶  Backend API (terpisah, VITE_API_BASE_URL)
 | `features/pos/hooks/usePosKeyboardShortcuts.js` | seluruh pintasan keyboard (F1-F12, Alt+, Esc, panah) | 685 |
 | `features/pos/hooks/usePosCheckout.js` | validasi stok, `handleSubmit`, `handleOfflineConfirm` | 581 |
 | `features/pos/hooks/useProductBrowse.js` | jelajah, pencarian ber-debounce, fallback offline, penjaga race | 233 |
+| `features/pos/hooks/usePosCartActions.js` | tambah ke keranjang, scan barcode, undo, harga grosir | 371 |
 | `pages/PosPage.jsx` | state, handler keranjang/scan, dan JSX | 2.625 |
 
 Pemindahan dilakukan dengan `scripts/extract-hook.cjs` (analisis scope, bukan salin-tempel) dan dibuktikan ekuivalen:
