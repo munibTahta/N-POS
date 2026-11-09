@@ -132,7 +132,7 @@ Urutan di bawah adalah urutan kerja yang disarankan; tiap fase bisa dikerjakan b
 - Rotasi sertifikat dan kunci QZ Tray; keluarkan kunci privat dari installer (tanda tangan permintaan cetak dilakukan backend).
 - `.gitattributes` dengan `* text=auto eol=lf` dan Prettier. Repo ini campuran CRLF/LF sehingga satu edit bisa menjadi diff satu file penuh (terjadi saat pekerjaan ini).
 - CI (GitHub Actions) pada setiap PR: `npm run lint`, `npm run build`, `npm run test:e2e`. Targetkan 0 error ESLint (sisa 23).
-- Backend: jalankan `backups/databases/drop-duplicate-indexes.sql`, set `NODE_ENV=production` di pm2, taruh backend di git.
+- Backend: (selesai) indeks duplikat dihapus dan backend sudah di git lokal; (sisa) set `NODE_ENV=production` di pm2, push ke remote privat, ganti rahasia yang pernah tertulis di berkas contoh.
 
 ### Fase 1: struktur dan kemudahan perawatan (1-2 bulan)
 - **Pecah `PosPage.jsx` (±4.000 baris)** menjadi hook dan komponen: `useProductBrowse` (jelajah, debounce, fallback offline), `useCart`, `usePayment`, `useBarcodeScanner`, `useCatalogGuard`; panel `ProductPanel`, `CartPanel`, `PaymentPanel`. Target < 400 baris per file.
@@ -206,3 +206,10 @@ Urutan di bawah adalah urutan kerja yang disarankan; tiap fase bisa dikerjakan b
 - Kasir: pemilih jatuh tempo (+7/+14/+30 hari atau tanggal kustom) muncul bila "Pembayaran Nanti" dicentang atau pembayaran baru sebagian. Online dikirim ke server; offline ikut disimpan di data transaksi dan diteruskan saat sinkronisasi (`syncEngine`).
 - Tampilan: `AgeBadge` memakai jatuh tempo bila ada ("Lewat 3 hari" merah, "Jatuh tempo hari ini/2 hari lagi" kuning, "Jatuh tempo 12 Okt" abu); tanpa jatuh tempo kembali ke usia piutang. Riwayat Penjualan punya filter "Lewat jatuh tempo"; halaman Pembayaran Pending punya tombol "Atur jatuh tempo".
 - Migrasi skema dilakukan manual (backend tidak memakai `sync()`): `ALTER TABLE penjualan ADD COLUMN tanggal_jatuh_tempo DATE NULL AFTER sisa_pembayaran` + indeks `idx_penjualan_jatuh_tempo`. Cadangan skema ada di `/home/nusasoft-toko/backups/due-date-*`.
+
+
+## Backend di git
+
+- Repo lokal di `/home/nusasoft-toko/htdocs/toko.nusasoft.my.id` (cabang `main`, belum ada remote). Berisi `README`, `.gitignore`, tes unit (`npm test`), pemeriksa sintaks (`npm run check`), dan workflow CI GitHub Actions.
+- Rahasia tidak ikut: `.env`, `config/config.json`, unggahan, arsip. Berkas contoh (`.env.example`, `config/config.example.json`) memakai placeholder.
+- Sebelum dibersihkan, `.env.example`, `API_DOCUMENTATION.md`, `config/config.json`, dan tiga skrip `test-*.js` memuat nilai ASLI (password DB, JWT secret, API key). Karena sudah terlihat di berkas-berkas itu, **ganti** rahasia tersebut (lihat daftar tindakan di laporan).
