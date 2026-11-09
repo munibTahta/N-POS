@@ -44,6 +44,24 @@ React UI (src/)  ──REST──▶  Backend API (terpisah, VITE_API_BASE_URL)
 - Item flex dan input di dalam flex wajib `min-w-0` agar tidak mendorong panel lain keluar layar (penyebab bug overlap dan tombol Validasi voucher).
 - Font Inter dimuat lokal (`@fontsource-variable/inter`) agar tampil benar di Electron offline. Angka harga memakai `tabular-nums`.
 
+### Struktur kode kasir (hasil pemecahan `PosPage.jsx`)
+
+`PosPage.jsx` semula 4.091 baris dalam satu fungsi. Logikanya mulai dipindah ke `src/features/pos/`:
+
+| Berkas | Isi | Baris |
+|---|---|---|
+| `features/pos/hooks/usePosKeyboardShortcuts.js` | seluruh pintasan keyboard (F1-F12, Alt+, Esc, panah) | 685 |
+| `features/pos/hooks/usePosCheckout.js` | validasi stok, `handleSubmit`, `handleOfflineConfirm` | 581 |
+| `features/pos/hooks/useProductBrowse.js` | jelajah, pencarian ber-debounce, fallback offline, penjaga race | 233 |
+| `pages/PosPage.jsx` | state, handler keranjang/scan, dan JSX | 2.625 |
+
+Pemindahan dilakukan dengan `scripts/extract-hook.cjs` (analisis scope, bukan salin-tempel) dan dibuktikan ekuivalen:
+tes yang sama harus lolos pada `PosPage.jsx` sebelum dan sesudah ekstraksi (`e2e/pos-shortcuts`, `pos-checkout`, `pos-search`, `pos-catalog`, `pos-resilience`).
+Berikutnya: `handleAddToCart`/`handleBarcodeScan` (`useCart`, `useBarcodeScanner`), efek inisialisasi data, lalu memecah JSX
+menjadi `ProductPanel`, `CartPanel`, `PaymentPanel`.
+Catatan: hook menerima banyak parameter karena state masih berada di `PosPage`; tahap lanjut adalah memindahkan state ke hook
+yang memilikinya (mis. `useCart`) sehingga parameter menyusut.
+
 ## 3b. Katalog produk multi-cabang
 
 | Tipe cabang | Katalog yang dipakai | Kolom penanda |
@@ -84,10 +102,10 @@ dan pemulihan dari error server produk. Alur transaksi lengkap (keranjang, bayar
 ## 7. Utang teknis yang diketahui
 
 - `electron/main.cjs` sangat besar (3500+ baris) dan memuat skema DB, IPC, printer, dan jendela sekaligus. Pecah per modul.
-- `PosPage.jsx` ±4000 baris. Pecah menjadi hook (`useProductBrowse`, `useCart`, `usePayment`) dan komponen panel.
+- `PosPage.jsx` masih 2.625 baris (semula 4.091). Lanjutkan pemecahan seperti di bagian 3.
 - Skema SQLite ganda (lihat bagian 4). Satukan dengan migrasi berversi (`PRAGMA user_version`).
-- `scripts/remove-console.cjs` (dijalankan sebelum build desktop) mengubah `console.log` menjadi `void 0 && (...)`. Sisa yang ada sudah dihapus; ganti skrip ini dengan `esbuild.drop: ['console']` di Vite.
-- 23 error ESLint tersisa (20 `no-unused-vars` berupa penghitung yang hanya ditulis dan stub logger, 3 `set-state-in-effect`) dan 9 peringatan `exhaustive-deps`.
+- (Selesai) `scripts/remove-console.cjs` dihapus; build produksi membuang `console.log/debug/info` lewat `esbuild.pure` di Vite, sedangkan `warn`/`error` tetap ada.
+- ESLint 0 error; tersisa 10 peringatan (`exhaustive-deps`, 1 `only-export-components`). CI (`.github/workflows/ci.yml`) menjalankan lint, build, dan e2e.
 - `FinancialReportsPageNew.jsx` tidak dipakai rute mana pun.
 - `npm audit`: 10 kerentanan high (rantai `exceljs` → `tmp`).
 
