@@ -20,6 +20,9 @@ import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import DropdownActionMenu from '../components/common/DropdownActionMenu';
 import HeaderActionButton from '../components/HeaderActionButton';
 import { Printer, CheckCircle, XCircle, RotateCcw, Download } from 'lucide-react';
+import DateRangeFilter from '../components/common/DateRangeFilter';
+import RelativeDate from '../components/common/RelativeDate';
+import { isDateInRange, todayISO } from '../utils/dateRange';
 
 const SalesListPage = () => {
   const { user, canVoidSales } = usePermissions();
@@ -47,6 +50,8 @@ const SalesListPage = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterBranch, setFilterBranch] = useState('all');
   const [filterPaymentMethod, setFilterPaymentMethod] = useState('all');
+  const [dateStart, setDateStart] = useState('');
+  const [dateEnd, setDateEnd] = useState('');
 
   const navigate = useNavigate();
 
@@ -119,8 +124,11 @@ const SalesListPage = () => {
       .join(', ');
   }, []);
 
+  // Rentang tanggal (hari lokal, inklusif) diterapkan lebih dulu; sisanya oleh useSearchAndFilter.
+  const salesInRange = useMemo(() => sales.filter((s) => isDateInRange(s.tanggal, dateStart, dateEnd)), [sales, dateStart, dateEnd]);
+
   // Apply search and filter logic
-  const { filteredItems: filteredSales } = useSearchAndFilter(sales, {
+  const { filteredItems: filteredSales } = useSearchAndFilter(salesInRange, {
     searchTerm: searchQuery,
     searchKeys: ['kode_transaksi', 'user.nama_lengkap', 'User.nama_lengkap', 'Cabang.nama_cabang', 'MetodePembayaran.nama_metode', 'metode_pembayaran'],
     filters: {
@@ -228,7 +236,7 @@ const SalesListPage = () => {
           Kembali: Number(sale.kembali || sale.kembalian || 0),
         };
       });
-      exportToExcel(rows, `Riwayat_Penjualan_${new Date().toISOString().slice(0,10)}.xlsx`);
+      exportToExcel(rows, `Riwayat_Penjualan_${todayISO()}.xlsx`);
     } catch (_err) {
       showError('Gagal export daftar penjualan');
       showError('Gagal mengekspor riwayat penjualan. Cek console untuk detail.');
@@ -432,17 +440,26 @@ const SalesListPage = () => {
           {/* Search & Filter Section */}
           <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
             <div className="p-6">
+              <DateRangeFilter
+                compact
+                className="mb-3"
+                start={dateStart}
+                end={dateEnd}
+                onChange={({ start, end }) => { setDateStart(start); setDateEnd(end); }}
+              />
               <SearchFilterBar
                 searchTerm={searchQuery}
                 onSearchChange={setSearchQuery}
                 onClearSearch={() => setSearchQuery('')}
                 onFilterToggle={() => setShowFilters(prev => !prev)}
                 isFilterActive={showFilters}
-                hasActiveFilters={filterStatus !== 'all' || filterBranch !== 'all' || filterPaymentMethod !== 'all'}
+                hasActiveFilters={filterStatus !== 'all' || filterBranch !== 'all' || filterPaymentMethod !== 'all' || Boolean(dateStart || dateEnd)}
                 onClearFilters={() => {
                   setFilterStatus('all');
                   setFilterBranch('all');
                   setFilterPaymentMethod('all');
+                  setDateStart('');
+                  setDateEnd('');
                   setSearchQuery('');
                 }}
                 searchPlaceholder="Cari kode transaksi..."
@@ -553,7 +570,7 @@ const SalesListPage = () => {
                           {sale.kode_transaksi}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(sale.tanggal).toLocaleDateString('id-ID')}
+                          <RelativeDate value={sale.tanggal} />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {sale.Cabang?.nama_cabang || '-'}

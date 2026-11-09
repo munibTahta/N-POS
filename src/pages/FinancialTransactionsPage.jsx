@@ -15,11 +15,12 @@ import {
 import { extractArray } from '../utils/apiResponseHelper';
 import { exportToExcel } from '../utils/exportHelper';
 import { toast } from 'react-toastify';
+import { todayISO } from '../utils/dateRange';
 
 const INITIAL_LINE = { id_akun: '', debit: 0, kredit: 0, keterangan: '' };
 
 const getInitialTransactionForm = () => ({
-  tanggal: new Date().toISOString().split('T')[0],
+  tanggal: todayISO(),
   id_cabang: '',
   jenis_transaksi: 'lainnya',
   keterangan: '',
@@ -105,7 +106,7 @@ const FinancialTransactionsPage = () => {
     if (transaction) {
       setEditingTransaction(transaction);
       setFormState({
-        tanggal: transaction.tanggal ? transaction.tanggal.split('T')[0] : new Date().toISOString().split('T')[0],
+        tanggal: transaction.tanggal ? transaction.tanggal.split('T')[0] : todayISO(),
         id_cabang: transaction.id_cabang || '',
         jenis_transaksi: transaction.jenis_transaksi || 'lainnya',
         keterangan: transaction.keterangan || '',
@@ -251,7 +252,7 @@ const FinancialTransactionsPage = () => {
       Debit: Number(row.total_debit || 0),
       Kredit: Number(row.total_kredit || 0)
     }));
-    exportToExcel(rows, `Transaksi_Keuangan_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    exportToExcel(rows, `Transaksi_Keuangan_${todayISO()}.xlsx`);
   };
 
   const transactionColumns = [

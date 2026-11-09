@@ -13,6 +13,8 @@ import { AlertTriangle, CheckCircle, CreditCard, Trophy, Star, Package } from 'l
 
 import { exportToExcel } from '../utils/exportHelper';
 import { Bar, Pie } from 'react-chartjs-2';
+import DateRangeFilter from '../components/common/DateRangeFilter';
+import { toISODate, todayISO } from '../utils/dateRange';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -253,8 +255,9 @@ const ReportsPage = () => {
     }
     
     if (start && end) {
-      setStartDate(start.toISOString().split('T')[0]);
-      setEndDate(end.toISOString().split('T')[0]);
+      // toISODate (lokal), bukan toISOString (UTC): di WIB, tengah malam lokal jatuh pada tanggal UTC kemarin.
+      setStartDate(toISODate(start));
+      setEndDate(toISODate(end));
     }
   }, [granularity]);
 
@@ -763,7 +766,7 @@ const ReportsPage = () => {
           Kembali: Number(s.kembali || s.kembalian || 0),
         };
       });
-      exportToExcel(rows, `Laporan_Penjualan_${new Date().toISOString().slice(0,10)}.xlsx`);
+      exportToExcel(rows, `Laporan_Penjualan_${todayISO()}.xlsx`);
     } catch (err) {
       console.error('Export error:', err);
       alert('Gagal mengekspor data ke Excel. Cek console untuk detail.');
@@ -791,7 +794,7 @@ const ReportsPage = () => {
   const handleExportSummary = () => {
     try {
       const rows = getAggregatedRows();
-      exportToExcel(rows, `Laporan_Ringkasan_${granularity}_${new Date().toISOString().slice(0,10)}.xlsx`);
+      exportToExcel(rows, `Laporan_Ringkasan_${granularity}_${todayISO()}.xlsx`);
     } catch (err) {
       console.error('Export ringkasan error:', err);
       alert('Gagal mengekspor ringkasan. Lihat console untuk detail.');
@@ -809,12 +812,12 @@ const ReportsPage = () => {
       // If server provided a simple series [{label, value}] convert to rows
       if (serverReport?.series && Array.isArray(serverReport.series)) {
         const mapped = serverReport.series.map(s => ({ Periode: s.label ?? s.periode, Total: Number(s.value ?? s.total ?? 0) }));
-        exportToExcel(mapped, `Laporan_Server_${new Date().toISOString().slice(0,10)}.xlsx`);
+        exportToExcel(mapped, `Laporan_Server_${todayISO()}.xlsx`);
         return;
       }
 
       // Otherwise export the rows/data directly
-      exportToExcel(serverRows, `Laporan_Server_${new Date().toISOString().slice(0,10)}.xlsx`);
+      exportToExcel(serverRows, `Laporan_Server_${todayISO()}.xlsx`);
     } catch (err) {
       console.error('Export server report error:', err);
       alert('Gagal mengekspor laporan server. Lihat console untuk detail.');
@@ -879,14 +882,16 @@ const ReportsPage = () => {
         />
         <FilterPanel visible={showFilterPanel} className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <DateRangeFilter
+              className="md:col-span-2 lg:col-span-4"
+              start={startDate}
+              end={endDate}
+              onChange={({ start, end }) => { setStartDate(start); setEndDate(end); }}
+            />
             <div className="flex items-center gap-2">
-              <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Dari</label>
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="p-2 border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-xl flex-1 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Jam</label>
               <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} title="Jam mulai" className="p-2 border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-xl w-28 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Sampai</label>
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="p-2 border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-xl flex-1 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              <span className="text-slate-500">-</span>
               <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} title="Jam selesai" className="p-2 border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-xl w-28 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
             </div>
             <div className="flex items-center gap-2">

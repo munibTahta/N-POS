@@ -7,6 +7,7 @@ import { logger } from '../utils/logger';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import HeaderActionButton from '../components/HeaderActionButton';
 import { exportToExcel } from '../utils/exportHelper';
+import { todayISO } from '../utils/dateRange';
 
 const StockTransferPage = () => {
   const navigate = useNavigate();
@@ -104,7 +105,7 @@ const StockTransferPage = () => {
         'Jumlah Cabang': Object.keys(info.cabang || {}).length
       }));
 
-      const filename = `Data_Stok_Transfer_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const filename = `Data_Stok_Transfer_${todayISO()}.xlsx`;
       await exportToExcel(exportData, filename);
       toast.success('Data stok berhasil diekspor ke Excel');
     } catch (error) {

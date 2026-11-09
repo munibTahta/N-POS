@@ -9,6 +9,7 @@ import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import ResponsiveTable from '../components/common/ResponsiveTable';
 import HeaderActionButton from '../components/HeaderActionButton';
 import { Eye, Printer, Plus, History } from 'lucide-react';
+import RelativeDate from '../components/common/RelativeDate';
 
 const PurchasePage = () => {
   const { storeInfo } = useSettings();
@@ -330,7 +331,7 @@ const PurchasePage = () => {
             {
               key: 'tanggal',
               header: 'Tanggal',
-              render: (purchase) => new Date(purchase.tanggal || purchase.created_at || purchase.createdAt).toLocaleDateString('id-ID')
+              render: (purchase) => <RelativeDate value={purchase.tanggal || purchase.created_at || purchase.createdAt} />
             },
             {
               key: 'supplier',

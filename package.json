@@ -20,6 +20,7 @@
     "lint": "eslint . --ignore-pattern .history",
     "preview": "vite preview",
     "test:electron": "node --test electron/__tests__/*.test.cjs",
+    "test:unit": "node --test src/utils/__tests__/*.test.mjs electron/__tests__/*.test.cjs",
     "smoke:electron": "xvfb-run -a node e2e-electron/smoke.cjs",
     "test:e2e": "playwright test"
   },

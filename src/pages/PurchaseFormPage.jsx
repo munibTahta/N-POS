@@ -5,6 +5,7 @@ import { UniversalPrintModal, PRINT_TYPES } from '../components/UniversalPrintMo
 import { formatCurrency } from '../utils/formatHelper';
 import { useSettings } from '../context/SettingsContext';
 import { Trash2, X, Info, Lightbulb, Plus, Loader } from 'lucide-react';
+import { todayISO } from '../utils/dateRange';
 
 const PurchaseFormPage = () => {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ const PurchaseFormPage = () => {
   const [header, setHeader] = useState(() => ({
     kode_pembelian: `PO-${Date.now()}`,
     id_supplier: '',
-    tanggal: new Date().toISOString().slice(0, 10),
+    tanggal: todayISO(),
     destination: 'gudang',
     id_cabang: null,
   }));

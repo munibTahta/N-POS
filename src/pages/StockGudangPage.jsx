@@ -12,6 +12,7 @@ import { logger } from '../utils/logger';
 import { ArrowUpDown, ArrowDownUp, Edit, Clock, Download } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { todayISO } from '../utils/dateRange';
 
 const StockAdjustmentModal = ({ item, onClose, onAdjust, isSubmitting, categoryMap }) => {
   logger.info('StockAdjustmentModal item:', item);
@@ -423,7 +424,7 @@ const StockGudangPage = () => {
       // Generate and save file
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const filename = `Stok-Gudang-${new Date().toISOString().split('T')[0]}.xlsx`;
+      const filename = `Stok-Gudang-${todayISO()}.xlsx`;
       saveAs(blob, filename);
 
       showSuccess(`Excel berhasil diekspor (${dataToExport.length} data)`);

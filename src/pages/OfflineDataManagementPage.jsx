@@ -7,6 +7,7 @@ import HeaderActionButton from '../components/HeaderActionButton';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import { useNotifications } from '../hooks/useNotifications';
 import { useAuth } from '../hooks/useAuth';
+import { todayISO } from '../utils/dateRange';
 
 const OfflineDataManagementPage = () => {
   const { user } = useAuth();
@@ -383,7 +384,7 @@ const OfflineDataManagementPage = () => {
       const url = URL.createObjectURL(dataBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `offline-backup-${new Date().toISOString().split('T')[0]}.json`;
+      link.download = `offline-backup-${todayISO()}.json`;
       link.click();
       URL.revokeObjectURL(url);
       success('Data offline berhasil di-export');

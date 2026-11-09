@@ -185,3 +185,11 @@ Urutan di bawah adalah urutan kerja yang disarankan; tiap fase bisa dikerjakan b
 ## CORS backend
 
 - Daftar asal tepercaya di `app.js`; tambah lewat env `CORS_ORIGINS` (pisahkan koma). Di luar produksi (`NODE_ENV` bukan `production`) semua `localhost`/`127.0.0.1` diizinkan. Asal di luar daftar membuat browser melaporkan "Network Error".
+
+## Tanggal: filter rentang cepat dan tanggal relatif
+
+- `src/utils/dateRange.js` (murni, zona waktu LOKAL, diuji di 4 zona waktu): preset rentang (Hari ini, Kemarin, 7/30 hari terakhir, Minggu ini [Senin-Minggu], Bulan ini/lalu, Tahun ini, Semua), `isDateInRange` (hari lokal, inklusif), `formatRelativeDate` ("Baru saja", "20 menit lalu", "Hari ini, 14.30", "Kemarin", "3 hari lalu", lalu "12 Okt"), `todayISO()`.
+- `components/common/DateRangeFilter.jsx`: chip cepat + input Dari/Sampai (awal > akhir otomatis ditukar); `compact` = hanya chip + tombol "Kustom". `components/common/RelativeDate.jsx`: `<time>` dengan tooltip tanggal lengkap, menyegarkan tiap menit bila baru.
+- Dipakai di: Riwayat Penjualan (compact, di atas pencarian), Laporan Penjualan, Riwayat Pembelian, Retur, Riwayat Stok, Laporan Keuangan (bawaan Bulan ini). Tanggal relatif di tabel penjualan, pembelian, retur, dan riwayat stok; ekspor Excel tetap tanggal absolut.
+- **Jangan** memakai `new Date().toISOString().slice(0, 10)` untuk tanggal: itu UTC dan di WIB (00.00-07.00) hasilnya kemarin. Aturan ESLint `no-restricted-syntax` melarangnya; pakai `todayISO()`/`toISODate()`.
+- Bug yang ikut diperbaiki: granularitas harian di Laporan Penjualan menampilkan kemarin (UTC), filter Riwayat Pembelian melewatkan transaksi dini hari di hari awal, filter Retur memotong seluruh hari terakhir, dan Laporan Keuangan tidak punya kontrol periode yang tampil.

@@ -7,6 +7,7 @@ import ActionButton from '../components/ActionButton';
 import HeaderActionButton from '../components/HeaderActionButton';
 import { exportToExcel } from '../utils/exportHelper';
 import { ArrowLeft, Trash2, Plus, X, Loader, Download, Check } from 'lucide-react';
+import { todayISO } from '../utils/dateRange';
 
 const StockDistributionPage = () => {
   const navigate = useNavigate();
@@ -43,7 +44,7 @@ const StockDistributionPage = () => {
         'Jumlah Cabang': Object.keys(info.cabang || {}).length
       }));
 
-      const filename = `Data_Stok_Distribusi_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const filename = `Data_Stok_Distribusi_${todayISO()}.xlsx`;
       await exportToExcel(exportData, filename);
       setSuccess('Data stok berhasil diekspor ke Excel');
       setTimeout(() => setSuccess(''), 3000);

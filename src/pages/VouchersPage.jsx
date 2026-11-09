@@ -7,6 +7,7 @@ import HeaderActionButton from '../components/HeaderActionButton';
 import DataTable from '../components/DataTable';
 import ActionButton from '../components/ActionButton';
 import { Plus, Edit, Trash2 } from 'lucide-react';
+import { toDateInputValue } from '../utils/dateRange';
 
 const VouchersPage = () => {
   const [vouchers, setVouchers] = useState([]);
@@ -71,8 +72,8 @@ const VouchersPage = () => {
       // Format dates for API
       const submitData = {
         ...formData,
-        tanggal_mulai: formData.tanggal_mulai ? new Date(formData.tanggal_mulai).toISOString().split('T')[0] : null,
-        tanggal_berakhir: formData.tanggal_berakhir ? new Date(formData.tanggal_berakhir).toISOString().split('T')[0] : null
+        tanggal_mulai: toDateInputValue(formData.tanggal_mulai) || null,
+        tanggal_berakhir: toDateInputValue(formData.tanggal_berakhir) || null
       };
 
       if (editingVoucher) {

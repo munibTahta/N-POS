@@ -20,6 +20,8 @@ import { extractArray, extractData } from '../utils/apiResponseHelper';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import { exportToExcel } from '../utils/exportHelper';
 import { toast } from 'react-toastify';
+import DateRangeFilter from '../components/common/DateRangeFilter';
+import { getPresetRange, todayISO } from '../utils/dateRange';
 
 const FinancialReportsPage = () => {
   // Tab & Report State
@@ -30,8 +32,9 @@ const FinancialReportsPage = () => {
 
   // Search & Filter State
   const [selectedBranch, setSelectedBranch] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  // Bawaan: bulan berjalan (laporan keuangan tanpa periode tidak bermakna); pilih "Semua" untuk seluruh waktu.
+  const [startDate, setStartDate] = useState(() => getPresetRange('thisMonth').start);
+  const [endDate, setEndDate] = useState(() => getPresetRange('thisMonth').end);
   const [selectedAccount, setSelectedAccount] = useState('');
   const [selectedRekening, setSelectedRekening] = useState('');
 
@@ -54,7 +57,7 @@ const FinancialReportsPage = () => {
 
   function getInitialJournalForm() {
     return {
-      tanggal: new Date().toISOString().split('T')[0],
+      tanggal: todayISO(),
       keterangan: '',
       id_cabang: '',
       jenis_transaksi: 'lainnya',
@@ -332,7 +335,7 @@ const FinancialReportsPage = () => {
     if (journal) {
       setEditingJournal(journal);
       setJournalForm({
-        tanggal: journal.tanggal?.split('T')[0] || new Date().toISOString().split('T')[0],
+        tanggal: journal.tanggal?.split('T')[0] || todayISO(),
         keterangan: journal.keterangan || '',
         id_cabang: journal.id_cabang || '',
         jenis_transaksi: journal.jenis_transaksi || 'lainnya',
@@ -421,7 +424,7 @@ const FinancialReportsPage = () => {
 
     try {
       let exportData = [];
-      const fileName = `Laporan_${activeTab}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      const fileName = `Laporan_${activeTab}_${todayISO()}.xlsx`;
 
       switch (activeTab) {
         case 'buku-besar':
@@ -969,6 +972,17 @@ const FinancialReportsPage = () => {
               );
             })}
           </nav>
+        </div>
+
+        {/* Periode laporan */}
+        <div className="mb-6">
+          <DateRangeFilter
+            label="Periode laporan"
+            presets={['today', 'yesterday', 'last7', 'last30', 'thisMonth', 'lastMonth', 'thisYear', 'all']}
+            start={startDate}
+            end={endDate}
+            onChange={({ start, end }) => { setStartDate(start); setEndDate(end); setCurrentPage(1); }}
+          />
         </div>
 
         {/* Loading State */}

@@ -9,6 +9,7 @@ import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import HeaderActionButton from '../components/HeaderActionButton';
 import { exportToExcel } from '../utils/exportHelper';
+import { todayISO } from '../utils/dateRange';
 
 const StockViewKasirPage = () => {
   const navigate = useNavigate();
@@ -69,7 +70,7 @@ const StockViewKasirPage = () => {
       });
 
       const branchName = branchStock[0]?.Cabang?.nama_cabang || user?.Cabang?.nama_cabang || 'N/A';
-      const filename = `Stok_Cabang_${branchName}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const filename = `Stok_Cabang_${branchName}_${todayISO()}.xlsx`;
       await exportToExcel(exportData, filename);
       showSuccess('Data berhasil diekspor ke Excel');
     } catch (err) {

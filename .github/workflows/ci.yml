@@ -31,8 +31,8 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Unit test Electron (pemformat struk)
-        run: npm run test:electron
+      - name: Unit test (tanggal, pemformat struk)
+        run: npm run test:unit
 
       - name: Build
         run: npm run build

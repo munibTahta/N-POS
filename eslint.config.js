@@ -15,6 +15,11 @@ export default [
       ...js.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': 'warn',
+      // toISOString() memakai UTC: di WIB dini hari (00.00-07.00) tanggalnya mundur sehari. Pakai todayISO()/toISODate() dari utils/dateRange.
+      'no-restricted-syntax': ['error', {
+        selector: "CallExpression[callee.property.name=/^(slice|split|substring)$/][callee.object.callee.property.name='toISOString']",
+        message: 'Jangan ambil tanggal dari toISOString() (UTC, bisa mundur sehari di WIB). Gunakan todayISO()/toISODate() dari src/utils/dateRange.',
+      }],
       'no-unused-vars': ['error', { 
         varsIgnorePattern: '^[A-Z_]',
         argsIgnorePattern: '^_',

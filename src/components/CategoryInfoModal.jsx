@@ -4,6 +4,7 @@ import { getCategories } from '../services/api';
 import { useNotifications } from '../hooks/useNotifications';
 import { exportToExcel } from '../utils/exportHelper';
 import { handleError } from '../utils/errorHandler';
+import { todayISO } from '../utils/dateRange';
 
 const CategoryInfoModal = ({ isOpen, onClose }) => {
   const { error: showError, success: showSuccess } = useNotifications();
@@ -60,7 +61,7 @@ const CategoryInfoModal = ({ isOpen, onClose }) => {
         'Diubah': category.updated_at ? new Date(category.updated_at).toLocaleString('id-ID') : ''
       }));
 
-      await exportToExcel(rows, `Kategori_Produk_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      await exportToExcel(rows, `Kategori_Produk_${todayISO()}.xlsx`);
       showSuccess('Data kategori berhasil didownload ke Excel');
     } catch (err) {
       console.error('Failed to export categories:', err);

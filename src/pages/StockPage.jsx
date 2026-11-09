@@ -11,6 +11,7 @@ import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import HeaderActionButton from '../components/HeaderActionButton';
 import { MapPin, Warehouse, Pencil, Clock, AlertCircle, AlertTriangle, Info, Download, ArrowDownUp, Share2 } from 'lucide-react';
+import { todayISO } from '../utils/dateRange';
 
 const StockAdjustmentModal = ({ item, onClose, onAdjust }) => {
   const { success: _showSuccess, error: _showError } = useNotifications();
@@ -201,7 +202,7 @@ const StockPage = () => {
         }
       });
 
-      const filename = `Laporan_Stok_${activeTab === 'cabang' ? 'Cabang' : 'Gudang'}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const filename = `Laporan_Stok_${activeTab === 'cabang' ? 'Cabang' : 'Gudang'}_${todayISO()}.xlsx`;
       await exportToExcel(exportData, filename);
       showSuccess('Data berhasil diekspor ke Excel');
     } catch (error) {
