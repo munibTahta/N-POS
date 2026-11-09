@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { toDateInputValue, toISODate, todayISO, parseISODate, getPresetRange, detectPreset, normalizeRange, isDateInRange, rangeDays, formatRelativeDate, formatShortDate, formatFullDate } from '../dateRange.js';
+import { parseFlexibleDate, formatDateTimeID, ageInDays, toDateInputValue, toISODate, todayISO, parseISODate, getPresetRange, detectPreset, normalizeRange, isDateInRange, rangeDays, formatRelativeDate, formatShortDate, formatFullDate } from '../dateRange.js';
 
 // Rabu, 14 Okt 2026 15:30 waktu lokal
 const NOW = new Date(2026, 9, 14, 15, 30);
@@ -85,4 +85,24 @@ test('toDateInputValue: pertahankan YYYY-MM-DD, ubah datetime ke hari lokal, tol
   assert.equal(toDateInputValue('bukan'), '');
   assert.equal(toDateInputValue(''), '');
   assert.equal(toDateInputValue(null), '');
+});
+
+test('parseFlexibleDate: ISO, epoch detik/milidetik, string angka, tidak valid', () => {
+  assert.equal(parseFlexibleDate(1760454600).getTime(), 1760454600000);
+  assert.equal(parseFlexibleDate(1760454600000).getTime(), 1760454600000);
+  assert.equal(parseFlexibleDate('1760454600').getTime(), 1760454600000);
+  assert.equal(parseFlexibleDate('2026-10-14T08:00:00.000Z').getTime(), Date.UTC(2026, 9, 14, 8));
+  assert.equal(parseFlexibleDate(null), null);
+  assert.equal(parseFlexibleDate(''), null);
+  assert.equal(parseFlexibleDate('bukan tanggal'), null);
+  assert.equal(parseFlexibleDate(NaN), null);
+});
+
+test('formatDateTimeID dan ageInDays', () => {
+  assert.equal(formatDateTimeID('x'), 'Tanggal tidak valid');
+  assert.match(formatDateTimeID(new Date(2026, 9, 14, 15, 30, 5)), /14\/10\/2026.*15[.:]30[.:]05/);
+  assert.equal(ageInDays(new Date(2026, 9, 14, 1, 0), NOW), 0);
+  assert.equal(ageInDays(new Date(2026, 9, 7, 23, 0), NOW), 7);
+  assert.equal(ageInDays(null, NOW), null);
+  assert.equal(ageInDays(new Date(2026, 9, 20), NOW), -6);
 });

@@ -193,3 +193,9 @@ Urutan di bawah adalah urutan kerja yang disarankan; tiap fase bisa dikerjakan b
 - Dipakai di: Riwayat Penjualan (compact, di atas pencarian), Laporan Penjualan, Riwayat Pembelian, Retur, Riwayat Stok, Laporan Keuangan (bawaan Bulan ini). Tanggal relatif di tabel penjualan, pembelian, retur, dan riwayat stok; ekspor Excel tetap tanggal absolut.
 - **Jangan** memakai `new Date().toISOString().slice(0, 10)` untuk tanggal: itu UTC dan di WIB (00.00-07.00) hasilnya kemarin. Aturan ESLint `no-restricted-syntax` melarangnya; pakai `todayISO()`/`toISODate()`.
 - Bug yang ikut diperbaiki: granularitas harian di Laporan Penjualan menampilkan kemarin (UTC), filter Riwayat Pembelian melewatkan transaksi dini hari di hari awal, filter Retur memotong seluruh hari terakhir, dan Laporan Keuangan tidak punya kontrol periode yang tampil.
+
+### Lanjutan filter tanggal
+
+- Bawaan periode per halaman: Riwayat Penjualan = Hari ini; Laporan Keuangan dan Transaksi Keuangan = Bulan ini; Audit Trail dan Log Aktivitas = 7 hari terakhir (log bisa sangat banyak). Semua halaman punya chip "Semua".
+- `parseFlexibleDate` / `formatDateTimeID` (utils/dateRange.js) menggantikan dua salinan parser tanggal di halaman log (mendukung ISO, epoch detik/milidetik, string angka).
+- `AgeBadge`: usia piutang pada penjualan Pending (abu < 3 hari, kuning >= 3, merah >= 7). Data belum punya kolom jatuh tempo; usia dihitung dari tanggal transaksi. Bila kolom jatuh tempo ditambahkan di backend, ganti sumbernya.

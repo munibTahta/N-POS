@@ -16,6 +16,9 @@ import { extractArray } from '../utils/apiResponseHelper';
 import { exportToExcel } from '../utils/exportHelper';
 import { toast } from 'react-toastify';
 import { todayISO } from '../utils/dateRange';
+import DateRangeFilter from '../components/common/DateRangeFilter';
+import RelativeDate from '../components/common/RelativeDate';
+import { getPresetRange, isDateInRange } from '../utils/dateRange';
 
 const INITIAL_LINE = { id_akun: '', debit: 0, kredit: 0, keterangan: '' };
 
@@ -33,7 +36,13 @@ const getInitialTransactionForm = () => ({
 });
 
 const FinancialTransactionsPage = () => {
-  const [transactions, setTransactions] = useState([]);
+  const [allTransactions, setTransactions] = useState([]);
+  // Bawaan bulan berjalan; pilih "Semua" untuk seluruh waktu.
+  const [range, setRange] = useState(() => getPresetRange('thisMonth'));
+  const transactions = useMemo(
+    () => allTransactions.filter((row) => isDateInRange(row.tanggal, range.start, range.end)),
+    [allTransactions, range]
+  );
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
@@ -256,7 +265,7 @@ const FinancialTransactionsPage = () => {
   };
 
   const transactionColumns = [
-    { key: 'tanggal', header: 'Tanggal', render: (row) => new Date(row.tanggal).toLocaleDateString('id-ID'), width: '140px' },
+    { key: 'tanggal', header: 'Tanggal', render: (row) => <RelativeDate value={row.tanggal} withTime={false} />, width: '140px' },
     { key: 'cabang.nama_cabang', header: 'Cabang', render: (row) => row.cabang?.nama_cabang || '-' },
     { key: 'jenis_transaksi', header: 'Jenis Transaksi', render: (row) => row.jenis_transaksi || '-' },
     { key: 'keterangan', header: 'Keterangan', render: (row) => row.keterangan || '-' },
@@ -333,6 +342,7 @@ const FinancialTransactionsPage = () => {
         </div>
 
         <div className="bg-white p-4 rounded-xl shadow-sm">
+          <DateRangeFilter compact className="mb-4" start={range.start} end={range.end} onChange={setRange} />
           <DataTable
             data={transactions}
             columns={transactionColumns}

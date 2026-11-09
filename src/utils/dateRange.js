@@ -107,7 +107,7 @@ const toDate = (value) => {
   if (value === null || value === undefined || value === '') return null; // new Date(null) = 1 Jan 1970: jangan
   if (value instanceof Date) return value;
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return parseISODate(value); // tanggal murni = hari lokal
-  return new Date(value);
+  return parseFlexibleDate(value) || new Date(NaN);
 };
 const hhmm = (d) => `${pad(d.getHours())}.${pad(d.getMinutes())}`;
 
@@ -151,4 +151,35 @@ export function formatRelativeDate(value, now = new Date(), { withTime = false }
   if (dayDiff > 1 && dayDiff <= 6) return `${dayDiff} hari lalu${t}`;
   if (dayDiff < -1 && dayDiff >= -6) return `${-dayDiff} hari lagi${t}`;
   return `${formatShortDate(d, now)}${t}`;
+}
+
+/**
+ * Parser tanggal toleran untuk data campuran: Date, ISO/teks tanggal, atau epoch (detik atau milidetik, angka/string angka).
+ * Mengembalikan Date atau null bila tidak valid (tidak pernah 1 Jan 1970 untuk null/kosong).
+ */
+export function parseFlexibleDate(value) {
+  if (value === null || value === undefined || value === '') return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  const fromEpoch = (n) => new Date(n > 9999999999 ? n : n * 1000);
+  if (typeof value === 'number') return Number.isFinite(value) ? fromEpoch(value) : null;
+  if (typeof value === 'string') {
+    if (/^\d+$/.test(value.trim())) return fromEpoch(parseInt(value, 10));
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+}
+
+/** Tanggal + jam lengkap (dd/mm/yyyy, hh.mm.ss) untuk log/audit; 'Tanggal tidak valid' bila gagal. */
+export function formatDateTimeID(value) {
+  const d = parseFlexibleDate(value);
+  if (!d) return 'Tanggal tidak valid';
+  return d.toLocaleString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+/** Selisih hari kalender lokal dari `value` ke `now` (>= 0 = sudah lewat); null bila tidak valid. */
+export function ageInDays(value, now = new Date()) {
+  const d = parseFlexibleDate(value);
+  if (!d) return null;
+  return Math.round((startOfDay(now) - startOfDay(d)) / 86400000);
 }

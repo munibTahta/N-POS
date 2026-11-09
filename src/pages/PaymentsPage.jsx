@@ -7,6 +7,8 @@ import { PageLayout, PageContainer, PageHeader } from '../components/layouts/ind
 import { SearchFilterBar } from '../components/SearchFilterBar';
 import useSearchAndFilter from '../hooks/useSearchAndFilter';
 import { useNotifications } from '../hooks/useNotifications';
+import RelativeDate from '../components/common/RelativeDate';
+import AgeBadge from '../components/common/AgeBadge';
 
 // SVG Icons
 const ViewIcon = ({ className = '' }) => (
@@ -193,12 +195,9 @@ const PaymentsPage = () => {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                               <div className="text-slate-600">
-                                <span className="font-medium">Tanggal:</span> {(() => {
-                                  const paymentDate = item.tanggal_pembayaran || item.created_at || item.tanggal || item.createdAt || item.updated_at;
-                                  const saleDate = item.penjualan?.tanggal;
-                                  const finalDate = paymentDate || saleDate;
-                                  return finalDate ? new Date(finalDate).toLocaleDateString('id-ID') : 'N/A';
-                                })()}
+                                <span className="font-medium">Tanggal:</span>{' '}
+                                <RelativeDate value={item.tanggal_pembayaran || item.created_at || item.tanggal || item.createdAt || item.updated_at || item.penjualan?.tanggal} />
+                                <AgeBadge value={item.penjualan?.tanggal || item.tanggal || item.created_at} className="ml-2" />
                               </div>
                               <div className="text-slate-600">
                                 <span className="font-medium">Metode:</span> {item.metodePembayaran?.nama_metode || item.nama_metode || 'N/A'}

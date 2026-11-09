@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { formatRelativeDate, formatFullDate } from '../../utils/dateRange';
+import { formatRelativeDate, formatFullDate, parseFlexibleDate } from '../../utils/dateRange';
 
 /**
  * Tanggal relatif ("Hari ini, 14.30", "Kemarin", "3 hari lalu", "12 Okt") dengan tooltip tanggal lengkap.
@@ -8,8 +8,8 @@ import { formatRelativeDate, formatFullDate } from '../../utils/dateRange';
  */
 export default function RelativeDate({ value, withTime = true, className = '' }) {
   const [now, setNow] = useState(() => new Date());
-  const d = value instanceof Date ? value : value ? new Date(value) : null;
-  const valid = d && !Number.isNaN(d.getTime());
+  const d = parseFlexibleDate(value);
+  const valid = !!d;
   const isRecent = valid && Math.abs(now.getTime() - d.getTime()) < 6 * 3600 * 1000;
 
   useEffect(() => {

@@ -22,7 +22,8 @@ import HeaderActionButton from '../components/HeaderActionButton';
 import { Printer, CheckCircle, XCircle, RotateCcw, Download } from 'lucide-react';
 import DateRangeFilter from '../components/common/DateRangeFilter';
 import RelativeDate from '../components/common/RelativeDate';
-import { isDateInRange, todayISO } from '../utils/dateRange';
+import AgeBadge from '../components/common/AgeBadge';
+import { getPresetRange, isDateInRange, todayISO } from '../utils/dateRange';
 
 const SalesListPage = () => {
   const { user, canVoidSales } = usePermissions();
@@ -50,8 +51,9 @@ const SalesListPage = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterBranch, setFilterBranch] = useState('all');
   const [filterPaymentMethod, setFilterPaymentMethod] = useState('all');
-  const [dateStart, setDateStart] = useState('');
-  const [dateEnd, setDateEnd] = useState('');
+  // Kasir terutama melihat transaksi hari ini; "Semua" dan chip lain tinggal satu ketukan.
+  const [dateStart, setDateStart] = useState(() => getPresetRange('today').start);
+  const [dateEnd, setDateEnd] = useState(() => getPresetRange('today').end);
 
   const navigate = useNavigate();
 
@@ -594,6 +596,7 @@ const SalesListPage = () => {
                               Lunas
                             </span>
                           )}
+                          {getPaymentStatus(sale) === 'pending' && <AgeBadge value={sale.tanggal} className="ml-2" />}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {hasReturns(sale.id_penjualan) ? (

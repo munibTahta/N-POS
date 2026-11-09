@@ -2,36 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { getLogAktivitas } from '../services/api';
 import DataTable from '../components/DataTable';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import DateRangeFilter from '../components/common/DateRangeFilter';
+import { getPresetRange, isDateInRange, parseFlexibleDate, formatDateTimeID } from '../utils/dateRange';
 
-const formatAuditDate = (dateString) => {
-  if (!dateString) return 'Tanggal tidak tersedia';
-  try {
-    let date;
-    if (typeof dateString === 'string') {
-      date = new Date(dateString);
-      if (Number.isNaN(date.getTime())) {
-        const timestamp = parseInt(dateString, 10);
-        date = new Date(timestamp > 9999999999 ? timestamp : timestamp * 1000);
-      }
-    } else if (typeof dateString === 'number') {
-      date = new Date(dateString > 9999999999 ? dateString : dateString * 1000);
-    } else {
-      date = new Date(dateString);
-    }
-    if (Number.isNaN(date.getTime())) return 'Tanggal tidak valid';
-    return date.toLocaleString('id-ID', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  } catch (error) {
-    console.error('Date formatting error:', error, dateString);
-    return 'Tanggal tidak valid';
-  }
-};
 
 const normalizeLog = (item = {}, index) => {
   const aktivitas = item.aktivitas || item.aksi || item.action || item.activity || 'Tidak diketahui';
@@ -50,6 +23,12 @@ const LogAktivitasPage = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // Log bisa sangat banyak: bawaan 7 hari terakhir (pilih "Semua" untuk seluruhnya).
+  const [range, setRange] = useState(() => getPresetRange('last7'));
+  const logsInRange = useMemo(
+    () => logs.filter((l) => isDateInRange(parseFlexibleDate(l.tanggal), range.start, range.end)),
+    [logs, range]
+  );
 
   useEffect(() => {
     const fetchLogs = async () => {
@@ -69,8 +48,8 @@ const LogAktivitasPage = () => {
     fetchLogs();
   }, []);
 
-  const uniqueUsers = useMemo(() => [...new Set(logs.map((log) => log.userName).filter(Boolean))], [logs]);
-  const uniqueActivities = useMemo(() => [...new Set(logs.map((log) => log.aktivitas).filter(Boolean))].length, [logs]);
+  const uniqueUsers = useMemo(() => [...new Set(logsInRange.map((log) => log.userName).filter(Boolean))], [logsInRange]);
+  const uniqueActivities = useMemo(() => [...new Set(logsInRange.map((log) => log.aktivitas).filter(Boolean))].length, [logsInRange]);
 
   const filters = useMemo(() => [
     {
@@ -93,7 +72,7 @@ const LogAktivitasPage = () => {
       key: 'tanggal',
       header: 'Waktu',
       width: '180px',
-      render: (log) => formatAuditDate(log.tanggal)
+      render: (log) => formatDateTimeID(log.tanggal)
     },
     {
       key: 'userName',
@@ -119,7 +98,7 @@ const LogAktivitasPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
               <p className="text-sm font-medium text-slate-500">Total Log</p>
-              <p className="mt-3 text-3xl font-semibold text-slate-900">{logs.length.toLocaleString()}</p>
+              <p className="mt-3 text-3xl font-semibold text-slate-900">{logsInRange.length.toLocaleString()}</p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
               <p className="text-sm font-medium text-slate-500">Pengguna Unik</p>
@@ -146,8 +125,9 @@ const LogAktivitasPage = () => {
 
           {!loading && !error && (
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+              <DateRangeFilter compact className="mb-4" start={range.start} end={range.end} onChange={setRange} />
               <DataTable
-                data={logs}
+                data={logsInRange}
                 columns={columns}
                 searchPlaceholder="Cari pengguna atau aktivitas..."
                 searchKeys={['userName', 'aktivitas']}
