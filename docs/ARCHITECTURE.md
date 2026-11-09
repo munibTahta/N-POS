@@ -155,3 +155,10 @@ Urutan di bawah adalah urutan kerja yang disarankan; tiap fase bisa dikerjakan b
 - **Beban kerja berat** (jurnal, laporan, ekspor) lewat antrean (BullMQ) dan cache master data (Redis); WebSocket yang sudah ada dipakai untuk stok real-time.
 - **Observabilitas**: aktifkan Sentry (`utils/sentry.js` sudah ada) di klien dan backend, monitor uptime, dan uji pemulihan cadangan secara berkala.
 - **Multi-tenant** bila akan dijual sebagai layanan: `tenant_id` di semua tabel atau skema per tenant, ditentukan sebelum jumlah data membesar.
+
+## Sertifikat QZ Tray (penandatanganan cetak)
+
+- Kunci privat QZ **tidak lagi dikemas** ke installer (`certs/**/*` dihapus dari `build.files`); folder `certs/` juga di-gitignore.
+- Letakkan `digital-certificate.txt` dan `digital-certificate-key.txt` di `%APPDATA%/.n-pos/certs/` (atau `userData/certs`) pada PC kasir yang memerlukan cetak tanpa dialog kepercayaan; jalur pencarian ada di `electron/thermalPrintService.cjs`.
+- Kunci lama pernah masuk riwayat git remote: wajib diganti (terbitkan sertifikat baru di portal QZ) dan cabut yang lama.
+- Jangka panjang: pindahkan penandatanganan ke backend (endpoint `/qz/sign`) agar kunci tidak ada di perangkat kasir.
