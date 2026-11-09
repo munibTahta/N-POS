@@ -220,3 +220,9 @@ Urutan di bawah adalah urutan kerja yang disarankan; tiap fase bisa dikerjakan b
 - Klien: `RetryManager` tidak mengulang 429 bila `Retry-After` > 5 detik; `LoginPage` menampilkan "Coba lagi dalam N menit".
 - `SessionAuthManager` kini melempar galat berbentuk axios (`error.response.{status,data,headers}`). Login memakai `/session/login`; **hanya** bila endpoint itu tidak tersedia (404/5xx/jaringan) atau 409 (sesi lama aktif dari IP yang sama) dipakai login cadangan `/auth/login`. 400/401/403/429 langsung ditampilkan (dulu setiap password salah mengirim dua permintaan, sehingga pembatas menghitung ganda).
 - Catatan: cabang 409 dulu tidak pernah aktif (galat fetch tanpa status). Sengaja tidak dihidupkan menjadi blokir agar kasir yang menutup tab tanpa logout tidak terkunci.
+
+### Perlindungan rute backend & sinkronisasi pra-login
+
+- `/data/*`, `/dashboard/*`, `/roles`, `/menus` kini wajib JWT (dulu hanya API key, padahal kunci itu tertanam di setiap klien sehingga praktis publik). Frontend tidak memakai `/data` dan `/dashboard`. Tersisa publik (hanya API key) dan dibekukan oleh tes `routeProtection`: data master non-sensitif, `GET /pengaturan`, `GET /laporan/stok`, dan jalur login/sesi.
+- Klien: sinkronisasi latar (`AppInitializer` -> `OfflineBootstrap`) dan `syncEngine.pullServerData` tidak berjalan sebelum login (dulu halaman login menembakkan 10 permintaan yang pasti 401). Setelah token muncul, `autoSync` dipicu sekali.
+- Rotasi API key tanpa memutus klien: backend menerima `API_KEYS` (daftar, dipisah koma) di samping `API_KEY`. Urutan: tambahkan kunci baru ke `API_KEYS`, bangun ulang klien dengan `VITE_API_KEY` baru, lalu hapus kunci lama dari `API_KEY`.

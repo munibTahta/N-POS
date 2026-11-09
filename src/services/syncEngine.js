@@ -1028,6 +1028,9 @@ class SyncEngine {
   }
 
   async pullServerData() {
+    // Belum login: endpoint yang ditarik di sini terlindungi JWT, jadi hasilnya pasti 401. Sinkronisasi berikutnya
+    // (setelah login) yang akan menarik data.
+    if (!safeStorage.getItem('authToken')) return;
     try {
       const { getSales, getPurchases } = await import('./api.js');
 
