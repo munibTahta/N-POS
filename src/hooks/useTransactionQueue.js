@@ -147,16 +147,12 @@ export const useTransactionQueue = () => {
           await refreshStats();
           return;
         }
-        let successCount = 0;
-        let failureCount = 0;
 
         for (const transaction of pending) {
           try {
-            let success;
-
             if (submitFn && typeof submitFn === 'function') {
               // Use provided submit function
-              success = await processTransaction(transaction, submitFn);
+              await processTransaction(transaction, submitFn);
             } else {
               // Auto-submit to default endpoint
               const defaultSubmit = async (data) => {
@@ -168,17 +164,10 @@ export const useTransactionQueue = () => {
                 return response;
               };
 
-              success = await processTransaction(transaction, defaultSubmit);
-            }
-
-            if (success) {
-              successCount++;
-            } else {
-              failureCount++;
+              await processTransaction(transaction, defaultSubmit);
             }
           } catch (err) {
             console.error(`Error processing transaction ${transaction.transaction_id}:`, err);
-            failureCount++;
           }
         }
         setLastSync(new Date());

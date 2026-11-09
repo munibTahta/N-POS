@@ -1525,7 +1525,7 @@ class SyncEngine {
       // Also sync products to product_offline.db for product database indexing
       if (productsData.length > 0 && window.electronAPI?.productDB_bulkUpsertProducts) {
         try {
-          const result = await window.electronAPI.productDB_bulkUpsertProducts(productsData);
+          await window.electronAPI.productDB_bulkUpsertProducts(productsData);
         } catch (indexError) {
           console.warn('Failed to index products:', indexError.message);
           // Continue - don't fail entire sync if indexing fails

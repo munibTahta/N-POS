@@ -55,11 +55,14 @@ export default defineConfig(({ mode }) => ({
       overlay: false
     }
   },
+  // Produksi: buang console.log/debug/info (dan debugger) saat build. console.warn/error TETAP ada.
+  // Menggantikan scripts/remove-console.cjs yang menulis ulang file sumber secara permanen.
+  esbuild: {
+    pure: mode === 'production' ? ['console.log', 'console.debug', 'console.info'] : [],
+    drop: mode === 'production' ? ['debugger'] : [],
+  },
   build: {
     minify: 'esbuild',
-    esbuild: {
-      drop: ['console', 'debugger']
-    },
     rollupOptions: {
       output: {
         manualChunks: {

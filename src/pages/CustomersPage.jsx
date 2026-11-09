@@ -358,7 +358,7 @@ const CustomersPage = () => {
         } else {
           failCount += chunk.length;
         }
-      } catch (err) {
+      } catch {
         failCount += chunk.length;
       }
       

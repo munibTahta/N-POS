@@ -200,7 +200,7 @@ const ProductsPage = () => {
     try {
       const categoriesRes = await getCategories();
       setCategories(categoriesRes.data?.data || categoriesRes.data || []);
-    } catch (err) {
+    } catch {
       showError('Gagal mengambil kategori');
     }
   }, [showError]);
@@ -477,7 +477,7 @@ const ProductsPage = () => {
         } else {
           failCount += chunk.length;
         }
-      } catch (err) {
+      } catch {
         failCount += chunk.length;
       }
       

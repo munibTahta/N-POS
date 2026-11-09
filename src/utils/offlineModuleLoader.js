@@ -102,7 +102,8 @@ export const preloadAllPages = async () => {
   const _successful = results.filter(r => r.status === 'fulfilled' && r.value?.success).length;
   const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value?.success)).length;
   
-  if (import.meta.env.DEV) { /* intentionally empty */ 
+  if (import.meta.env.DEV) {
+    console.log(`Offline cache selesai: ${_successful} berhasil, ${failed} gagal`);
   }
   
   isCaching = false;

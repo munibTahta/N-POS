@@ -77,7 +77,6 @@ export const usePaymentMethods = () => {
 
             // Batch database operations with small delays to avoid rate limiting
             const batchSize = 5;
-            let persistedCount = 0;
             
             for (let i = 0; i < methods.length; i += batchSize) {
               const batch = methods.slice(i, i + batchSize);
@@ -110,11 +109,9 @@ export const usePaymentMethods = () => {
                 const keyStr = id != null ? String(id) : null;
                 if (keyStr && localMap[keyStr]) {
                   return window.electronAPI.dbUpdate({ table: 'metode_pembayaran', data: row, whereClause: 'id_metode = ?', whereValues: [id] })
-                    .then(() => { persistedCount++; })
                     .catch(e => console.warn('Failed to update payment method', id, e?.message || e));
                 } else {
                   return window.electronAPI.dbInsert({ table: 'metode_pembayaran', data: row })
-                    .then(() => { persistedCount++; })
                     .catch(e => console.warn('Failed to insert payment method', id, e?.message || e));
                 }
               });

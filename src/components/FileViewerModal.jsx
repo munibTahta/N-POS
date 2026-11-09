@@ -16,9 +16,11 @@ const FileViewerModal = ({
   // Reset controls when modal opens/closes
   useEffect(() => {
     if (isOpen) {
+      /* eslint-disable react-hooks/set-state-in-effect -- reset kontrol viewer tiap kali modal dibuka atau file berganti */
       setZoom(1);
       setRotation(0);
       setCopied(false);
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [isOpen, fileUrl]);
 

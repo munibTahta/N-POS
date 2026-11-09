@@ -8,12 +8,14 @@ const isDevelopment = (typeof import.meta !== 'undefined' &&
 
 class Logger {
   debug(message, ...args) {
-    if (isDevelopment) { /* intentionally empty */ 
+    if (isDevelopment) {
+      console.debug(`[DEBUG] ${message}`, ...args);
     }
   }
 
   info(message, ...args) {
-    if (isDevelopment) { /* intentionally empty */ 
+    if (isDevelopment) {
+      console.info(`[INFO] ${message}`, ...args);
     }
   }
 

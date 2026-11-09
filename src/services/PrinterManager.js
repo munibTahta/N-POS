@@ -50,6 +50,7 @@ class ProfessionalPrinterManager {
   _setupDebugListener() {
     if (window.electronAPI?.onPrintDebug) {
       window.electronAPI.onPrintDebug((message) => {
+        console.debug('[print]', message);
       });
     }
   }

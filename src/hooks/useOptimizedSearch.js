@@ -7,18 +7,15 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 export const useDebouncedSearch = (initialQuery = '', delay = 300) => {
   const [query, setQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
-  const [isSearching, setIsSearching] = useState(false);
 
   // Debounce effect
   useEffect(() => {
-    setIsSearching(true);
-    const timer = setTimeout(() => {
-      setDebouncedQuery(query);
-      setIsSearching(false);
-    }, delay);
-
+    const timer = setTimeout(() => setDebouncedQuery(query), delay);
     return () => clearTimeout(timer);
   }, [query, delay]);
+
+  // Diturunkan, bukan state: sedang mencari selama input belum sama dengan nilai yang sudah di-debounce.
+  const isSearching = query !== debouncedQuery;
 
   // Memoized handlers
   const updateQuery = useCallback((newQuery) => {

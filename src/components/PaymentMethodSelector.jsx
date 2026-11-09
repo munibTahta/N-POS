@@ -45,6 +45,7 @@ const PaymentMethodSelector = React.memo(({
   // Set default selection only when it changes and we don't have a selection yet
   useEffect(() => {
     if (defaultSelection && !selectedMethod) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- pilihan awal harus sekaligus memberi tahu induk lewat onMethodChange
       setSelectedMethod(defaultSelection);
       onMethodChange?.(defaultSelection);
     }

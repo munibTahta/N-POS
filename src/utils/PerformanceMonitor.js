@@ -57,7 +57,7 @@ class PerformanceMonitor {
     Object.entries(this.metrics).forEach(([label, duration]) => {
       const percentage = ((duration / totalTime) * 100).toFixed(1);
       const color = duration > 1000 ? '#ff6b6b' : duration > 500 ? '#ffa500' : '#51cf66';
-      
+      console.log(`  %c${label}%c: ${duration.toFixed(2)}ms (${percentage}%)`, `color: ${color}; font-weight: bold`, 'color: inherit');
     });
     
     console.groupEnd();

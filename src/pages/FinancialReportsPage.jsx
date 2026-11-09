@@ -505,7 +505,8 @@ const FinancialReportsPage = () => {
   ];
 
   // Render functions
-  const renderSummaryCards = () => {
+  // Belum dipakai (kartu ringkasan dipindah ke komponen lain); dipertahankan sementara untuk referensi.
+  const _renderSummaryCards = () => {
     if (!data?.summary) return null;
 
     const cards = [];
