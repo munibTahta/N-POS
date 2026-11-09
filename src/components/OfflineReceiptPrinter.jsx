@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import offlineDataSync from '../services/offlineDataSync';
 import { toast } from 'react-toastify';
-import { Printer } from 'lucide-react';
+import { Printer, X, RefreshCw, FileText, Inbox, ArrowLeft } from 'lucide-react';
 
 /**
  * Offline Receipt Printer
@@ -173,13 +173,13 @@ const OfflineReceiptPrinter = ({
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 flex justify-between items-center">
           <h2 className="text-lg font-bold flex items-center gap-2">
-            <span>🖨️</span> Cetak Struk {isOffline && '(OFFLINE)'}
+            <Printer className="w-5 h-5" /> Cetak Struk {isOffline && '(OFFLINE)'}
           </h2>
           <button
             onClick={onClose}
             className="text-white hover:bg-blue-700 p-1 rounded"
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -187,7 +187,7 @@ const OfflineReceiptPrinter = ({
         <div className="overflow-y-auto flex-1 p-4">
           {isOffline && printHistory.length > 0 && !selectedReceipt && (
             <div className="space-y-2">
-              <h3 className="font-semibold text-sm mb-3">📋 Riwayat Struk (Cetak Ulang)</h3>
+              <h3 className="font-semibold text-sm mb-3 flex items-center gap-1.5"><FileText className="w-4 h-4" /> Riwayat Struk (Cetak Ulang)</h3>
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {printHistory.map((receipt) => (
                   <button
@@ -231,7 +231,7 @@ const OfflineReceiptPrinter = ({
 
           {isOffline && printHistory.length === 0 && !receiptData && (
             <div className="text-center py-8 text-gray-500">
-              <p>📭 Belum ada riwayat struk</p>
+              <p className="flex items-center justify-center gap-1.5"><Inbox className="w-4 h-4" /> Belum ada riwayat struk</p>
             </div>
           )}
         </div>
@@ -241,9 +241,9 @@ const OfflineReceiptPrinter = ({
           {selectedReceipt && (
             <button
               onClick={() => setSelectedReceipt(null)}
-              className="px-4 py-2 text-gray-700 bg-gray-300 rounded hover:bg-gray-400 transition"
+              className="px-4 py-2 text-gray-700 bg-gray-300 rounded hover:bg-gray-400 transition flex items-center gap-1.5"
             >
-              ← Kembali
+              <ArrowLeft className="w-4 h-4" /> Kembali
             </button>
           )}
           <button
@@ -261,7 +261,7 @@ const OfflineReceiptPrinter = ({
                 : 'bg-blue-600 hover:bg-blue-700'
             }`}
           >
-            {isPrinting && <span className="animate-spin">⟳</span>}
+            {isPrinting && <RefreshCw className="w-4 h-4 animate-spin" />}
             <Printer className="w-4 h-4 inline" />
             <span className="ml-1">Cetak</span>
           </button>

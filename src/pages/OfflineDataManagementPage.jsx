@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { RefreshCw, Trash2, Download, Database, Search, Package, Folder, Ruler, Users, CreditCard, CheckCircle, Clock, XCircle, HelpCircle, Info, Eye, EyeOff } from 'lucide-react';
+import { RefreshCw, Trash2, Download, Database, Search, Package, Folder, Ruler, Users, CreditCard, CheckCircle, Clock, XCircle, HelpCircle, Info, Eye, EyeOff, X } from 'lucide-react';
 import offlineDataSync from '../services/offlineDataSync';
 import DataTable from '../components/DataTable';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts/index.jsx';
@@ -55,12 +55,12 @@ const OfflineDataManagementPage = () => {
           stats.products = productStats?.productCount || 0;
           stats.productsByStatus = productStats?.byStatus || [];
         } catch (err) {
-        console.error('❌ Error calling productDB_getStats:', err);
+        console.error('Error calling productDB_getStats:', err);
         stats.products = 0;
         stats.productsByStatus = [];
       }
     } else {
-      console.warn('⚠️ productDB_getStats not available');
+      console.warn('productDB_getStats not available');
     }
 
       // Get transaction stats from product_offline.db
@@ -71,13 +71,13 @@ const OfflineDataManagementPage = () => {
           stats.syncedTransactions = txStats?.synced || 0;
           stats.failedTransactions = txStats?.failed || 0;
         } catch (e) {
-          console.error('❌ Error calling productDB_getTransactionStats:', e);
+          console.error('Error calling productDB_getTransactionStats:', e);
           stats.pendingTransactions = 0;
           stats.syncedTransactions = 0;
           stats.failedTransactions = 0;
         }
       } else {
-        console.warn('⚠️ productDB_getTransactionStats not available');
+        console.warn('productDB_getTransactionStats not available');
       }
 
       // Get master data counts from offline.db using Promise.all for parallelization
@@ -98,7 +98,7 @@ const OfflineDataManagementPage = () => {
           stats.categories = categoriesResult.value?.length || 0;
         } else {
           stats.categories = 0;
-          console.warn('⚠️ Categories table not available:', categoriesResult.reason?.message);
+          console.warn('Categories table not available:', categoriesResult.reason?.message);
         }
 
         // Units
@@ -106,7 +106,7 @@ const OfflineDataManagementPage = () => {
           stats.units = unitsResult.value?.length || 0;
         } else {
           stats.units = 0;
-          console.warn('⚠️ Units table not available:', unitsResult.reason?.message);
+          console.warn('Units table not available:', unitsResult.reason?.message);
         }
 
         // Customers
@@ -114,7 +114,7 @@ const OfflineDataManagementPage = () => {
           stats.customers = customersResult.value?.length || 0;
         } else {
           stats.customers = 0;
-          console.warn('⚠️ Customers table not available:', customersResult.reason?.message);
+          console.warn('Customers table not available:', customersResult.reason?.message);
         }
 
         // Payment methods
@@ -122,23 +122,14 @@ const OfflineDataManagementPage = () => {
           stats.paymentMethods = paymentResult.value?.length || 0;
         } else {
           stats.paymentMethods = 0;
-          console.warn('⚠️ Payment methods table not available:', paymentResult.reason?.message);
+          console.warn('Payment methods table not available:', paymentResult.reason?.message);
         }
       } else {
-        console.error('❌ dbSelect not available in electronAPI');
+        console.error('dbSelect not available in electronAPI');
       }
 
       setSqliteStats(stats);
-      void 0 && ('✅ Final SQLite Stats:', {
-        products: stats.products,
-        categories: stats.categories,
-        units: stats.units,
-        customers: stats.customers,
-        paymentMethods: stats.paymentMethods,
-        pendingTransactions: stats.pendingTransactions,
-        syncedTransactions: stats.syncedTransactions,
-        failedTransactions: stats.failedTransactions
-      });
+      
     } catch (err) {
       console.warn('Error loading SQLite stats:', err.message);
       setSqliteStats({
@@ -156,22 +147,46 @@ const OfflineDataManagementPage = () => {
 
   const loadOfflineProducts = useCallback(async () => {
     if (!window.electronAPI?.productDB_searchProducts) {
-      console.warn('⚠️ productDB_searchProducts IPC tidak tersedia');
+      console.warn('productDB_searchProducts IPC tidak tersedia');
       setOfflineProducts([]);
       return;
     }
 
     try {
       setProductLoading(true);
-      const searchResult = await window.electronAPI.productDB_searchProducts('', { limit: 200, offset: 0 });
+      // Mirror the same katalog scoping POS uses, so this diagnostic view shows
+      // exactly what this branch would actually see/search offline — otherwise
+      // a 'terpisah' branch admin troubleshooting sync can't see their own
+      // cached products here (they'd only ever see the global catalog).
+      let tipeKatalog = 'global';
+      if (user?.id_cabang && window.electronAPI?.dbSelect) {
+        try {
+          const branchRes = await window.electronAPI.dbSelect({
+            table: 'branches',
+            whereClause: 'id_cabang = ?',
+            whereValues: [user.id_cabang]
+          });
+          if (branchRes && branchRes.length > 0) {
+            tipeKatalog = branchRes[0].tipe_katalog || 'global';
+          }
+        } catch (err) {
+          console.warn('Failed to load branch tipe_katalog offline:', err);
+        }
+      }
+      const searchResult = await window.electronAPI.productDB_searchProducts('', {
+        limit: 200,
+        offset: 0,
+        id_cabang: user?.id_cabang,
+        tipe_katalog: tipeKatalog
+      });
       setOfflineProducts(searchResult?.data || []);
     } catch (err) {
-      console.error('❌ Gagal memuat produk offline:', err);
+      console.error('Gagal memuat produk offline:', err);
       setOfflineProducts([]);
     } finally {
       setProductLoading(false);
     }
-  }, []);
+  }, [user?.id_cabang]);
 
   const loadOfflineStocks = useCallback(async () => {
     if (!user?.id_cabang) {
@@ -180,7 +195,7 @@ const OfflineDataManagementPage = () => {
     }
 
     if (!window.electronAPI?.productDB_getStocksByCabang) {
-      console.warn('⚠️ productDB_getStocksByCabang IPC tidak tersedia');
+      console.warn('productDB_getStocksByCabang IPC tidak tersedia');
       setOfflineStocks([]);
       return;
     }
@@ -190,7 +205,7 @@ const OfflineDataManagementPage = () => {
       const stocks = await window.electronAPI.productDB_getStocksByCabang(user.id_cabang);
       setOfflineStocks(Array.isArray(stocks) ? stocks : []);
     } catch (err) {
-      console.error('❌ Gagal memuat stok offline:', err);
+      console.error('Gagal memuat stok offline:', err);
       setOfflineStocks([]);
     } finally {
       setStockLoading(false);
@@ -711,7 +726,7 @@ const OfflineDataManagementPage = () => {
           <div className="mt-6 bg-white rounded shadow p-4">
             <div className="flex justify-between mb-3">
               <h3 className="font-bold">Detail Item</h3>
-              <button onClick={() => setShowDetails(false)} className="text-gray-500">✕</button>
+              <button onClick={() => setShowDetails(false)} className="text-gray-500"><X className="w-4 h-4" /></button>
             </div>
             <pre className="bg-gray-50 p-3 rounded text-xs overflow-auto max-h-64">{JSON.stringify(selectedItem, null, 2)}</pre>
           </div>

@@ -85,24 +85,24 @@ export const preloadAllPages = async () => {
       try {
         const module = await loadWithTimeout(mod);
         moduleCache.set(mod.name, module);
-        if (import.meta.env.DEV) {
+        if (import.meta.env.DEV) { /* intentionally empty */ 
         }
         return { name: mod.name, success: true };
       } catch (error) {
         // Don't throw - just log and continue
         // Development may not have all modules ready yet
         if (import.meta.env.DEV) {
-          console.warn(`⚠️ Failed to cache ${mod.name}:`, error.message);
+          console.warn(`Failed to cache ${mod.name}:`, error.message);
         }
         return { name: mod.name, success: false, error };
       }
     })
   );
 
-  const successful = results.filter(r => r.status === 'fulfilled' && r.value?.success).length;
+  const _successful = results.filter(r => r.status === 'fulfilled' && r.value?.success).length;
   const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value?.success)).length;
   
-  if (import.meta.env.DEV) {
+  if (import.meta.env.DEV) { /* intentionally empty */ 
   }
   
   isCaching = false;
@@ -148,14 +148,14 @@ export const getModuleWithOfflineFallback = async (importFn, moduleName) => {
       // If not last attempt, wait before retrying
       if (attempt < maxRetries - 1) {
         const delayMs = Math.min(1000 * Math.pow(2, attempt), 5000); // Exponential backoff
-        console.warn(`⚠️ Attempt ${attempt + 1} to load ${moduleName} failed, retrying in ${delayMs}ms...`);
+        console.warn(`Attempt ${attempt + 1} to load ${moduleName} failed, retrying in ${delayMs}ms...`);
         await new Promise(resolve => setTimeout(resolve, delayMs));
       }
     }
   }
 
   // All retries exhausted
-  console.error(`❌ Failed to load ${moduleName} after ${maxRetries} attempts:`, lastError?.message);
+  console.error(`Failed to load ${moduleName} after ${maxRetries} attempts:`, lastError?.message);
   
   // Last resort: Try one more time synchronously if module is partially loaded
   const lastChance = moduleCache.get(moduleName);

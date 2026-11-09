@@ -183,10 +183,6 @@ export const usePrinter = () => {
     }));
 
     try {
-      if (!window.electronAPI) {
-        throw new Error('Electron API tidak tersedia');
-      }
-
       const result = await manager.printTestReceipt(printerName, storeInfo);
 
       setPrintState(prev => ({

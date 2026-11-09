@@ -1,4 +1,5 @@
 import React from 'react';
+import { Smartphone, HardDrive } from 'lucide-react';
 import { useNetworkState } from './useNetworkState';
 import RoutePreloader from '../hooks/useRoutePreloader';
 
@@ -17,7 +18,7 @@ export const OfflineDataIndicator = ({ routeName }) => {
   if (!fallback.data) {
     return (
       <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-2 flex items-center gap-2 text-sm text-yellow-800">
-        <span className="text-lg">📱</span>
+        <Smartphone className="w-5 h-5" />
         <span>Offline Mode - Data tidak tersedia untuk halaman ini</span>
       </div>
     );
@@ -25,7 +26,7 @@ export const OfflineDataIndicator = ({ routeName }) => {
 
   return (
     <div className="bg-blue-50 border-b border-blue-200 px-4 py-2 flex items-center gap-2 text-sm text-blue-800">
-      <span className="text-lg">💾</span>
+      <HardDrive className="w-5 h-5" />
       <span>{fallback.message}</span>
     </div>
   );

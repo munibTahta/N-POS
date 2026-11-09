@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { Download, ArrowLeft } from 'lucide-react';
+import { Download, ArrowLeft, X } from 'lucide-react';
 import { getBranches, transferStock, getStockReport, searchProducts } from '../services/api';
 import { logger } from '../utils/logger';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
@@ -124,8 +124,15 @@ const StockTransferPage = () => {
     try {
       setIsSearchingProducts(true);
       setShowProductDropdown(true);
-      const response = await searchProducts(searchTerm, 20);
-      
+      // Scope search to the source branch's own catalog (this is where stock
+      // physically comes from), falling back to the shared global catalog.
+      const sourceBranch = branches.find(b => String(b.id_cabang) === String(transfer.cabang_asal));
+      const katalogFilter = sourceBranch?.tipe_katalog || 'global';
+      const response = await searchProducts(searchTerm, 20, {
+        katalogFilter,
+        idCabang: katalogFilter === 'terpisah' ? sourceBranch.id_cabang : undefined
+      });
+
       // searchProducts returns array directly
       let results = [];
       if (Array.isArray(response)) {
@@ -135,7 +142,7 @@ const StockTransferPage = () => {
       } else if (response?.data?.data && Array.isArray(response.data.data)) {
         results = response.data.data;
       }
-      
+
       setProductSearchResults(results);
     } catch (error) {
       logger.error('Product search failed:', error);
@@ -143,7 +150,7 @@ const StockTransferPage = () => {
     } finally {
       setIsSearchingProducts(false);
     }
-  }, []);
+  }, [branches, transfer.cabang_asal]);
 
   const handleProductSelect = (product) => {
     setTransfer(prev => ({ ...prev, id_produk: product.id_produk.toString() }));
@@ -316,7 +323,7 @@ const StockTransferPage = () => {
                     required={!!transfer.id_produk}
                   />
                   {transfer.id_produk && (
-                    <button type="button" onClick={clearProductSelection} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>
+                    <button type="button" onClick={clearProductSelection} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
                   )}
                   {isSearchingProducts && <div className="absolute right-2 top-1/2 transform -translate-y-1/2"><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div></div>}
 

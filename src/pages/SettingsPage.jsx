@@ -7,6 +7,7 @@ import { useNotifications } from '../hooks/useNotifications';
 import { useSync } from '../context/SyncContext';
 import { usePermissions } from '../hooks/usePermissions';
 import usePrinter from '../hooks/usePrinter';
+import { professionalPrinterManager, RAWBT_PRINTER } from '../services/PrinterManager';
 import { Printer, Trash2, Database, RefreshCw, AlertTriangle, CheckCircle, HardDrive } from 'lucide-react';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import CacheManager from '../utils/CacheManager';
@@ -114,9 +115,10 @@ const SettingsPage = () => {
               setPrinterError('Tidak ada printer terdeteksi dari sistem');
             }
           } else {
-            // non-electron environment: leave printer list empty
-            setPrinters([]);
-            setPrinterError('API printer tidak tersedia');
+            // Browser / Android / Tablet: tawarkan RawBT (Bluetooth/USB) atau dialog print browser
+            const webPrinters = await professionalPrinterManager.getPrinters();
+            setPrinters(webPrinters);
+            setPrinterError('');
           }
       } catch (_err) {
         setPrinterError('Gagal memuat daftar printer');
@@ -419,7 +421,7 @@ const SettingsPage = () => {
     // name akan berupa "cabang.nama_cabang" atau "printer.nama"
     const [section, field] = e.target.name.split('.');
 
-    if (field === 'paperWidth') {
+    if (field === 'paperWidth') { /* intentionally empty */ 
     }
 
     setSettings(prev => ({
@@ -656,6 +658,13 @@ const SettingsPage = () => {
                     <span className="hidden sm:inline">Test Cetak</span>
                   </button>
                 </div>
+                {!window.electronAPI && settings.printer?.nama === RAWBT_PRINTER && (
+                  <p className="md-helper">
+                    Install aplikasi <strong>RawBT</strong> dari Play Store, pasangkan (pair) printer Bluetooth Anda
+                    di dalam aplikasi RawBT, lalu jadikan printer tersebut default di RawBT. Struk dari halaman ini
+                    akan otomatis diteruskan ke RawBT untuk dicetak ke printer Bluetooth/USB yang sudah dikonfigurasi.
+                  </p>
+                )}
               </div>
               <div className="md-field">
                 <label className="md-label">Lebar Kertas Struk</label>
@@ -1311,7 +1320,7 @@ const SettingsPage = () => {
             </div>
 
             <div className="bg-red-50 dark:bg-red-950/20 rounded-xl p-4 mb-6 border border-red-100 dark:border-red-900/30 text-xs text-red-800 dark:text-red-300 space-y-2">
-              <p className="font-semibold">⚠️ PERINGATAN KERAS:</p>
+              <p className="font-semibold flex items-center gap-1.5"><AlertTriangle className="w-4 h-4 shrink-0" /> PERINGATAN KERAS:</p>
               <ul className="list-disc list-inside space-y-1">
                 <li>Seluruh Laporan & Jurnal Keuangan</li>
                 <li>Seluruh Transaksi Penjualan & Pembelian</li>

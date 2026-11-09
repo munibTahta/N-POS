@@ -18,7 +18,7 @@ const MAX_RETRY_DELAY = 30000; // 30 seconds
  */
 export const initializeTransactionQueue = async () => {
   if (!window.electronAPI?.dbExec) {
-    console.warn('⚠️ electronAPI not available for transaction queue');
+    console.warn('electronAPI not available for transaction queue');
     return false;
   }
 
@@ -53,7 +53,7 @@ export const initializeTransactionQueue = async () => {
     }
     return true;
   } catch (error) {
-    console.error('❌ Failed to initialize transaction queue:', error);
+    console.error('Failed to initialize transaction queue:', error);
     return false;
   }
 };
@@ -75,7 +75,7 @@ export const enqueueTransaction = async (
   metadata = {}
 ) => {
   if (!window.electronAPI?.dbInsert) {
-    console.error('❌ electronAPI not available');
+    console.error('electronAPI not available');
     throw new Error('Database not available');
   }
 
@@ -98,7 +98,7 @@ export const enqueueTransaction = async (
     });
     return true;
   } catch (error) {
-    console.error(`❌ Failed to enqueue transaction: ${transactionId}`, error);
+    console.error(`Failed to enqueue transaction: ${transactionId}`, error);
     throw error;
   }
 };
@@ -121,7 +121,7 @@ export const getPendingTransactions = async () => {
 
     return result || [];
   } catch (error) {
-    console.error('❌ Failed to get pending transactions:', error);
+    console.error('Failed to get pending transactions:', error);
     return [];
   }
 };
@@ -145,7 +145,7 @@ export const getTransaction = async (transactionId) => {
 
     return result?.[0] || null;
   } catch (error) {
-    console.error(`❌ Failed to get transaction ${transactionId}:`, error);
+    console.error(`Failed to get transaction ${transactionId}:`, error);
     return null;
   }
 };
@@ -171,7 +171,7 @@ export const markProcessing = async (transactionId) => {
     });
     return true;
   } catch (error) {
-    console.error(`❌ Failed to mark processing: ${transactionId}`, error);
+    console.error(`Failed to mark processing: ${transactionId}`, error);
     return false;
   }
 };
@@ -202,7 +202,7 @@ export const markCompleted = async (transactionId, serverResponse = null) => {
     });
     return true;
   } catch (error) {
-    console.error(`❌ Failed to mark completed: ${transactionId}`, error);
+    console.error(`Failed to mark completed: ${transactionId}`, error);
     return false;
   }
 };
@@ -239,7 +239,7 @@ export const markFailed = async (transactionId, errorMessage) => {
     });
     return true;
   } catch (error) {
-    console.error(`❌ Failed to mark failed: ${transactionId}`, error);
+    console.error(`Failed to mark failed: ${transactionId}`, error);
     return false;
   }
 };
@@ -301,7 +301,7 @@ export const getQueueStats = async () => {
              (completed?.length || 0) + (failed?.length || 0)
     };
   } catch (error) {
-    console.error('❌ Failed to get queue stats:', error);
+    console.error('Failed to get queue stats:', error);
     return {
       pending: 0,
       processing: 0,
@@ -336,7 +336,7 @@ export const clearCompletedTransactions = async (olderThanDays = 30) => {
     });
     return result;
   } catch (error) {
-    console.error('❌ Failed to clear completed transactions:', error);
+    console.error('Failed to clear completed transactions:', error);
     return 0;
   }
 };
@@ -364,7 +364,7 @@ export const resetTransaction = async (transactionId) => {
     });
     return true;
   } catch (error) {
-    console.error(`❌ Failed to reset transaction: ${transactionId}`, error);
+    console.error(`Failed to reset transaction: ${transactionId}`, error);
     return false;
   }
 };
@@ -387,7 +387,7 @@ export const getFailedTransactions = async () => {
 
     return result || [];
   } catch (error) {
-    console.error('❌ Failed to get failed transactions:', error);
+    console.error('Failed to get failed transactions:', error);
     return [];
   }
 };
@@ -409,7 +409,7 @@ export const exportQueue = async () => {
 
     return result || [];
   } catch (error) {
-    console.error('❌ Failed to export queue:', error);
+    console.error('Failed to export queue:', error);
     return [];
   }
 };

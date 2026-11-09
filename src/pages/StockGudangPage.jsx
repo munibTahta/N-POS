@@ -245,7 +245,7 @@ const StockGudangPage = () => {
       error,
       sampleData: warehouseStock?.[0]
     });
-    if (warehouseStock?.[0]) {
+    if (warehouseStock?.[0]) { /* intentionally empty */ 
 
 
 

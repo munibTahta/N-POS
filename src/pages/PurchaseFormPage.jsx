@@ -71,7 +71,7 @@ const PurchaseFormPage = () => {
                 branchesData = localBranches;
               }
             } catch (_dbError) {
-              if (import.meta.env.DEV) {
+              if (import.meta.env.DEV) { /* intentionally empty */ 
               }
             }
           }
@@ -533,7 +533,20 @@ const PurchaseFormPage = () => {
                                   clearTimeout(window[`searchTimeout_${index}`]);
                                   window[`searchTimeout_${index}`] = setTimeout(async () => {
                                     try {
-                                      const response = await getProducts({ search: value, limit: 20, status: 'aktif' });
+                                      // Scope search to the destination branch's catalog: a 'terpisah'
+                                      // branch owns its own products, otherwise fall back to the shared
+                                      // global catalog (also used when destination is the central gudang).
+                                      const destinationBranch = header.destination === 'cabang' && header.id_cabang
+                                        ? branches.find(b => String(b.id_cabang) === String(header.id_cabang))
+                                        : null;
+                                      const katalogFilter = destinationBranch?.tipe_katalog || 'global';
+                                      const response = await getProducts({
+                                        search: value,
+                                        limit: 20,
+                                        status: 'aktif',
+                                        katalog_filter: katalogFilter,
+                                        id_cabang: katalogFilter === 'terpisah' ? destinationBranch.id_cabang : undefined
+                                      });
                                       setProductSearchStates(prev => ({
                                         ...prev,
                                         [index]: {

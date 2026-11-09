@@ -13,7 +13,7 @@ class DebugLogger {
    * Log message (only in dev)
    */
   log(...args) {
-    if (!this.isProduction) {
+    if (!this.isProduction) { /* intentionally empty */ 
     }
   }
 
@@ -37,7 +37,7 @@ class DebugLogger {
    * Info message (only in dev)
    */
   info(...args) {
-    if (!this.isProduction) {
+    if (!this.isProduction) { /* intentionally empty */ 
     }
   }
 
@@ -45,7 +45,7 @@ class DebugLogger {
    * Debug message (only in dev)
    */
   debug(...args) {
-    if (!this.isProduction) {
+    if (!this.isProduction) { /* intentionally empty */ 
     }
   }
 }

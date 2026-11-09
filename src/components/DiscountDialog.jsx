@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { formatCurrency } from '../utils/formatHelper';
 
 /**
@@ -203,7 +204,7 @@ const DiscountDialog = ({
             </div>
             {error && (
               <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                <span>⚠️</span> {error}
+                <AlertTriangle className="w-4 h-4" /> {error}
               </p>
             )}
           </div>

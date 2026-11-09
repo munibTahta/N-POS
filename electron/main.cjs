@@ -562,6 +562,57 @@ async function performPrintReceipt(printerName, printData) {
   }
 }
 
+// --- SHARED DB VALIDATION HELPERS (module scope: used both by the generic
+// db-insert/db-update/db-delete/db-select handlers registered inside
+// registerDatabaseHandlers(), and by the db-batch-* handlers registered at
+// module scope further below) ---
+
+// ✅ FIX #3: Define allowed columns for each table (prevent SQL injection)
+const ALLOWED_COLUMNS = {
+  products: ['id_produk', 'kode_produk', 'nama_produk', 'id_kategori', 'id_satuan', 'harga_beli', 'harga_jual', 'harga_grosir', 'min_qty_grosir', 'stok_minimum', 'status', 'gambar', 'barcode', 'merek', 'lokasi_rak', 'deskripsi', 'foto_produk', 'created_at', 'updated_at', 'synced', 'sync_version', 'id_cabang_pemilik', 'urutan'],
+  branches: ['id_cabang', 'kode_cabang', 'nama_cabang', 'alamat', 'kota', 'no_telp', 'status', 'tipe_katalog', 'created_at'],
+  sales: ['id_penjualan', 'kode_transaksi', 'id_cabang', 'id_pelanggan', 'id_user', 'tanggal', 'total', 'total_diskon', 'pajak', 'metode_pembayaran', 'status', 'status_pembayaran', 'catatan', 'tanggal_transaksi', 'created_at', 'updated_at', 'synced', 'sync_version', 'bayar', 'diskon'],
+  sale_items: ['id', 'id_penjualan', 'id_produk', 'jumlah', 'harga_satuan', 'subtotal', 'diskon_item', 'created_at', 'tipe_harga', 'harga_produk'],
+  payment_details: ['id', 'id_penjualan', 'metode_pembayaran', 'shadow_pay', 'jumlah_bayar', 'created_at'],
+  sync_queue: ['id', 'table_name', 'operation', 'record_id', 'data', 'status', 'error_message', 'created_at', 'updated_at', 'server_id', 'retry_count'],
+  sync_metadata: ['key', 'value', 'created_at', 'updated_at'],
+  categories: ['id_kategori', 'nama_kategori', 'created_at', 'updated_at', 'synced', 'sync_version'],
+  units: ['id_satuan', 'nama_satuan', 'created_at', 'updated_at', 'synced', 'sync_version'],
+  customers: ['id_pelanggan', 'nama_pelanggan', 'nomor_hp', 'email', 'alamat', 'created_at', 'updated_at', 'synced', 'sync_version'],
+  supplier: ['id_supplier', 'nama_supplier', 'alamat', 'telepon', 'email', 'created_at', 'updated_at', 'synced', 'sync_version'],
+  suppliers: ['id_supplier', 'nama_supplier', 'alamat', 'telepon', 'email', 'created_at', 'updated_at', 'synced', 'sync_version'],
+  purchases: ['id_pembelian', 'kode_pembelian', 'id_supplier', 'id_cabang', 'tanggal', 'total', 'status', 'masuk_gudang', 'catatan', 'id_user', 'created_at', 'updated_at', 'synced', 'sync_version'],
+  purchase_items: ['id', 'id_pembelian', 'id_produk', 'jumlah', 'harga_beli', 'subtotal', 'created_at'],
+  metode_pembayaran: ['id_metode', 'kode_metode', 'nama_metode', 'tipe_metode', 'aktif', 'konfigurasi', 'is_default', 'urutan_tampil', 'biaya_tambahan_persen', 'biaya_tambahan_nominal', 'minimum_transaksi', 'maksimum_transaksi', 'created_at', 'updated_at', 'synced', 'sync_version'],
+  warehouse_stock: ['id', 'id_produk', 'id_cabang', 'stok', 'lokasi_rak', 'updated_at']
+};
+
+// Validate column names (prevent SQL injection via column names)
+function validateColumns(table, columns) {
+  const allowedCols = ALLOWED_COLUMNS[table] || [];
+  for (const col of columns) {
+    if (!allowedCols.includes(col)) {
+      throw new Error(`⚠️ SQL Injection Attempt: Column "${col}" not allowed in table "${table}"`);
+    }
+  }
+}
+
+const ALLOWED_TABLES = Object.keys(ALLOWED_COLUMNS);
+
+function validateWhereClause(whereClause) {
+  if (!whereClause || typeof whereClause !== 'string') {
+    throw new Error('WHERE clause must be a non-empty string');
+  }
+  const forbidden = /;|--|\/\*|\*\//;
+  if (forbidden.test(whereClause)) {
+    throw new Error('Invalid WHERE clause');
+  }
+  const safePattern = /^[\w\s=<>!\.%'"(),\-?]+$/;
+  if (!safePattern.test(whereClause)) {
+    throw new Error('WHERE clause contains unsupported characters');
+  }
+}
+
 // --- FUNCTION TO REGISTER DATABASE IPC HANDLERS ---
 // This must be called AFTER database initialization but BEFORE the window is created
 // so that the renderer can access these handlers immediately
@@ -582,52 +633,6 @@ function registerDatabaseHandlers() {
     } catch (schemaError) {
       console.error(`❌ Failed to ensure sales column ${columnName}:`, schemaError.message);
       throw schemaError;
-    }
-  }
-
-  // ✅ FIX #3: Define allowed columns for each table (prevent SQL injection)
-  const ALLOWED_COLUMNS = {
-    products: ['id_produk', 'kode_produk', 'nama_produk', 'id_kategori', 'id_satuan', 'harga_beli', 'harga_jual', 'harga_grosir', 'min_qty_grosir', 'stok_minimum', 'status', 'gambar', 'barcode', 'merek', 'lokasi_rak', 'deskripsi', 'foto_produk', 'created_at', 'updated_at', 'synced', 'sync_version', 'id_cabang_pemilik', 'urutan'],
-    branches: ['id_cabang', 'kode_cabang', 'nama_cabang', 'alamat', 'kota', 'no_telp', 'status', 'tipe_katalog', 'created_at'],
-    sales: ['id_penjualan', 'kode_transaksi', 'id_cabang', 'id_pelanggan', 'id_user', 'tanggal', 'total', 'total_diskon', 'pajak', 'metode_pembayaran', 'status', 'status_pembayaran', 'catatan', 'tanggal_transaksi', 'created_at', 'updated_at', 'synced', 'sync_version', 'bayar', 'diskon'],
-    sale_items: ['id', 'id_penjualan', 'id_produk', 'jumlah', 'harga_satuan', 'subtotal', 'diskon_item', 'created_at', 'tipe_harga', 'harga_produk'],
-    payment_details: ['id', 'id_penjualan', 'metode_pembayaran', 'shadow_pay', 'jumlah_bayar', 'created_at'],
-    sync_queue: ['id', 'table_name', 'operation', 'record_id', 'data', 'status', 'error_message', 'created_at', 'updated_at', 'server_id', 'retry_count'],
-    sync_metadata: ['key', 'value', 'created_at', 'updated_at'],
-    categories: ['id_kategori', 'nama_kategori', 'created_at', 'updated_at', 'synced', 'sync_version'],
-    units: ['id_satuan', 'nama_satuan', 'created_at', 'updated_at', 'synced', 'sync_version'],
-    customers: ['id_pelanggan', 'nama_pelanggan', 'nomor_hp', 'email', 'alamat', 'created_at', 'updated_at', 'synced', 'sync_version'],
-    supplier: ['id_supplier', 'nama_supplier', 'alamat', 'telepon', 'email', 'created_at', 'updated_at', 'synced', 'sync_version'],
-    suppliers: ['id_supplier', 'nama_supplier', 'alamat', 'telepon', 'email', 'created_at', 'updated_at', 'synced', 'sync_version'],
-    purchases: ['id_pembelian', 'kode_pembelian', 'id_supplier', 'id_cabang', 'tanggal', 'total', 'status', 'masuk_gudang', 'catatan', 'id_user', 'created_at', 'updated_at', 'synced', 'sync_version'],
-    purchase_items: ['id', 'id_pembelian', 'id_produk', 'jumlah', 'harga_beli', 'subtotal', 'created_at'],
-    metode_pembayaran: ['id_metode', 'kode_metode', 'nama_metode', 'tipe_metode', 'aktif', 'konfigurasi', 'is_default', 'urutan_tampil', 'biaya_tambahan_persen', 'biaya_tambahan_nominal', 'minimum_transaksi', 'maksimum_transaksi', 'created_at', 'updated_at', 'synced', 'sync_version'],
-    warehouse_stock: ['id', 'id_produk', 'id_cabang', 'stok', 'lokasi_rak', 'updated_at']
-  };
-
-  // Validate column names (prevent SQL injection via column names)
-  function validateColumns(table, columns) {
-    const allowedCols = ALLOWED_COLUMNS[table] || [];
-    for (const col of columns) {
-      if (!allowedCols.includes(col)) {
-        throw new Error(`⚠️ SQL Injection Attempt: Column "${col}" not allowed in table "${table}"`);
-      }
-    }
-  }
-
-  const ALLOWED_TABLES = Object.keys(ALLOWED_COLUMNS);
-
-  function validateWhereClause(whereClause) {
-    if (!whereClause || typeof whereClause !== 'string') {
-      throw new Error('WHERE clause must be a non-empty string');
-    }
-    const forbidden = /;|--|\/\*|\*\//;
-    if (forbidden.test(whereClause)) {
-      throw new Error('Invalid WHERE clause');
-    }
-    const safePattern = /^[\w\s=<>!\.%'"(),\-?]+$/;
-    if (!safePattern.test(whereClause)) {
-      throw new Error('WHERE clause contains unsupported characters');
     }
   }
 
@@ -3758,6 +3763,12 @@ ipcMain.handle('print-regular', async (event, params) => {
 */
 
 /*
+  // Orphaned fragment from a retired 'print-receipt' handler (no enclosing
+  // ipcMain.handle(...) — printerName/printData were never in scope here).
+  // Left disabled intentionally; QZ Tray (print-thermal) / print-regular are
+  // the supported print paths. The unclosed `/*` that used to start here
+  // had accidentally swallowed every handler below it up to line ~4447 —
+  // that was the real bug; this fragment itself was already dead.
   try {
     return await performPrintReceipt(printerName, printData);
   } catch (error) {
@@ -3768,7 +3779,7 @@ ipcMain.handle('print-regular', async (event, params) => {
     throw friendly;
   }
 });
-
+*/
 
 // --- IPC HANDLERS FOR OFFLINE DATABASE ---
 
@@ -3854,8 +3865,7 @@ ipcMain.handle('db-batch-insert', async (event, { table, rows }) => {
     if (!table || typeof table !== 'string') throw new Error('Invalid table name');
     if (!Array.isArray(rows) || rows.length === 0) return { inserted: 0, failed: 0, failedRows: [] };
 
-    const allowedTables = ['products', 'sales', 'sale_items', 'payment_details', 'sync_queue', 'sync_metadata', 'categories', 'units', 'customers', 'supplier', 'suppliers', 'purchases', 'purchase_items', 'metode_pembayaran', 'warehouse_stock'];
-    if (!allowedTables.includes(table)) throw new Error(`Table '${table}' not allowed`);
+    if (!ALLOWED_TABLES.includes(table)) throw new Error(`Table '${table}' not allowed`);
 
     let inserted = 0;
     let failed = 0;
@@ -3866,6 +3876,7 @@ ipcMain.handle('db-batch-insert', async (event, { table, rows }) => {
       rows.forEach((data, index) => {
         try {
           const columns = Object.keys(data);
+          validateColumns(table, columns);
           const placeholders = columns.map(() => '?').join(', ');
           const values = Object.values(data);
           const stmt = offlineDb.prepare(`INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`);
@@ -3899,8 +3910,7 @@ ipcMain.handle('db-batch-update', async (event, { table, updates }) => {
     if (!table || typeof table !== 'string') throw new Error('Invalid table name');
     if (!Array.isArray(updates) || updates.length === 0) return { updated: 0, failed: 0 };
 
-    const allowedTables = ['products', 'sales', 'sale_items', 'payment_details', 'sync_queue', 'sync_metadata', 'categories', 'units', 'customers', 'supplier', 'suppliers', 'purchases', 'purchase_items', 'metode_pembayaran', 'warehouse_stock'];
-    if (!allowedTables.includes(table)) throw new Error(`Table '${table}' not allowed`);
+    if (!ALLOWED_TABLES.includes(table)) throw new Error(`Table '${table}' not allowed`);
 
     let updated = 0;
     let failed = 0;
@@ -3908,14 +3918,17 @@ ipcMain.handle('db-batch-update', async (event, { table, updates }) => {
     const transaction = offlineDb.transaction(() => {
       updates.forEach(({ data, whereClause, whereValues }, index) => {
         try {
+          validateWhereClause(whereClause);
           // Validate whereValues count matches placeholders in whereClause
           const placeholderCount = (whereClause.match(/\?/g) || []).length;
           const actualValues = whereValues || [];
           if (actualValues.length !== placeholderCount) {
             throw new Error(`Row ${index}: WHERE values count (${actualValues.length}) does not match placeholders (${placeholderCount})`);
           }
-          
-          const setClause = Object.keys(data).map(key => `${key} = ?`).join(', ');
+
+          const columns = Object.keys(data);
+          validateColumns(table, columns);
+          const setClause = columns.map(key => `${key} = ?`).join(', ');
           const values = [...Object.values(data), ...actualValues];
           const stmt = offlineDb.prepare(`UPDATE ${table} SET ${setClause} WHERE ${whereClause}`);
           stmt.run(...values);
@@ -3941,8 +3954,8 @@ ipcMain.handle('db-batch-delete', async (event, { table, whereClause, whereValue
     if (!offlineDb) throw new Error('Database not initialized');
     if (!table || typeof table !== 'string') throw new Error('Invalid table name');
 
-    const allowedTables = ['products', 'sales', 'sale_items', 'payment_details', 'sync_queue', 'sync_metadata', 'categories', 'units', 'customers', 'supplier', 'suppliers', 'purchases', 'purchase_items', 'metode_pembayaran', 'warehouse_stock'];
-    if (!allowedTables.includes(table)) throw new Error(`Table '${table}' not allowed`);
+    if (!ALLOWED_TABLES.includes(table)) throw new Error(`Table '${table}' not allowed`);
+    validateWhereClause(whereClause);
 
     // Validate whereValues count matches placeholders in whereClause
     const placeholderCount = (whereClause.match(/\?/g) || []).length;
@@ -3991,22 +4004,14 @@ ipcMain.handle('db-update-sync-queue-server-id', async (event, { syncId, serverI
   }
 });
 
-ipcMain.handle('db-set-sync-metadata', async (event, { key, value }) => {
-  try {
-    if (!offlineDb) throw new Error('Database not initialized');
-
-    const stmt = offlineDb.prepare(`
-      INSERT OR REPLACE INTO sync_metadata (key, value, updated_at)
-      VALUES (?, ?, CURRENT_TIMESTAMP)
-    `);
-    const result = stmt.run(key, JSON.stringify(value));
-
-    return result;
-  } catch (error) {
-    console.error('❌ Failed to set sync metadata:', error);
-    throw error;
-  }
-});
+// Note: 'db-set-sync-metadata' is already registered above (see the
+// `sync_metadata` handler near the top of registerDatabaseHandlers) — that
+// version stores `value` as-is, matching what 'db-get-sync-metadata' reads
+// back (no JSON parsing). A second, inconsistent duplicate registration
+// (JSON.stringify-ing the value, which the getter never un-stringifies) used
+// to live here; removed rather than restored, since Electron throws if two
+// handlers are registered for the same channel and this one would have won
+// by registration order, silently breaking every dbGetSyncMetadata() read.
 
 // Handler for on-demand database corruption check and repair
 ipcMain.handle('db-repair-corruption', async (event) => {

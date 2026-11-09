@@ -44,7 +44,7 @@ export const useOptimizedStockReport = () => {
       const products = response.data.data || [];
       cacheRef.current.set(categoryId, products);
 
-      logger.info(`✅ Loaded ${products.length} products for category ${categoryId}`);
+      logger.info(`Loaded ${products.length} products for category ${categoryId}`);
       return products;
     } catch (err) {
       logger.error(`Error loading category ${categoryId}:`, err);
@@ -66,7 +66,7 @@ export const useOptimizedStockReport = () => {
       // Use centralized helper: only use cache when offline
       const cachedSummary = CacheManager.getCachedIfOffline('/stok-summary');
       if (cachedSummary) {
-        logger.info('📦 Using cached stock summary (offline)');
+        logger.info('Using cached stock summary (offline)');
         setStockData(cachedSummary);
         return cachedSummary;
       }
@@ -99,7 +99,7 @@ export const useOptimizedStockReport = () => {
       CacheManager.set('/stok-summary', summaryArray, 30 * 60 * 1000);
       setStockData(summaryArray);
 
-      logger.info(`✅ Loaded stock summary: ${summaryArray.length} categories`);
+      logger.info(`Loaded stock summary: ${summaryArray.length} categories`);
       return summaryArray;
     } catch (err) {
       logger.error('Error loading stock summary:', err);
@@ -123,7 +123,7 @@ export const useOptimizedStockReport = () => {
       });
 
       const results = response.data.data || [];
-      logger.info(`✅ Found ${results.length} products matching: ${query}`);
+      logger.info(`Found ${results.length} products matching: ${query}`);
       return results;
     } catch (err) {
       logger.error('Stock search error:', err);
@@ -148,19 +148,19 @@ export const useOptimizedStockReport = () => {
       if (!skipCache) {
         const cached = CacheManager.getCachedIfOffline('/laporan/stok-full');
         if (cached) {
-          logger.info('📦 Using cached full stock report (offline)');
+          logger.info('Using cached full stock report (offline)');
           setStockData(cached);
           return cached;
         }
       }
 
-      logger.warn('⚠️ Loading full stock report (14MB+) - this may cause memory pressure');
+      logger.warn('Loading full stock report (14MB+) - this may cause memory pressure');
 
       const response = await getStockReport();
       const report = response.data.data || [];
 
       // Note: This won't be cached because /laporan/stok is in noCachePatterns
-      logger.info(`✅ Loaded full stock report: ${report.length} items`);
+      logger.info(`Loaded full stock report: ${report.length} items`);
       setStockData(report);
 
       return report;
@@ -178,7 +178,7 @@ export const useOptimizedStockReport = () => {
    */
   const clearSessionCache = useCallback(() => {
     cacheRef.current.clear();
-    logger.info('🗑️ Cleared session stock cache');
+    logger.info('Cleared session stock cache');
   }, []);
 
   /**

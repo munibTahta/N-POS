@@ -108,14 +108,14 @@ class MemoryManager {
     const memory = this.getMemoryUsage();
     if (memory) {
       if (memory.usagePercent > 90) {
-        console.error('🚨 Critical memory usage detected (>90%), clearing all caches');
+        console.error('Critical memory usage detected (>90%), clearing all caches');
         this.clear();
         // Force garbage collection if available
         if (window.gc) {
           window.gc();
         }
       } else if (memory.usagePercent > 75) {
-        console.warn('⚠️ High memory usage detected (>75%), clearing oldest cache entries');
+        console.warn('High memory usage detected (>75%), clearing oldest cache entries');
         // Clear oldest entries instead of everything
         const keysToDelete = [];
         for (const [key, _] of this.cacheTimestamps) {
@@ -344,7 +344,7 @@ export const setupMemoryManagement = () => {
     const memoryInfo = monitorMemoryUsage();
     if (memoryInfo) {
       if (memoryInfo.isCriticalUsage) {
-        console.error('🚨 CRITICAL memory usage (>95%), emergency cleanup');
+        console.error('CRITICAL memory usage (>95%), emergency cleanup');
         memoryManager.clear();
         apiCache.clear();
         imageCache.clear();
@@ -354,7 +354,7 @@ export const setupMemoryManagement = () => {
           window.gc();
         }
       } else if (memoryInfo.isHighUsage) {
-        console.warn(`⚠️ HIGH memory usage (${memoryInfo.usagePercent.toFixed(1)}%), partial cleanup`);
+        console.warn(`HIGH memory usage (${memoryInfo.usagePercent.toFixed(1)}%), partial cleanup`);
         memoryManager.checkMemoryPressure();
         // Also clear old API cache
         for (const [endpoint, cached] of apiCache.cache) {

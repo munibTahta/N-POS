@@ -42,7 +42,7 @@ export const useOfflineDiscounts = () => {
     try {
       await dbBatchInsert('discounts', records);
     } catch (err) {
-      console.warn('⚠️ Failed to persist discounts:', err);
+      console.warn('Failed to persist discounts:', err);
     }
   }, []);
 
@@ -57,7 +57,7 @@ export const useOfflineDiscounts = () => {
       });
       return result || [];
     } catch (dbErr) {
-      console.warn('⚠️ Failed to load discounts from offline DB:', dbErr);
+      console.warn('Failed to load discounts from offline DB:', dbErr);
       return [];
     }
   }, []);

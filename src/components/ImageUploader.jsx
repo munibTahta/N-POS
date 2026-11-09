@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Upload, X, CheckCircle, Image as ImageIcon, Loader } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Upload, X, CheckCircle, Image as ImageIcon, Loader, ZoomIn } from 'lucide-react';
 import { useNotifications } from '../hooks/useNotifications';
 
 /**
@@ -86,6 +86,14 @@ const ImageUploader = ({
   const [isDragActive, setIsDragActive] = useState(false);
   const [compressStats, setCompressStats] = useState(null);
   const [isCompressing, setIsCompressing] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isLightboxOpen) return;
+    const handleKeyDown = (e) => { if (e.key === 'Escape') setIsLightboxOpen(false); };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isLightboxOpen]);
 
   // Parse initial value (if it's a File object)
   React.useEffect(() => {
@@ -240,51 +248,75 @@ const ImageUploader = ({
       )}
 
       {preview && (
-        <div className="relative border border-slate-200 rounded-2xl p-4 bg-slate-50/50 flex flex-col sm:flex-row items-center gap-4 transition duration-300 hover:shadow-md">
+        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden transition duration-300 hover:shadow-md">
           {/* Preview Image */}
-          <div className="relative w-32 h-32 flex-shrink-0 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => setIsLightboxOpen(true)}
+            className="group relative flex items-center justify-center w-full h-48 bg-slate-50"
+            title="Klik untuk memperbesar"
+          >
             <img
               src={preview}
               alt="Uploaded preview"
-              className="w-full h-full object-contain"
+              className="max-w-full max-h-full object-contain"
             />
-          </div>
+            <span className="absolute inset-0 flex items-center justify-center bg-slate-900/0 group-hover:bg-slate-900/30 transition duration-300">
+              <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition duration-300" />
+            </span>
+          </button>
 
-          {/* Metadata & Stats */}
-          <div className="flex-grow text-center sm:text-left space-y-1.5 min-w-0">
-            <h4 className="text-sm font-semibold text-slate-800 flex items-center justify-center sm:justify-start gap-1.5">
-              <ImageIcon className="w-4 h-4 text-blue-500" />
-              Gambar Terpilih
-            </h4>
-            
-            {compressStats ? (
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-slate-600">
-                <div>Dimensi Asli: <strong className="text-slate-800">{compressStats.originalDim}</strong></div>
-                <div>Dimensi Baru: <strong className="text-slate-800">{compressStats.compressedDim}</strong></div>
-                <div>Ukuran Asli: <strong className="text-slate-800">{compressStats.originalSize}</strong></div>
-                <div>Ukuran Baru: <strong className="text-slate-800 text-emerald-600">{compressStats.compressedSize}</strong></div>
-                
-                <div className="col-span-2 pt-1">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                    <CheckCircle className="w-3.5 h-3.5" />
-                    Optimal: {compressStats.ratio}
+          {/* Metadata & Actions */}
+          <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-slate-200">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-slate-800 flex items-center gap-1.5">
+                <ImageIcon className="w-4 h-4 text-blue-500 shrink-0" />
+                Gambar terpilih
+              </p>
+              {compressStats ? (
+                <p className="mt-0.5 text-xs text-slate-500 truncate">
+                  {compressStats.compressedDim} · {compressStats.compressedSize}
+                  <span className="ml-1.5 inline-flex items-center gap-1 text-emerald-600 font-medium">
+                    <CheckCircle className="w-3 h-3" />
+                    {compressStats.ratio}
                   </span>
-                </div>
-              </div>
-            ) : (
-              <p className="text-xs text-slate-500 italic">Membuka pratinjau gambar...</p>
-            )}
-          </div>
+                </p>
+              ) : (
+                <p className="mt-0.5 text-xs text-slate-500 italic">Membuka pratinjau gambar...</p>
+              )}
+            </div>
 
-          {/* Remove Button */}
+            <button
+              type="button"
+              onClick={handleClear}
+              className="p-2 shrink-0 text-slate-500 hover:bg-red-50 hover:text-red-600 rounded-full transition duration-300"
+              title="Hapus gambar"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isLightboxOpen && preview && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-6"
+          onClick={() => setIsLightboxOpen(false)}
+        >
           <button
             type="button"
-            onClick={handleClear}
-            className="absolute top-2 right-2 sm:static p-2 bg-white hover:bg-red-50 hover:text-red-600 border border-slate-200 rounded-full shadow-sm hover:border-red-100 transition duration-300"
-            title="Hapus gambar"
+            onClick={() => setIsLightboxOpen(false)}
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+            title="Tutup"
           >
-            <X className="w-4 h-4" />
+            <X className="w-6 h-6" />
           </button>
+          <img
+            src={preview}
+            alt="Pratinjau penuh"
+            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>

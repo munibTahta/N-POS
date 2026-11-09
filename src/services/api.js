@@ -235,7 +235,7 @@ apiClient.interceptors.response.use(
           data: {
             success: true,
             offline: true,
-            message: '✓ Data tersimpan (akan disinkronkan saat online)',
+            message: 'Data tersimpan (akan disinkronkan saat online)',
             queued: true
           },
           status: 202,
@@ -347,14 +347,24 @@ const searchCache = new Map();
 let searchCacheTimer = null;
 
 // Fungsi untuk mencari produk dengan aggressive caching dan size limit
-export const searchProducts = (query, limit = 100) => {
+// `options.katalogFilter`/`options.idCabang` scope results to a branch's catalog
+// (see ProductsPage/PosPage). GET /produk/search supports the same
+// katalog_filter/id_cabang params as GET /produk (confirmed against the
+// backend's produkController.js), so scoped searches still use the fast
+// search endpoint rather than falling back to the heavier full listing.
+export const searchProducts = (query, limit = 100, options = {}) => {
   if (!query || query.trim().length === 0) {
     return Promise.resolve([]);
   }
-  
+
+  const { katalogFilter, idCabang } = options;
+  const catalogParams = katalogFilter
+    ? { katalog_filter: katalogFilter, id_cabang: katalogFilter === 'terpisah' ? idCabang : undefined }
+    : {};
+
   const q = query.trim().toLowerCase();
-  const cacheKey = `search:${q}:${limit}`;
-  
+  const cacheKey = `search:${q}:${limit}:${katalogFilter ? `${katalogFilter}:${idCabang || ''}` : 'unscoped'}`;
+
   if (searchCache.has(cacheKey)) {
     const cached = searchCache.get(cacheKey);
     // TTL: 2 seconds for search cache
@@ -363,21 +373,21 @@ export const searchProducts = (query, limit = 100) => {
     }
     searchCache.delete(cacheKey);
   }
-  
-  const promise = apiClient.get('/produk/search', { 
-    params: { q, limit: Math.min(limit, 50) } 
+
+  const promise = apiClient.get('/produk/search', {
+    params: { q, limit: Math.min(limit, 50), ...catalogParams }
   }).then(res => {
     const arr = Array.isArray(res) ? res : res?.data || [];
-    
+
     searchCache.set(cacheKey, { data: arr, time: Date.now() });
-    
+
     // Enforce max cache size limit (LRU eviction)
     if (searchCache.size > MAX_SEARCH_CACHE_SIZE) {
       // Remove oldest entry (first one in insertion order)
       const firstKey = searchCache.keys().next().value;
       searchCache.delete(firstKey);
     }
-    
+
     // Setup periodic cache cleanup for expired entries
     if (searchCacheTimer) clearTimeout(searchCacheTimer);
     searchCacheTimer = setTimeout(() => {
@@ -389,20 +399,21 @@ export const searchProducts = (query, limit = 100) => {
         }
       }
     }, 30000);
-    
+
     return arr;
   }).catch(_err => {
-    return getProducts({ 
-      search: q, 
+    return getProducts({
+      search: q,
       limit: Math.min(limit, 50),
       page: 1,
       sortBy: 'nama_produk',
-      sortOrder: 'asc'
+      sortOrder: 'asc',
+      ...catalogParams
     }).then(res => {
       const arr = Array.isArray(res) ? res : res?.data?.data || res?.data || [];
       if (!Array.isArray(arr)) return [];
-      
-      return arr.filter(p => 
+
+      return arr.filter(p =>
         (p.nama_produk || '').toLowerCase().includes(q) ||
         (p.kode_produk || '').toLowerCase().includes(q) ||
         (p.barcode || '').toLowerCase().includes(q) ||

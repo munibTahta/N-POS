@@ -48,7 +48,7 @@ class RetryManager {
       // 2. Offline (unless it's a temporary network blip)
       // 3. Error is not retryable (4xx errors except specific ones)
       if (attempt >= this.maxRetries) {
-        console.warn(`❌ Max retries reached for request`);
+        console.warn(`Max retries reached for request`);
         throw error;
       }
 

@@ -24,15 +24,15 @@ class SyncEngine {
     this.progressCallback = null; // Untuk progress tracking
     this.syncStats = { total: 0, completed: 0 }; // Track sync progress
     
-    // ✅ FIX #1: Add transaction write lock to prevent race conditions
+    // FIX #1: Add transaction write lock to prevent race conditions
     this.transactionWriteLock = false; // Prevent concurrent writes during sync
     this.queuedTransactions = []; // Queue transactions during sync
-    this.transactionsLocked = false; // ✅ FIX #2: UI-level transaction lock
+    this.transactionsLocked = false; // FIX #2: UI-level transaction lock
 
     // Listen for online/offline events
     window.addEventListener('online', async () => {
       this.isOnline = true;
-      this.transactionsLocked = true;  // ✅ FIX #2: Lock transactions during sync
+      this.transactionsLocked = true; // FIX #2: Lock transactions during sync
       try {
         // Notify UI that sync is happening
         window.dispatchEvent(new CustomEvent('syncStarted'));
@@ -49,6 +49,27 @@ class SyncEngine {
     window.addEventListener('offline', () => {
       this.isOnline = false;
       webSocketService.disconnect();
+    });
+
+    // NetworkStateService does a real health-check ping (not just the
+    // unreliable navigator.onLine event) and dispatches 'autoSync' when it
+    // detects recovery — nothing used to listen for it, so a reconnect that
+    // the raw browser online/offline events missed would never trigger a
+    // sync. Route it through the same path as the 'online' handler above.
+    window.addEventListener('autoSync', async () => {
+      if (this.syncInProgress) return;
+      this.isOnline = true;
+      this.transactionsLocked = true;
+      try {
+        window.dispatchEvent(new CustomEvent('syncStarted'));
+        this.connectWebSocket();
+        await this.autoSync();
+      } catch (error) {
+        console.error('Auto sync (from autoSync event) failed', error);
+      } finally {
+        this.transactionsLocked = false;
+        window.dispatchEvent(new CustomEvent('syncCompleted'));
+      }
     });
 
     // Setup WebSocket listeners for real-time updates
@@ -177,7 +198,7 @@ class SyncEngine {
   async performFullSync() {
     // Note: syncInProgress flag should be managed by caller (forceSync or autoSync)
     try {
-      // ✅ FIX #1: Acquire write lock before sync to prevent race conditions
+      // FIX #1: Acquire write lock before sync to prevent race conditions
       this.transactionWriteLock = true;
       this.transactionsLocked = true;
       // Add timeout to prevent indefinite hanging
@@ -240,10 +261,10 @@ class SyncEngine {
       // Step 3: Update sync metadata
       await this.saveLastSyncTime();
     } catch (error) {
-      console.error('❌ Full sync failed:', error?.message);
+      console.error('Full sync failed:', error?.message);
       throw error;
     } finally {
-      // ✅ FIX #1: Release write lock and process queued transactions
+      // FIX #1: Release write lock and process queued transactions
       this.transactionWriteLock = false;
       this.transactionsLocked = false;
       // Process any transactions that were queued during sync
@@ -293,7 +314,7 @@ class SyncEngine {
 
           await this.processSyncItem(item);
 
-          // ✅ CRITICAL: Validate server_id exists before deleting from queue
+          // CRITICAL: Validate server_id exists before deleting from queue
           // This ensures we have proof the item was successfully synced to server
           let hasServerId = item.server_id;
 
@@ -322,7 +343,7 @@ class SyncEngine {
             throw new Error(`Sync item ${item.id} (${item.table_name}) processed successfully but missing server_id - cannot delete from queue`);
           }
 
-          // ✅ ATOMIC: Use transaction to ensure status update + delete happen together
+          // ATOMIC: Use transaction to ensure status update + delete happen together
           if (window.electronAPI?.dbTransaction) {
             await window.electronAPI.dbTransaction([
               {
@@ -369,11 +390,18 @@ class SyncEngine {
           console.error(`Failed to sync item ${item.id}:`, error);
 
           if (error.isStockConflict) {
+            // Stock conflicts used to be re-marked 'failed' with retry_count
+            // left unchanged, so recoverStuckSyncItems() (retry_count < 3)
+            // would reset it to 'pending' and retry it forever, hammering
+            // getStockReport() every sync cycle with no chance of it ever
+            // being permanently resolved. Increment like any other failure
+            // so it respects the same MAX_SYNC_ITEM_RETRIES cap.
+            const conflictRetryCount = (item.retry_count || 0) + 1;
             if (window.electronAPI?.dbUpdateSyncStatus) {
               await window.electronAPI.dbUpdateSyncStatus({
                 id: item.id,
                 status: 'failed',
-                retryCount: item.retry_count || 0
+                retryCount: conflictRetryCount
               });
             }
             continue;
@@ -455,7 +483,7 @@ class SyncEngine {
         throw new Error(`Invalid sale data: missing required fields. Data: ${JSON.stringify(saleData)}`);
       }
 
-      // ✅ FIX #4: Mark transaction as "processing" to indicate atomicity boundary
+      // FIX #4: Mark transaction as"processing"to indicate atomicity boundary
       if (window.electronAPI?.dbUpdate) {
         await window.electronAPI.dbUpdate({
           table: 'sync_queue',
@@ -738,6 +766,18 @@ class SyncEngine {
   }
 
   async syncPaymentDetailToServer(paymentData, syncItem) {
+    // Unlike syncSaleToServer, `syncItem.server_id` can't be used as the
+    // already-synced guard here: queueFailedPayments() pre-populates it at
+    // insert time with the *parent sale's* server id (see queueFailedPayments
+    // above), so it's always truthy before this has ever run once. Use
+    // `server_response` instead — it is never set until a sync actually
+    // succeeds (see the dbUpdateSyncQueueServerId call at the end of this
+    // function) — otherwise a lost/retried response here would silently
+    // double-record a payment with zero duplicate protection.
+    if (syncItem.server_response) {
+      return { status: 'already_synced' };
+    }
+
     const serverSaleId = paymentData.server_id_penjualan || paymentData.server_id;
     if (!serverSaleId) {
       throw new Error('Missing server sale ID for payment detail sync');
@@ -787,7 +827,7 @@ class SyncEngine {
         whereValues: [cutoffISO]
       });
 
-      if (result?.changes > 0) {
+      if (result?.changes > 0) { /* intentionally empty */ 
       }
       return result?.changes || 0;
     } catch (error) {
@@ -995,35 +1035,35 @@ class SyncEngine {
       let currentStep = 0;
 
       currentStep++;
-      this.updateProgress(currentStep, totalSteps, '📦 Products...');
+      this.updateProgress(currentStep, totalSteps, 'Products...');
       await this.pullProducts();
 
       currentStep++;
-      this.updateProgress(currentStep, totalSteps, '📊 Stock...');
+      this.updateProgress(currentStep, totalSteps, 'Stock...');
       await this.pullStocks();
 
 
       
       currentStep++;
-      this.updateProgress(currentStep, totalSteps, '📋 Categories...');
+      this.updateProgress(currentStep, totalSteps, 'Categories...');
       await this.pullCategories();
       
       currentStep++;
-      this.updateProgress(currentStep, totalSteps, '📋 Units...');
+      this.updateProgress(currentStep, totalSteps, 'Units...');
       await this.pullUnits();
       
       currentStep++;
-      this.updateProgress(currentStep, totalSteps, '📋 Suppliers...');
+      this.updateProgress(currentStep, totalSteps, 'Suppliers...');
       await this.pullSuppliers();
 
       currentStep++;
-      this.updateProgress(currentStep, totalSteps, '🏢 Branches...');
+      this.updateProgress(currentStep, totalSteps, 'Branches...');
       await this.pullBranches();
 
 
       
       currentStep++;
-      this.updateProgress(currentStep, totalSteps, '📊 Sales & Items...');
+      this.updateProgress(currentStep, totalSteps, 'Sales & Items...');
       
       // Pull sales dan purchases
       try {
@@ -1109,7 +1149,7 @@ class SyncEngine {
           }
         }
         if (skippedSales.length > 0) {
-          const sample = skippedSales.slice(0, 6).map(s => s.kode).join(', ');
+          const _sample = skippedSales.slice(0, 6).map(s => s.kode).join(', ');
         }
 
         // Pull purchases (dengan products sudah tersinkron - tidak ada skip lagi)
@@ -1199,7 +1239,7 @@ class SyncEngine {
         console.warn('Failed to pull sales and purchases:', error);
       }
 
-      this.updateProgress(totalSteps, totalSteps, '✅ Sync Complete!');
+      this.updateProgress(totalSteps, totalSteps, 'Sync Complete!');
 
     } catch (error) {
       console.error('Failed to pull server data:', error);
@@ -1290,7 +1330,7 @@ class SyncEngine {
   }
 
   // Refresh data from server without pushing local changes
-  // ⭐ Perbarui Data: Hanya ambil data terbaru dari server
+  // Perbarui Data: Hanya ambil data terbaru dari server
   async updateDataFromServer() {
     if (!this.isOnline) {
       throw new Error('Tidak dapat update saat offline');
@@ -1313,7 +1353,7 @@ class SyncEngine {
     }
   }
 
-  // ⭐ Sinkron Data: Kirim perubahan lokal + ambil data terbaru dari server
+  // Sinkron Data: Kirim perubahan lokal + ambil data terbaru dari server
   async syncDataBidirectional() {
     if (!this.isOnline) {
       throw new Error('Tidak dapat sinkron saat offline');
@@ -1426,7 +1466,12 @@ class SyncEngine {
   async pullProducts() {
     try {
       const { getProducts } = await import('./api.js');
-      const productsResponse = await getProducts();
+      // Without skip_pagination the backend defaults to a 50-item page, so a
+      // regular sync only ever refreshed the first 50 products (and, in
+      // pullStocks's case, only their stock too) and left the rest stale
+      // indefinitely (offlineDataSync.js's separate sync path already got
+      // this right — this one hadn't).
+      const productsResponse = await getProducts({ skip_pagination: true });
       const productsData = extractArray(productsResponse);
 
       for (const product of productsData) {
@@ -1497,7 +1542,12 @@ class SyncEngine {
   async pullStocks() {
     try {
       const { getProducts } = await import('./api.js');
-      const productsResponse = await getProducts();
+      // Without skip_pagination the backend defaults to a 50-item page, so a
+      // regular sync only ever refreshed the first 50 products (and, in
+      // pullStocks's case, only their stock too) and left the rest stale
+      // indefinitely (offlineDataSync.js's separate sync path already got
+      // this right — this one hadn't).
+      const productsResponse = await getProducts({ skip_pagination: true });
       const productsData = extractArray(productsResponse);
 
       const stocks = [];
@@ -1521,7 +1571,7 @@ class SyncEngine {
       if (stocks.length > 0 && window.electronAPI?.productDB_bulkUpsertStocks) {
         try {
           const result = await window.electronAPI.productDB_bulkUpsertStocks(stocks);
-          if (result?.synced > 0 || (result?.failed > 0)) {
+          if (result?.synced > 0 || (result?.failed > 0)) { /* intentionally empty */ 
           }
         } catch (stockError) {
           console.warn('Failed to upsert stocks:', stockError.message);

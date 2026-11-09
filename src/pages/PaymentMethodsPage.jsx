@@ -54,8 +54,8 @@ const PaymentMethodsPage = () => {
       });
 
       setPaymentMethods(sortedMethods);
-      if (isFromCache) {
-        if (import.meta.env.DEV) void 0 && ('Payment methods loaded from cache');
+      if (isFromCache) { /* noop */ 
+        
       }
     } catch (_err) {
       toast.error('Gagal memuat data metode pembayaran');

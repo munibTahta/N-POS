@@ -245,8 +245,8 @@ const BranchesPage = () => {
               type: 'select',
               options: [
                 { value: '', label: 'Semua Tipe' },
-                { value: 'global', label: '🌐 Global' },
-                { value: 'terpisah', label: '🏠 Terpisah' }
+                { value: 'global', label: 'Global' },
+                { value: 'terpisah', label: 'Terpisah' }
               ]
             },
             {

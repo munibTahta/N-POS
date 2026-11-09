@@ -1,30 +1,33 @@
 import React, { useState, useEffect } from 'react';
+import { Banknote, CreditCard, Landmark, Smartphone, Wallet, Building2, X } from 'lucide-react';
 import { getMetodePembayaran } from '../services/api';
 import { formatCurrency } from '../utils/formatHelper';
 import PaymentAmountInput from './PaymentAmountInput';
 
 // Icon mapping untuk metode pembayaran
 const paymentIcons = {
-  'tunai': '💵',
-  'kartu kredit': '💳',
-  'transfer': '🏦',
-  'e-wallet': '📱',
-  'gopay': '🟢',
-  'ovo': '🟣',
-  'dana': '🔵',
-  'link aja': '🟠',
-  'bca': '🏢',
-  'mandiri': '🏢',
-  'bni': '🏢',
-  'bri': '🏢',
+  'tunai': { Icon: Banknote, color: 'text-green-600' },
+  'kartu kredit': { Icon: CreditCard, color: 'text-indigo-600' },
+  'transfer': { Icon: Landmark, color: 'text-blue-600' },
+  'e-wallet': { Icon: Smartphone, color: 'text-slate-600' },
+  'gopay': { Icon: Wallet, color: 'text-green-500' },
+  'ovo': { Icon: Wallet, color: 'text-purple-600' },
+  'dana': { Icon: Wallet, color: 'text-blue-500' },
+  'link aja': { Icon: Wallet, color: 'text-orange-500' },
+  'bca': { Icon: Building2, color: 'text-slate-700' },
+  'mandiri': { Icon: Building2, color: 'text-slate-700' },
+  'bni': { Icon: Building2, color: 'text-slate-700' },
+  'bri': { Icon: Building2, color: 'text-slate-700' },
 };
+
+const defaultPaymentIcon = { Icon: Wallet, color: 'text-gray-500' };
 
 const getPaymentIcon = (metodeName) => {
   const name = metodeName.toLowerCase();
-  for (const [key, icon] of Object.entries(paymentIcons)) {
-    if (name.includes(key)) return icon;
+  for (const [key, iconInfo] of Object.entries(paymentIcons)) {
+    if (name.includes(key)) return iconInfo;
   }
-  return '💰'; // Default icon
+  return defaultPaymentIcon; // Default icon
 };
 
 const PemilihMetodePembayaran = ({
@@ -112,20 +115,23 @@ const PemilihMetodePembayaran = ({
     return (
       <div className="space-y-2">
         <div className="flex flex-wrap gap-1">
-          {metodePembayaran.map((metode) => (
-            <button
-              key={metode.id}
-              onClick={() => handleAddPayment(metode)}
-              className="text-2xl p-2 hover:bg-gray-100 rounded-lg transition-colors tooltip relative group"
-              disabled={remaining <= 0}
-              title={metode.nama_metode}
-            >
-              {getPaymentIcon(metode.nama_metode)}
-              <span className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
-                {metode.nama_metode}
-              </span>
-            </button>
-          ))}
+          {metodePembayaran.map((metode) => {
+            const { Icon, color } = getPaymentIcon(metode.nama_metode);
+            return (
+              <button
+                key={metode.id}
+                onClick={() => handleAddPayment(metode)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors tooltip relative group"
+                disabled={remaining <= 0}
+                title={metode.nama_metode}
+              >
+                <Icon className={`w-6 h-6 ${color}`} />
+                <span className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+                  {metode.nama_metode}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
     );
@@ -138,14 +144,16 @@ const PemilihMetodePembayaran = ({
 
       {/* Daftar Metode Pembayaran Tersedia - Icon + Teks */}
       <div className="grid grid-cols-2 gap-2">
-        {metodePembayaran.map((metode) => (
+        {metodePembayaran.map((metode) => {
+          const { Icon, color } = getPaymentIcon(metode.nama_metode);
+          return (
           <button
             key={metode.id}
             onClick={() => handleAddPayment(metode)}
             className="p-3 border rounded-lg hover:bg-blue-50 hover:border-blue-400 transition-all flex items-center gap-2"
             disabled={remaining <= 0}
           >
-            <span className="text-2xl">{getPaymentIcon(metode.nama_metode)}</span>
+            <Icon className={`w-6 h-6 ${color}`} />
             <div className="text-left">
               <div className="font-medium text-sm">{metode.nama_metode}</div>
               {metode.biaya_tambahan_nominal > 0 && (
@@ -163,18 +171,21 @@ const PemilihMetodePembayaran = ({
               )}
             </div>
           </button>
-        ))}
+          );
+        })}
       </div>
 
       {/* Pembayaran yang Dipilih */}
       {selectedPayments.length > 0 && (
         <div className="space-y-2">
           <h4 className="font-medium text-sm">Metode Pembayaran yang Dipilih:</h4>
-          {selectedPayments.map((payment, index) => (
+          {selectedPayments.map((payment, index) => {
+            const { Icon: PaymentIcon, color: paymentColor } = getPaymentIcon(payment.nama_metode);
+            return (
             <div key={payment.uniqueId} className="border rounded-lg p-3 bg-blue-50">
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">{getPaymentIcon(payment.nama_metode)}</span>
+                  <PaymentIcon className={`w-5 h-5 ${paymentColor}`} />
                   <span className="font-medium text-sm">{payment.nama_metode}</span>
                 </div>
                 <button
@@ -182,7 +193,7 @@ const PemilihMetodePembayaran = ({
                   className="text-red-500 hover:text-red-700 font-bold"
                   title="Hapus metode pembayaran ini"
                 >
-                  ✕
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
@@ -209,7 +220,8 @@ const PemilihMetodePembayaran = ({
                 />
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

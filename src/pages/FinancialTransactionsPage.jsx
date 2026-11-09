@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Edit, Trash2, Download } from 'lucide-react';
+import { Plus, Edit, Trash2, Download, X } from 'lucide-react';
 import HeaderActionButton from '../components/HeaderActionButton';
 import DataTable from '../components/DataTable';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
@@ -38,7 +38,7 @@ const FinancialTransactionsPage = () => {
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [branches, setBranches] = useState([]);
   const [accounts, setAccounts] = useState([]);
-  const [financialAccounts, setFinancialAccounts] = useState([]);
+  const [_financialAccounts, setFinancialAccounts] = useState([]);
   const [formState, setFormState] = useState(getInitialTransactionForm());
 
   useEffect(() => {
@@ -248,8 +248,8 @@ const FinancialTransactionsPage = () => {
       Cabang: row.cabang?.nama_cabang || '-',
       Jenis: row.jenis_transaksi || '-',
       Keterangan: row.keterangan || '-',
-      Debit: formatCurrency(row.total_debit),
-      Kredit: formatCurrency(row.total_kredit)
+      Debit: Number(row.total_debit || 0),
+      Kredit: Number(row.total_kredit || 0)
     }));
     exportToExcel(rows, `Transaksi_Keuangan_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
@@ -380,7 +380,7 @@ const FinancialTransactionsPage = () => {
                   onClick={handleCloseForm}
                   aria-label="Tutup"
                 >
-                  ✕
+                  <X className="w-5 h-5" />
                 </button>
               </div>
               <form onSubmit={handleSubmit} className="space-y-6 px-6 py-6">

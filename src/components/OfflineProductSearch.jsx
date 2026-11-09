@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Clock, CheckCircle2, AlertTriangle, XCircle, Info, Ban } from 'lucide-react';
 import useProductOfflineDB from '../hooks/useProductOfflineDB';
 import { useNetworkState } from '../hooks/useNetworkState';
 
@@ -10,7 +11,7 @@ import { useNetworkState } from '../hooks/useNetworkState';
  * - Fast indexed queries (5-50ms)
  * - Limited results (max 100 items) untuk performa
  */
-export const OfflineProductSearch = ({ onSelect = () => {}, _autoSync = true }) => {
+export const OfflineProductSearch = ({ onSelect = () => {}, _autoSync = true, idCabang = undefined, tipeKatalog = 'global' }) => {
   const { isSyncing, syncProgress, totalProducts, syncError, searchOfflineProducts } = useProductOfflineDB();
   const { isOnline } = useNetworkState();
   
@@ -19,6 +20,7 @@ export const OfflineProductSearch = ({ onSelect = () => {}, _autoSync = true }) 
   const [loading, setLoading] = useState(false);
   const [cachedCount, setCachedCount] = useState(0);
   const [searchMessage, setSearchMessage] = useState('');
+  const [searchMessageType, setSearchMessageType] = useState('info');
 
   /**
    * Load berapa produk sudah di-cache
@@ -44,7 +46,8 @@ export const OfflineProductSearch = ({ onSelect = () => {}, _autoSync = true }) 
     const trimmedQuery = query.trim();
     if (!isOnline && trimmedQuery.length < 3) {
       setResults([]);
-      setSearchMessage(`⏸️ Type at least 3 characters for offline search (${trimmedQuery.length}/3)`);
+      setSearchMessageType('info');
+      setSearchMessage(`Type at least 3 characters for offline search (${trimmedQuery.length}/3)`);
       return;
     }
 
@@ -53,23 +56,26 @@ export const OfflineProductSearch = ({ onSelect = () => {}, _autoSync = true }) 
     
     try {
       // Text search - use normal limit (max 100 items)
-      const searchResults = await searchOfflineProducts(query, false);
+      const searchResults = await searchOfflineProducts(query, false, { id_cabang: idCabang, tipe_katalog: tipeKatalog });
       setResults(searchResults);
       
       // Beri feedback jika hasil banyak (sudah di-limit)
       if (searchResults && searchResults.length >= 100) {
-        setSearchMessage(`⚠️ Showing 100 results (limited). Refine search for better results.`);
+        setSearchMessageType('warning');
+        setSearchMessage(`Showing 100 results (limited). Refine search for better results.`);
       } else if (searchResults && searchResults.length > 50) {
-        setSearchMessage(`📋 Showing ${searchResults.length} results`);
+        setSearchMessageType('info');
+        setSearchMessage(`Showing ${searchResults.length} results`);
       }
     } catch (err) {
       console.error('Search error:', err);
       setResults([]);
-      setSearchMessage('❌ Search failed. Try again.');
+      setSearchMessageType('error');
+      setSearchMessage('Search failed. Try again.');
     } finally {
       setLoading(false);
     }
-  }, [searchOfflineProducts, isOnline]);
+  }, [searchOfflineProducts, isOnline, idCabang, tipeKatalog]);
 
   /**
    * Debounce search
@@ -90,8 +96,8 @@ export const OfflineProductSearch = ({ onSelect = () => {}, _autoSync = true }) 
       {isSyncing && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-blue-900">
-              ⏳ Syncing products...
+            <span className="text-sm font-medium text-blue-900 flex items-center gap-1.5">
+              <Clock className="w-4 h-4" /> Syncing products...
             </span>
             <span className="text-xs text-blue-700">
               {syncProgress} / {totalProducts || '?'}
@@ -112,7 +118,7 @@ export const OfflineProductSearch = ({ onSelect = () => {}, _autoSync = true }) 
       {cachedCount > 0 && !isSyncing && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-2">
             <p className="text-xs text-green-700 flex items-center gap-2">
-              <span>✅ {cachedCount.toLocaleString()} products ready offline</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" /> {cachedCount.toLocaleString()} products ready offline</span>
               {isOnline ? (
                 <span className="ml-1 inline-block" title="Online" aria-label="Online">
                   <span className="w-2 h-2 inline-block rounded-full bg-green-600 align-middle" />
@@ -129,8 +135,8 @@ export const OfflineProductSearch = ({ onSelect = () => {}, _autoSync = true }) 
       {/* Sync Error */}
       {syncError && !isSyncing && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2">
-          <p className="text-xs text-yellow-700">
-            ⚠️ {syncError}
+          <p className="text-xs text-yellow-700 flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5" /> {syncError}
           </p>
         </div>
       )}
@@ -154,13 +160,20 @@ export const OfflineProductSearch = ({ onSelect = () => {}, _autoSync = true }) 
 
       {/* Search Message (info/warning) */}
       {searchMessage && (
-        <div className={`rounded-lg p-2 text-xs ${
-          searchMessage.includes('❌') 
+        <div className={`rounded-lg p-2 text-xs flex items-center gap-1.5 ${
+          searchMessageType === 'error'
             ? 'bg-red-50 text-red-700 border border-red-200'
-            : searchMessage.includes('⚠️')
+            : searchMessageType === 'warning'
             ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
             : 'bg-blue-50 text-blue-700 border border-blue-200'
         }`}>
+          {searchMessageType === 'error' ? (
+            <XCircle className="w-3.5 h-3.5 shrink-0" />
+          ) : searchMessageType === 'warning' ? (
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+          ) : (
+            <Info className="w-3.5 h-3.5 shrink-0" />
+          )}
           {searchMessage}
         </div>
       )}
@@ -168,7 +181,7 @@ export const OfflineProductSearch = ({ onSelect = () => {}, _autoSync = true }) 
       {/* No Cache Warning */}
       {cachedCount === 0 && !isSyncing && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-          <p className="text-xs text-red-700 font-medium">🚫 No offline products cached</p>
+          <p className="text-xs text-red-700 font-medium flex items-center gap-1.5"><Ban className="w-3.5 h-3.5" /> No offline products cached</p>
           {isOnline ? (
             <p className="text-xs text-red-600 mt-1">Sync will start automatically when you go online</p>
           ) : (

@@ -6,7 +6,7 @@ import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import ActionButton from '../components/ActionButton';
 import HeaderActionButton from '../components/HeaderActionButton';
 import { exportToExcel } from '../utils/exportHelper';
-import { ArrowLeft, Trash2, Plus, X, Loader, Download } from 'lucide-react';
+import { ArrowLeft, Trash2, Plus, X, Loader, Download, Check } from 'lucide-react';
 
 const StockDistributionPage = () => {
   const navigate = useNavigate();
@@ -107,8 +107,12 @@ const StockDistributionPage = () => {
     try {
       setIsSearchingProducts(true);
       setShowProductDropdown(true);
-      const response = await searchProducts(searchTerm, 20);
-      
+      // Distribution always ships from the central gudang, which only ever
+      // stocks the shared global catalog (branch-owned "terpisah" catalogs
+      // aren't warehouse stock) — scope explicitly instead of relying on
+      // the backend's implicit default.
+      const response = await searchProducts(searchTerm, 20, { katalogFilter: 'global' });
+
       // API returns: { success: true, data: [...], meta: {...} }
       // But searchProducts function handles this and returns array directly
       let results = [];
@@ -125,7 +129,7 @@ const StockDistributionPage = () => {
       }
       setProductSearchResults(results);
     } catch (error) {
-      console.error('❌ Product search failed:', error);
+      console.error('Product search failed:', error);
       setProductSearchResults([]);
     } finally {
       setIsSearchingProducts(false);
@@ -397,8 +401,8 @@ const StockDistributionPage = () => {
                       </div>
                       <div className="text-right">
                         <p className="text-xs text-blue-600">Unit</p>
-                        <p className={`text-sm font-medium ${currentWarehouseStock > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {currentWarehouseStock > 0 ? '✓ Tersedia' : '✗ Habis'}
+                        <p className={`text-sm font-medium flex items-center justify-end gap-1 ${currentWarehouseStock > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {currentWarehouseStock > 0 ? <><Check className="w-3.5 h-3.5" /> Tersedia</> : <><X className="w-3.5 h-3.5" /> Habis</>}
                         </p>
                       </div>
                     </div>

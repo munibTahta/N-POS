@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 import { getPaymentHistory } from '../services/api';
 
 const PaymentHistoryModal = ({ saleId, onClose }) => {
@@ -32,7 +33,7 @@ const PaymentHistoryModal = ({ saleId, onClose }) => {
       <div className="bg-white rounded-lg shadow-lg max-w-lg w-full p-4">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Riwayat Pembayaran - Transaksi #{saleId}</h3>
-          <button onClick={onClose} className="text-gray-600 hover:text-gray-800">✕</button>
+          <button onClick={onClose} className="text-gray-600 hover:text-gray-800"><X className="w-5 h-5" /></button>
         </div>
 
         {loading && <p>Memuat...</p>}

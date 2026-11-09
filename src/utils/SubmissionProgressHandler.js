@@ -6,14 +6,14 @@
 import { toast } from 'react-toastify';
 
 const STAGES = {
-  START: { label: '⏳ Memproses transaksi...', duration: 0 },
-  VALIDATING: { label: '🔍 Validasi produk...', duration: 0 },
-  CREATING_SALE: { label: '💾 Menyimpan penjualan...', duration: 0 },
-  RECORDING_PAYMENT: { label: '💳 Merekam pembayaran...', duration: 0 },
-  SAVING_OFFLINE: { label: '💾 Menyimpan ke database lokal...', duration: 0 },
-  LOGGING: { label: '📝 Menyimpan audit log...', duration: 0 },
-  PREPARING_RECEIPT: { label: '🧾 Menyiapkan struk...', duration: 0 },
-  COMPLETE: { label: '✅ Transaksi berhasil!', duration: 2000 },
+  START: { label: 'Memproses transaksi...', duration: 0 },
+  VALIDATING: { label: 'Validasi produk...', duration: 0 },
+  CREATING_SALE: { label: 'Menyimpan penjualan...', duration: 0 },
+  RECORDING_PAYMENT: { label: 'Merekam pembayaran...', duration: 0 },
+  SAVING_OFFLINE: { label: 'Menyimpan ke database lokal...', duration: 0 },
+  LOGGING: { label: 'Menyimpan audit log...', duration: 0 },
+  PREPARING_RECEIPT: { label: 'Menyiapkan struk...', duration: 0 },
+  COMPLETE: { label: 'Transaksi berhasil!', duration: 2000 },
 };
 
 class SubmissionProgressHandler {
@@ -86,14 +86,14 @@ class SubmissionProgressHandler {
   error(message) {
     if (this.toastId) {
       toast.update(this.toastId, {
-        render: `❌ ${message}`,
+        render: `${message}`,
         type: 'error',
         isLoading: false,
         autoClose: 5000,
         closeButton: true
       });
     } else {
-      toast.error(`❌ ${message}`, { autoClose: 5000 });
+      toast.error(`${message}`, { autoClose: 5000 });
     }
     this.toastId = null;
   }

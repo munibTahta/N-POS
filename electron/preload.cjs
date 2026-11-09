@@ -105,8 +105,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   dbDelete: (params) => ipcRenderer.invoke('db-delete', params),
   dbSelect: (params) => ipcRenderer.invoke('db-select', params),
   dbTransaction: (operations) => ipcRenderer.invoke('db-transaction', operations),
+
+  /**
+   * Batch database operations (prevents N+1 query problems)
+   */
+  dbBatchInsert: (params) => ipcRenderer.invoke('db-batch-insert', params),
+  dbBatchUpdate: (params) => ipcRenderer.invoke('db-batch-update', params),
+  dbBatchDelete: (params) => ipcRenderer.invoke('db-batch-delete', params),
+
   dbGetSyncQueue: () => ipcRenderer.invoke('db-get-sync-queue'),
   dbUpdateSyncStatus: (params) => ipcRenderer.invoke('db-update-sync-status', params),
+  dbUpdateSyncQueueServerId: (params) => ipcRenderer.invoke('db-update-sync-queue-server-id', params),
   dbSetSyncMetadata: (params) => ipcRenderer.invoke('db-set-sync-metadata', params),
   dbGetSyncMetadata: (params) => ipcRenderer.invoke('db-get-sync-metadata', params),
   dbRepairCorruption: () => ipcRenderer.invoke('db-repair-corruption'),

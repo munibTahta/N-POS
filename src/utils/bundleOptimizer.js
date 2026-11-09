@@ -187,7 +187,7 @@ export const registerServiceWorker = async () => {
       console.error('Service Worker registration failed:', error);
     }
   } else if (import.meta.env.DEV) {
-    if (import.meta.env.DEV) {
+    if (import.meta.env.DEV) { /* intentionally empty */ 
     }
   }
 };
@@ -198,7 +198,7 @@ export const monitorBundleSize = () => {
   const observer = new PerformanceObserver((list) => {
     for (const entry of list.getEntries()) {
       if (entry.entryType === 'resource' && entry.name.includes('.js')) {
-        if (import.meta.env.DEV) {
+        if (import.meta.env.DEV) { /* intentionally empty */ 
         }
       }
     }
@@ -334,7 +334,7 @@ export const analyzeBundle = () => {
       const start = performance.now();
       return originalLoad.apply(this, arguments).then(() => {
         const _duration = performance.now() - start;
-        if (import.meta.env.DEV) void 0 && (`Chunk loaded in ${_duration}ms`);
+        
       });
     };
   }

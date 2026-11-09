@@ -1,3 +1,5 @@
+import { WifiOff, AlertTriangle } from 'lucide-react';
+
 /**
  * Fallback Component untuk Lazy Routes
  * Digunakan ketika lazy loading gagal (offline atau error)
@@ -8,7 +10,7 @@ export const LazyFallback = ({ error, retry, isOffline }) => {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
         <div className="bg-white p-8 rounded-lg shadow-md max-w-md text-center">
-          <div className="text-5xl mb-4">📴</div>
+          <div className="flex justify-center mb-4"><WifiOff className="w-12 h-12 text-yellow-600" /></div>
           <h2 className="text-2xl font-bold text-yellow-600 mb-4">Mode Offline</h2>
           <p className="text-gray-700 mb-4">
             Halaman ini memerlukan koneksi internet untuk dimuat.
@@ -37,7 +39,7 @@ export const LazyFallback = ({ error, retry, isOffline }) => {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-md max-w-md text-center">
-        <div className="text-5xl mb-4">⚠️</div>
+        <div className="flex justify-center mb-4"><AlertTriangle className="w-12 h-12 text-orange-600" /></div>
         <h2 className="text-2xl font-bold text-orange-600 mb-4">Gagal Load Halaman</h2>
         <p className="text-gray-700 mb-2">
           {error?.message || 'Terjadi kesalahan saat memuat halaman'}

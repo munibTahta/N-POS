@@ -56,7 +56,7 @@ export class OfflinePageDataCache {
           return { data, source: 'api', isFresh: true };
         }
       } catch (apiError) {
-        console.warn(`⚠️ API fetch failed for ${pageName}:`, apiError.message);
+        console.warn(`API fetch failed for ${pageName}:`, apiError.message);
       }
 
       // 3. Fallback to DB
@@ -70,7 +70,7 @@ export class OfflinePageDataCache {
             return { data: dbData, source: 'db', isFresh: false };
           }
         } catch (dbError) {
-          console.warn(`⚠️ DB fallback failed for ${pageName}:`, dbError.message);
+          console.warn(`DB fallback failed for ${pageName}:`, dbError.message);
         }
       }
 
@@ -81,7 +81,7 @@ export class OfflinePageDataCache {
 
       throw new Error(`No data available for ${pageName}`);
     } catch (error) {
-      console.error(`❌ Failed to load ${pageName}:`, error.message);
+      console.error(`Failed to load ${pageName}:`, error.message);
       throw error;
     }
   }
@@ -150,7 +150,7 @@ export class OfflinePageDataCache {
    * Invalidate all cache
    */
   invalidateAll() {
-    const count = this.cache.size;
+    const _count = this.cache.size;
     this.cache.clear();
   }
 

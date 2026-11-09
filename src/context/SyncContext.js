@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import syncEngine from '../services/syncEngine';
+import networkStateService from '../services/NetworkStateService';
 
 const SyncContext = createContext();
 
@@ -13,7 +14,11 @@ export const useSync = () => {
 
 export const SyncProvider = ({ children }) => {
   const [syncStatus, setSyncStatus] = useState({
-    isOnline: navigator.onLine,
+    // Sourced from NetworkStateService (real health-check ping), not raw
+    // navigator.onLine — this flag drives whether PosPage takes the durable
+    // offline-queue checkout path or the direct-online path, so it must
+    // reflect actual reachability, not just "device has a network interface".
+    isOnline: networkStateService.isOnline,
     syncInProgress: false,
     lastSyncTime: null,
     pendingCount: 0,
@@ -81,37 +86,29 @@ export const SyncProvider = ({ children }) => {
 
       setSyncStatus(prev => ({
         ...prev,
-        isOnline: navigator.onLine,
         pendingCount,
         failedCount,
         lastSyncTime
       }));
     };
 
-    // Handle online/offline events
-    const handleOnline = () => {
-      setSyncStatus(prev => ({ ...prev, isOnline: true }));
-      updateSyncStatus();
-    };
-    
-    const handleOffline = () => {
-      setSyncStatus(prev => ({ ...prev, isOnline: false }));
-    };
+    // Follow NetworkStateService's health-checked status rather than raw
+    // browser online/offline events (which can misfire — e.g. "online"
+    // while connected to a wifi with no real internet).
+    const unsubscribeNetwork = networkStateService.subscribe(({ isOnline }) => {
+      setSyncStatus(prev => ({ ...prev, isOnline }));
+      if (isOnline) updateSyncStatus();
+    });
 
     // Update sync status periodically (increased from 2s to 10s interval)
     const interval = setInterval(updateSyncStatus, 10000);
-
-    // Add event listeners for online/offline
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
 
     // Initial update
     updateSyncStatus();
 
     return () => {
       clearInterval(interval);
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      unsubscribeNetwork();
     };
   }, [lastStatusUpdate]);
 

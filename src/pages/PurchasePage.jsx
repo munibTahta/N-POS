@@ -127,14 +127,14 @@ const PurchasePage = () => {
               }
 
               data = localPurchases;
-            } catch (_dbError) {
-              if (import.meta.env.DEV) void 0 && ('Failed to load purchases from local db');
+            } catch (_dbError) { /* noop */ 
+              
             }
           }
         }
 
-        if (import.meta.env.DEV) void 0 && ('Purchases API response:', data);
-        if (data.length > 0 && import.meta.env.DEV) void 0 && ('First purchase structure:', data[0]);
+        
+        
 
         const normalized = data.map(p => ({ ...p, tanggal: p.tanggal || p.created_at || p.createdAt }));
         setPurchases(normalized.reverse());
@@ -184,7 +184,7 @@ const PurchasePage = () => {
                 suppliersData = localSuppliers;
               }
             } catch (_localError) {
-              if (import.meta.env.DEV) {
+              if (import.meta.env.DEV) { /* intentionally empty */ 
               }
             }
           }

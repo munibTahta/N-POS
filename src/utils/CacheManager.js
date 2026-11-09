@@ -46,7 +46,7 @@ class CacheManager {
     try {
       dataSize = JSON.stringify(data).length;
       if (dataSize > this.maxDataSize) {
-        console.warn(`⚠️ Cache data too large (${(dataSize / 1024 / 1024).toFixed(2)}MB) for: ${key}`);
+        console.warn(`Cache data too large (${(dataSize / 1024 / 1024).toFixed(2)}MB) for: ${key}`);
         return false;
       }
     } catch (e) {

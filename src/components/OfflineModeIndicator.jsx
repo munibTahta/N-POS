@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Circle, CheckCircle2, XCircle, AlertTriangle, RefreshCw, Search } from 'lucide-react';
 import useOfflineMode from '../hooks/useOfflineMode';
 import '../styles/OfflineModeIndicator.css';
 
@@ -43,9 +44,9 @@ export const OfflineModeIndicator = () => {
   };
 
   const getStatusIcon = () => {
-    if (mode === 'online') return '🟢';
-    if (hasCache && isFresh) return '🟡';
-    return '🔴';
+    if (mode === 'online') return <Circle className="w-3 h-3 fill-green-500 text-green-500" />;
+    if (hasCache && isFresh) return <Circle className="w-3 h-3 fill-yellow-500 text-yellow-500" />;
+    return <Circle className="w-3 h-3 fill-red-500 text-red-500" />;
   };
 
   return (
@@ -70,8 +71,8 @@ export const OfflineModeIndicator = () => {
 
           <div className="detail-row">
             <span className="label">Network:</span>
-            <span className={`value ${isOnline ? 'connected' : 'disconnected'}`}>
-              {isOnline ? '✓ Connected' : '✗ Disconnected'}
+            <span className={`value ${isOnline ? 'connected' : 'disconnected'} flex items-center gap-1`}>
+              {isOnline ? <><CheckCircle2 className="w-3.5 h-3.5" /> Connected</> : <><XCircle className="w-3.5 h-3.5" /> Disconnected</>}
             </span>
           </div>
 
@@ -88,14 +89,14 @@ export const OfflineModeIndicator = () => {
                 <span className="label">Cache Age:</span>
                 <span className={`value ${isFresh ? 'fresh' : 'stale'}`}>
                   {cacheAge.toFixed(1)} hours
-                  {!isFresh && ' ⚠️ (outdated)'}
+                  {!isFresh && <span className="inline-flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> (outdated)</span>}
                 </span>
               </div>
 
               <div className="detail-row">
                 <span className="label">Offline Ready:</span>
-                <span className={`value ${canWorkOffline ? 'ready' : 'not-ready'}`}>
-                  {canWorkOffline ? '✓ Yes' : '✗ No'}
+                <span className={`value ${canWorkOffline ? 'ready' : 'not-ready'} flex items-center gap-1`}>
+                  {canWorkOffline ? <><CheckCircle2 className="w-3.5 h-3.5" /> Yes</> : <><XCircle className="w-3.5 h-3.5" /> No</>}
                 </span>
               </div>
             </>
@@ -103,14 +104,14 @@ export const OfflineModeIndicator = () => {
 
           {!hasCache && (
             <div className="detail-row warning">
-              <span className="label">⚠️ No Cache:</span>
+              <span className="label flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" /> No Cache:</span>
               <span className="value">App requires network</span>
             </div>
           )}
 
           {lastSyncFailed && (
             <div className="detail-row error">
-              <span className="label">❌ Sync Failed:</span>
+              <span className="label flex items-center gap-1"><XCircle className="w-3.5 h-3.5" /> Sync Failed:</span>
               <span className="value">Last sync failed</span>
             </div>
           )}
@@ -123,7 +124,9 @@ export const OfflineModeIndicator = () => {
                 onClick={retrySync}
                 disabled={syncRetrying}
               >
-                {syncRetrying ? '⟳ Retrying...' : '🔄 Retry Sync'}
+                {syncRetrying
+                  ? <span className="inline-flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Retrying...</span>
+                  : <span className="inline-flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5" /> Retry Sync</span>}
               </button>
             )}
 
@@ -135,7 +138,7 @@ export const OfflineModeIndicator = () => {
                   setShowDetails(false);
                 }}
               >
-                🔍 Check Cache
+                <span className="inline-flex items-center gap-1"><Search className="w-3.5 h-3.5" /> Check Cache</span>
               </button>
             )}
           </div>

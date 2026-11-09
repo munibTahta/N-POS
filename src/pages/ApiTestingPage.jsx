@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { apiClient } from '../services/api';
+import { Check, Copy, XCircle, CheckCircle2, Search } from 'lucide-react';
 
 // Daftar endpoint berdasarkan kategori
 const endpoints = {
@@ -460,7 +461,7 @@ const ApiTestingPage = () => {
                 onClick={() => copyToClipboard(JSON.stringify(response?.data || error, null, 2))}
                 className="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 flex items-center space-x-1"
               >
-                <span>{copied ? '✓' : '📋'}</span>
+                <span>{copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}</span>
                 <span>{copied ? 'Copied!' : 'Copy'}</span>
               </button>
             )}
@@ -475,7 +476,7 @@ const ApiTestingPage = () => {
             {error && (
               <div className="text-red-600">
                 <div className="flex items-center space-x-2 mb-2">
-                  <span className="text-lg">❌</span>
+                  <XCircle className="w-5 h-5 text-red-600" />
                   <h3 className="font-semibold">Error Response</h3>
                 </div>
                 <pre className="text-sm bg-red-50 p-3 rounded border whitespace-pre-wrap overflow-x-auto">
@@ -486,7 +487,7 @@ const ApiTestingPage = () => {
             {response && (
               <div>
                 <div className="flex items-center space-x-2 mb-4">
-                  <span className="text-lg">✅</span>
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
                   <div>
                     <span className="font-semibold">Status: </span>
                     <span className={`px-2 py-1 rounded text-sm ${
@@ -508,7 +509,7 @@ const ApiTestingPage = () => {
             )}
             {!loading && !error && !response && (
               <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-                <span className="text-4xl mb-4">🔍</span>
+                <Search className="w-10 h-10 mb-4" />
                 <p className="text-center">Select an endpoint and send a request to see the response here</p>
               </div>
             )}

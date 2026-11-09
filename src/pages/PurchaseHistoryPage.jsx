@@ -60,8 +60,8 @@ const PurchaseHistoryPage = () => {
               }
 
               data = localPurchases;
-            } catch (_dbError) {
-              if (import.meta.env.DEV) void 0 && ('Failed to load purchases from local db');
+            } catch (_dbError) { /* noop */ 
+              
             }
           }
         }
@@ -117,8 +117,8 @@ const PurchaseHistoryPage = () => {
               // branches likely not available locally
               branchesData = [];
             }
-          } catch (_localError) {
-            if (import.meta.env.DEV) void 0 && ('Failed to load masters from local db');
+          } catch (_localError) { /* noop */ 
+            
           }
         }
 

@@ -37,7 +37,7 @@ export const useOfflineTaxRates = () => {
     try {
       await dbBatchInsert('tax_rates', records);
     } catch (err) {
-      console.warn('⚠️ Failed to persist tax rates:', err);
+      console.warn('Failed to persist tax rates:', err);
     }
   }, []);
 
@@ -52,7 +52,7 @@ export const useOfflineTaxRates = () => {
       });
       return result || [];
     } catch (dbErr) {
-      console.warn('⚠️ Failed to load tax rates from offline DB:', dbErr);
+      console.warn('Failed to load tax rates from offline DB:', dbErr);
       return [];
     }
   }, []);

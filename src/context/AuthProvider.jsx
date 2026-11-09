@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
         });
       } catch (logoutError) {
         // Log error tapi tetap lanjut dengan local logout
-        console.warn('⚠️ Session logout API failed:', logoutError.message || logoutError);
+        console.warn('Session logout API failed:', logoutError.message || logoutError);
       }
     } else {
       // No remote session to log out from; proceed with local cleanup
@@ -243,7 +243,7 @@ export const AuthProvider = ({ children }) => {
         // Check if it's a 409 Conflict (duplicate login)
         if (sessionError.response?.status === 409) {
           // Hanya satu login aktif per user - tampilkan error dan minta logout
-          throw new Error('❌ Anda sudah login di device lain.\n\nSilakan logout terlebih dahulu dari device lain, kemudian coba login kembali.');
+          throw new Error('Anda sudah login di device lain.\n\nSilakan logout terlebih dahulu dari device lain, kemudian coba login kembali.');
         }
 
         // Fallback to old login system

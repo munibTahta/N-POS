@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { FolderOpen } from 'lucide-react';
 import { getCategories } from '../services/api';
 import { useNotifications } from '../hooks/useNotifications';
 import { exportToExcel } from '../utils/exportHelper';
@@ -80,7 +81,9 @@ const CategoryInfoModal = ({ isOpen, onClose }) => {
       >
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">📂 Info Kategori Produk</h2>
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <FolderOpen className="w-6 h-6" /> Info Kategori Produk
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"

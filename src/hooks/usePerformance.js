@@ -26,7 +26,7 @@ export const usePerformance = (componentName = 'Component') => {
 
     // Log component mount
     if (renderCount.current === 1) {
-      if (import.meta.env.DEV) {
+      if (import.meta.env.DEV) { /* intentionally empty */ 
       }
     }
   });
@@ -49,7 +49,7 @@ export const usePerformance = (componentName = 'Component') => {
       const result = syncFn();
       const duration = performance.now() - startTime;
       if (duration > 10) { // Log operations taking more than 10ms
-        if (import.meta.env.DEV) {
+        if (import.meta.env.DEV) { /* intentionally empty */ 
         }
       }
       return result;

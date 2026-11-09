@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Clock, CheckCircle2, XCircle, Smartphone, Globe, Check, AlertTriangle } from 'lucide-react';
 import { useNetworkState } from '../hooks/useNetworkState';
 import '../styles/InitialSyncProgress.css';
 
@@ -104,13 +105,13 @@ export const InitialSyncProgress = () => {
   const getStatusIcon = () => {
     switch (syncStatus) {
       case 'syncing':
-        return '⏳';
+        return <Clock className="w-6 h-6" />;
       case 'complete':
-        return '✅';
+        return <CheckCircle2 className="w-6 h-6 text-green-600" />;
       case 'error':
-        return '❌';
+        return <XCircle className="w-6 h-6 text-red-600" />;
       default:
-        return '📱';
+        return <Smartphone className="w-6 h-6" />;
     }
   };
 
@@ -138,8 +139,8 @@ export const InitialSyncProgress = () => {
           <span className="text-2xl">{getStatusIcon()}</span>
           <div>
             <h3 className="font-semibold text-gray-900">{getStatusText()}</h3>
-            <p className="text-xs text-gray-500">
-              {isOnline ? '🌐 Online' : '📱 Offline'}
+            <p className="text-xs text-gray-500 flex items-center gap-1">
+              {isOnline ? <><Globe className="w-3.5 h-3.5" /> Online</> : <><Smartphone className="w-3.5 h-3.5" /> Offline</>}
             </p>
           </div>
         </div>
@@ -218,10 +219,10 @@ export const InitialSyncProgress = () => {
             <p>Data is syncing in the background. You can continue working.</p>
           )}
           {syncStatus === 'complete' && (
-            <p className="text-green-700">✓ All data synced successfully</p>
+            <p className="text-green-700 flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> All data synced successfully</p>
           )}
           {syncStatus === 'error' && (
-            <p className="text-red-700">⚠️ Some data failed to sync. Retrying...</p>
+            <p className="text-red-700 flex items-center justify-center gap-1"><AlertTriangle className="w-3.5 h-3.5" /> Some data failed to sync. Retrying...</p>
           )}
         </div>
       </div>

@@ -58,10 +58,10 @@ export const useOfflinePageCache = (
       setIsFresh(result.isFresh);
 
       // Show visual feedback untuk cache source
-      if (result.source === 'cache') {
-      } else if (result.source === 'api') {
-      } else if (result.source === 'db') {
-      } else if (result.source === 'cache-stale') {
+      if (result.source === 'cache') { /* intentionally empty */ 
+      } else if (result.source === 'api') { /* intentionally empty */ 
+      } else if (result.source === 'db') { /* intentionally empty */ 
+      } else if (result.source === 'cache-stale') { /* intentionally empty */ 
       }
     } catch (err) {
       if (abortControllerRef.current?.signal.aborted) {
@@ -71,7 +71,7 @@ export const useOfflinePageCache = (
       setError(err.message || 'Failed to load data');
       setData(null);
       setSource('error');
-      console.error(`❌ ${pageName} load error:`, err);
+      console.error(`${pageName} load error:`, err);
     } finally {
       if (!abortControllerRef.current?.signal.aborted) {
         setLoading(false);

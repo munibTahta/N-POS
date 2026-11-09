@@ -164,7 +164,7 @@ const MenuPage = () => {
       if (contextMenus && contextMenus.length > 0) {
         transformedMenus = contextMenus.map((menu, index) => ({
           to: menu.path,
-          icon: menu.icon || '📄',
+          icon: menu.icon || 'FileText',
           title: menu.nama_menu || 'Menu Item',
           description: getMenuDescription(menu.path, `Kelola ${menu.nama_menu || 'menu ini'}`),
           isPrimary: menu.path === '/pos', // POS is primary

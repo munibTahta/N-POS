@@ -12,7 +12,7 @@ export const OfflineDataStats = () => {
     try {
       await offlineDataSync.preCacheEssentialData();
     } catch (err) {
-      console.error('❌ Refresh error:', err);
+      console.error('Refresh error:', err);
     } finally {
       setIsRefreshing(false);
     }

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import { Camera, Image as ImageIcon, Save, ChevronLeft, Info } from 'lucide-react';
 import HeaderActionButton from '../components/HeaderActionButton';
 import SearchableSelect from '../components/SearchableSelect';
@@ -8,6 +7,7 @@ import { addProduct, getCategories, getUnits, getSuppliers, createLogAktivitas }
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import CategoryInfoModal from '../components/CategoryInfoModal';
 import ImageUploader from '../components/ImageUploader';
+import { FloatingLabelInput, FloatingLabelSelect } from '../components/common/FloatingLabelField';
 import { useNotifications } from '../hooks/useNotifications';
 import { formatRupiahNumber, parseRupiahNumber } from '../utils/numberFormat';
 
@@ -169,15 +169,17 @@ const AddProductPage = () => {
         <PageContainer>
           {idCabangPemilik && (
             <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
-              <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                ℹ️ Produk akan ditambahkan ke <span className="font-semibold">Katalog Cabang Terpisah</span>
+              <p className="text-sm font-medium text-amber-900 dark:text-amber-100 flex items-center gap-1.5">
+                <Info className="w-4 h-4 shrink-0" />
+                Produk akan ditambahkan ke <span className="font-semibold">Katalog Cabang Terpisah</span>
               </p>
             </div>
           )}
           {!idCabangPemilik && (
             <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                ℹ️ Produk akan ditambahkan ke <span className="font-semibold">Katalog Global</span>
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100 flex items-center gap-1.5">
+                <Info className="w-4 h-4 shrink-0" />
+                Produk akan ditambahkan ke <span className="font-semibold">Katalog Global</span>
               </p>
             </div>
           )}
@@ -186,14 +188,12 @@ const AddProductPage = () => {
             <div>
               <div className="flex gap-2 mb-4">
                 <div className="flex-1">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Kode Produk *</label>
-                  <input 
-                    type="text" 
-                    name="kode_produk" 
-                    value={product.kode_produk} 
-                    onChange={handleChange} 
-                    required 
-                    className="input w-full"
+                  <FloatingLabelInput
+                    label="Kode Produk"
+                    name="kode_produk"
+                    value={product.kode_produk}
+                    onChange={handleChange}
+                    required
                   />
                 </div>
                 <div className="flex items-end">
@@ -232,28 +232,20 @@ const AddProductPage = () => {
               )}
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Nama Produk *</label>
-                  <input 
-                    type="text" 
-                    name="nama_produk" 
-                    value={product.nama_produk} 
-                    onChange={handleChange} 
-                    required 
-                    className="input w-full"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Merek</label>
-                  <input 
-                    type="text" 
-                    name="merek" 
-                    value={product.merek} 
-                    onChange={handleChange} 
-                    className="input w-full"
-                  />
-                </div>
+                <FloatingLabelInput
+                  label="Nama Produk"
+                  name="nama_produk"
+                  value={product.nama_produk}
+                  onChange={handleChange}
+                  required
+                />
+
+                <FloatingLabelInput
+                  label="Merek"
+                  name="merek"
+                  value={product.merek}
+                  onChange={handleChange}
+                />
               </div>
             </div>
 
@@ -310,83 +302,57 @@ const AddProductPage = () => {
             {/* Row 3: Harga & Stok */}
             <div className="pt-6 border-t">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Harga Jual (Rp) *</label>
-                  <input 
-                    type="text" 
-                    name="harga_jual" 
-                    value={formatRupiahNumber(product.harga_jual)} 
-                    onChange={handleChange} 
-                    required 
-                    className="input w-full"
-                    placeholder="0"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Harga Beli (Rp) *</label>
-                  <input 
-                    type="text" 
-                    name="harga_beli" 
-                    value={formatRupiahNumber(product.harga_beli)} 
-                    onChange={handleChange} 
-                    required 
-                    className="input w-full"
-                    placeholder="0"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Harga Grosir (Rp)</label>
-                  <input 
-                    type="text" 
-                    name="harga_grosir" 
-                    value={formatRupiahNumber(product.harga_grosir)} 
-                    onChange={handleChange} 
-                    className="input w-full"
-                    placeholder="0"
-                  />
-                </div>
+                <FloatingLabelInput
+                  label="Harga Jual (Rp)"
+                  name="harga_jual"
+                  value={formatRupiahNumber(product.harga_jual)}
+                  onChange={handleChange}
+                  required
+                />
+
+                <FloatingLabelInput
+                  label="Harga Beli (Rp)"
+                  name="harga_beli"
+                  value={formatRupiahNumber(product.harga_beli)}
+                  onChange={handleChange}
+                  required
+                />
+
+                <FloatingLabelInput
+                  label="Harga Grosir (Rp)"
+                  name="harga_grosir"
+                  value={formatRupiahNumber(product.harga_grosir)}
+                  onChange={handleChange}
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Min Qty Grosir</label>
-                  <input 
-                    type="number" 
-                    name="min_qty_grosir" 
-                    value={product.min_qty_grosir} 
-                    onChange={handleChange} 
-                    className="input w-full"
-                    placeholder="10"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Stok Minimum *</label>
-                  <input 
-                    type="number" 
-                    name="stok_minimum" 
-                    value={product.stok_minimum} 
-                    onChange={handleChange} 
-                    required 
-                    className="input w-full"
-                    placeholder="0"
-                  />
-                </div>
+                <FloatingLabelInput
+                  label="Min Qty Grosir"
+                  type="number"
+                  name="min_qty_grosir"
+                  value={product.min_qty_grosir}
+                  onChange={handleChange}
+                />
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
-                  <select 
-                    name="status" 
-                    value={product.status} 
-                    onChange={handleChange} 
-                    className="input w-full"
-                  >
-                    <option value="aktif">Aktif</option>
-                    <option value="nonaktif">Nonaktif</option>
-                  </select>
-                </div>
+                <FloatingLabelInput
+                  label="Stok Minimum"
+                  type="number"
+                  name="stok_minimum"
+                  value={product.stok_minimum}
+                  onChange={handleChange}
+                  required
+                />
+
+                <FloatingLabelSelect
+                  label="Status"
+                  name="status"
+                  value={product.status}
+                  onChange={handleChange}
+                >
+                  <option value="aktif">Aktif</option>
+                  <option value="nonaktif">Nonaktif</option>
+                </FloatingLabelSelect>
               </div>
             </div>
 

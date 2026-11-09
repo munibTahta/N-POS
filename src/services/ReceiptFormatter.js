@@ -28,12 +28,7 @@ export class ReceiptFormatter {
     this.paperWidth = options.paperWidth || storageWidth || '58mm';
     this.charWidth = this.PAPER_WIDTHS[this.paperWidth] || 32;
     
-    void 0 && ('[ReceiptFormatter] Init:', {
-      optionWidth: options.paperWidth || 'undefined',
-      storageWidth: storageWidth || 'undefined',
-      finalWidth: this.paperWidth,
-      charWidth: this.charWidth
-    });
+    
   }
 
   _getCharWidth(paperWidth = this.paperWidth) {
@@ -118,11 +113,7 @@ export class ReceiptFormatter {
 
   formatReceipt(saleData, storeInfo = {}, options = {}) {
     const paperWidth = options.paperWidth || this.paperWidth;
-    void 0 && ('[ReceiptFormatter.formatReceipt] Paper width:', {
-      optionWidth: options.paperWidth || 'undefined',
-      thisWidth: this.paperWidth,
-      finalWidth: paperWidth
-    });
+    
     
     const content = this.generateReceipt(saleData, storeInfo, paperWidth);
     return {

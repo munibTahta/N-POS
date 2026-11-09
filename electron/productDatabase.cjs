@@ -516,8 +516,9 @@ class ProductDatabase {
         console.warn('Search query failed:', queryErr.message);
         // Try simple fallback query without LIKE
         try {
-          const fallbackSql = `SELECT * FROM products LIMIT ${Math.min(limit, MAX_RESULTS)} OFFSET ${offset}`;
-          const fallbackRows = this.db.prepare(fallbackSql).all();
+          const fallbackRows = this.db
+            .prepare('SELECT * FROM products LIMIT ? OFFSET ?')
+            .all(Math.min(limit, MAX_RESULTS), Number(offset) || 0);
           return { 
             data: fallbackRows || [], 
             total: fallbackRows?.length || 0, 
@@ -542,7 +543,9 @@ class ProductDatabase {
    */
   getProduct(id, idType = 'id_produk') {
     try {
-      const stmt = this.db.prepare(`SELECT * FROM products WHERE ${idType} = ?`);
+      const allowedIdTypes = ['id_produk', 'kode_produk'];
+      const column = allowedIdTypes.includes(idType) ? idType : 'id_produk';
+      const stmt = this.db.prepare(`SELECT * FROM products WHERE ${column} = ?`);
       return stmt.get(id);
     } catch (error) {
       console.error('Error getting product:', error);

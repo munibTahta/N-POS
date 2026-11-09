@@ -24,22 +24,22 @@ const AppInitializer = ({ children }) => {
     const preloadData = async () => {
       try {
         // Initialize and run product sync (this loads from API if not yet synced)
-        const syncResult = await offlineDataSync.initialize();
+        const _syncResult = await offlineDataSync.initialize();
         // Load master data from offline.db
         await offlineDataSync.loadMasterDataFromDb();
         
         // Recover any failed offline transactions
         const recoveryResult = await posService.recoverFailedTransactions();
-        if (recoveryResult.recovered > 0) {
+        if (recoveryResult.recovered > 0) { /* intentionally empty */ 
         }
         if (recoveryResult.failed > 0) {
-          console.warn(`⚠️ ${recoveryResult.failed} transactions still failed recovery`);
+          console.warn(`${recoveryResult.failed} transactions still failed recovery`);
         }
         
-        const readiness = await offlineDataSync.getOfflineReadiness();
+        const _readiness = await offlineDataSync.getOfflineReadiness();
         setIsReady(true);
       } catch (error) {
-        console.error('⚠️ Error preloading offline data:', error);
+        console.error('Error preloading offline data:', error);
         // Continue anyway - data will load on demand
         setIsReady(true);
       }
@@ -52,7 +52,7 @@ const AppInitializer = ({ children }) => {
   useEffect(() => {
     if (isOnline && !isInitializing && isReady) {
       offlineDataSync.syncProductsToDb()
-        .catch(err => console.warn('⚠️ Incremental product sync failed:', err));
+        .catch(err => console.warn('Incremental product sync failed:', err));
     }
   }, [isOnline, isInitializing, isReady]);
 

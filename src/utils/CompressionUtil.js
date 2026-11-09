@@ -58,7 +58,7 @@ class CompressionUtil {
         
         // Verify checksum
         if (payload._checksum && this.generateChecksum(json) !== payload._checksum) {
-          console.warn('⚠️ Checksum mismatch - data may be corrupted');
+          console.warn('Checksum mismatch - data may be corrupted');
         }
         
         return data;
@@ -71,7 +71,7 @@ class CompressionUtil {
         
         // Verify checksum
         if (payload._checksum && this.generateChecksum(json) !== payload._checksum) {
-          console.warn('⚠️ Checksum mismatch - data may be corrupted');
+          console.warn('Checksum mismatch - data may be corrupted');
         }
         
         return data;

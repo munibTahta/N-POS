@@ -7,6 +7,7 @@
  */
 
 import React, { useState } from 'react';
+import { Clock, Send, ChevronDown, ChevronRight, XCircle, Globe, WifiOff, BarChart3, AlertTriangle, Lightbulb } from 'lucide-react';
 import useTransactionQueue from '../hooks/useTransactionQueue';
 
 export const TransactionQueueStatus = () => {
@@ -48,9 +49,9 @@ export const TransactionQueueStatus = () => {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             {isProcessing ? (
-              <div className="animate-spin">⏳</div>
+              <Clock className="w-4 h-4 animate-spin" />
             ) : (
-              <span>📤</span>
+              <Send className="w-4 h-4" />
             )}
             <span className="font-semibold">Transaksi Offline</span>
           </div>
@@ -58,23 +59,23 @@ export const TransactionQueueStatus = () => {
             onClick={() => setShowDetails(!showDetails)}
             className="text-white/80 hover:text-white text-lg"
           >
-            {showDetails ? '▼' : '▶'}
+            {showDetails ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>
         </div>
 
         {/* Summary Line */}
         <div className="text-sm mb-3">
           {pendingCount > 0 && (
-            <div>⏳ {pendingCount} transaksi pending</div>
+            <div className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {pendingCount} transaksi pending</div>
           )}
           {failedCount > 0 && (
-            <div className="text-red-100">❌ {failedCount} gagal</div>
+            <div className="text-red-100 flex items-center gap-1"><XCircle className="w-3.5 h-3.5" /> {failedCount} gagal</div>
           )}
           {isOnline && pendingCount > 0 && !isProcessing && (
-            <div className="text-green-100">🌐 Siap disync</div>
+            <div className="text-green-100 flex items-center gap-1"><Globe className="w-3.5 h-3.5" /> Siap disync</div>
           )}
           {!isOnline && (
-            <div className="text-yellow-100">📵 Offline - akan disync otomatis saat online</div>
+            <div className="text-yellow-100 flex items-center gap-1"><WifiOff className="w-3.5 h-3.5" /> Offline - akan disync otomatis saat online</div>
           )}
         </div>
 
@@ -114,7 +115,7 @@ export const TransactionQueueStatus = () => {
       {/* Detailed View */}
       {showDetails && (
         <div className="bg-white rounded-lg shadow-lg p-4 mt-2 text-gray-800 text-sm">
-          <h3 className="font-semibold mb-2">📊 Queue Details</h3>
+          <h3 className="font-semibold mb-2 flex items-center gap-1.5"><BarChart3 className="w-4 h-4" /> Queue Details</h3>
 
           <div className="space-y-2">
             <div className="flex justify-between py-1 border-b">
@@ -134,13 +135,13 @@ export const TransactionQueueStatus = () => {
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded p-2 mt-3 text-red-800 text-xs">
-              ⚠️ {error}
+            <div className="bg-red-50 border border-red-200 rounded p-2 mt-3 text-red-800 text-xs flex items-center gap-1">
+              <AlertTriangle className="w-3.5 h-3.5" /> {error}
             </div>
           )}
 
-          <p className="text-xs text-gray-500 mt-3">
-            💡 Transaksi offline akan disimpan dan otomatis disync saat internet tersedia.
+          <p className="text-xs text-gray-500 mt-3 flex items-center gap-1">
+            <Lightbulb className="w-3.5 h-3.5" /> Transaksi offline akan disimpan dan otomatis disync saat internet tersedia.
           </p>
         </div>
       )}
@@ -163,17 +164,17 @@ export const TransactionQueueBadge = () => {
     <div className="inline-flex items-center gap-1">
       {failedCount > 0 && (
         <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
-          ❌ {failedCount} Failed
+          <XCircle className="w-3 h-3" /> {failedCount} Failed
         </span>
       )}
       {pendingCount > 0 && (
         <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold">
-          ⏳ {pendingCount} Pending
+          <Clock className="w-3 h-3" /> {pendingCount} Pending
         </span>
       )}
       {pendingCount > 0 && !isOnline && (
         <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
-          📵 Offline
+          <WifiOff className="w-3 h-3" /> Offline
         </span>
       )}
     </div>

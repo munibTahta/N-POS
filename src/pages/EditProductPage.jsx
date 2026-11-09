@@ -7,6 +7,7 @@ import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import SearchableSelect from '../components/SearchableSelect';
 import { ArrowLeft, Save, X } from 'lucide-react';
 import ImageUploader from '../components/ImageUploader';
+import { FloatingLabelInput } from '../components/common/FloatingLabelField';
 import { useNotifications } from '../hooks/useNotifications';
 import { formatRupiahNumber, parseRupiahNumber } from '../utils/numberFormat';
 
@@ -282,14 +283,12 @@ const EditProductPage = () => {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-2">Kode Produk *</label>
-                <input
-                  type="text"
+                <FloatingLabelInput
+                  label="Kode Produk"
                   name="kode_produk"
                   value={product.kode_produk}
                   onChange={handleChange}
                   required
-                  className="input w-full"
                 />
                 {barcodePreview && (
                   <div className="mt-3 p-2 border border-gray-200 rounded bg-gray-50">
@@ -298,29 +297,21 @@ const EditProductPage = () => {
                   </div>
                 )}
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-2">Nama Produk *</label>
-                <input
-                  type="text"
-                  name="nama_produk"
-                  value={product.nama_produk}
-                  onChange={handleChange}
-                  required
-                  className="input w-full"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-2">Merek</label>
-              <input
-                type="text"
-                name="merek"
-                value={product.merek}
+              <FloatingLabelInput
+                label="Nama Produk"
+                name="nama_produk"
+                value={product.nama_produk}
                 onChange={handleChange}
-                className="input w-full"
+                required
               />
             </div>
+
+            <FloatingLabelInput
+              label="Merek"
+              name="merek"
+              value={product.merek}
+              onChange={handleChange}
+            />
           </div>
 
           {/* Classification Section */}
@@ -389,51 +380,36 @@ const EditProductPage = () => {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Harga</h2>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-2">Harga Jual *</label>
-                <input
-                  type="text"
-                  name="harga_jual"
-                  value={formatRupiahNumber(product.harga_jual)}
-                  onChange={handleChange}
-                  required
-                  className="input w-full"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-2">Harga Beli *</label>
-                <input
-                  type="text"
-                  name="harga_beli"
-                  value={formatRupiahNumber(product.harga_beli)}
-                  onChange={handleChange}
-                  required
-                  className="input w-full"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-2">Harga Grosir</label>
-                <input
-                  type="text"
-                  name="harga_grosir"
-                  value={formatRupiahNumber(product.harga_grosir)}
-                  onChange={handleChange}
-                  className="input w-full"
-                />
-              </div>
+              <FloatingLabelInput
+                label="Harga Jual"
+                name="harga_jual"
+                value={formatRupiahNumber(product.harga_jual)}
+                onChange={handleChange}
+                required
+              />
+              <FloatingLabelInput
+                label="Harga Beli"
+                name="harga_beli"
+                value={formatRupiahNumber(product.harga_beli)}
+                onChange={handleChange}
+                required
+              />
+              <FloatingLabelInput
+                label="Harga Grosir"
+                name="harga_grosir"
+                value={formatRupiahNumber(product.harga_grosir)}
+                onChange={handleChange}
+              />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-2">Minimum Qty Grosir</label>
-              <input
-                type="number"
-                name="min_qty_grosir"
-                value={product.min_qty_grosir}
-                onChange={handleChange}
-                className="input w-full"
-              />
-              <p className="text-xs text-gray-500 mt-1">(Opsional) Jumlah minimum untuk harga grosir.</p>
-            </div>
+            <FloatingLabelInput
+              label="Minimum Qty Grosir"
+              type="number"
+              name="min_qty_grosir"
+              value={product.min_qty_grosir}
+              onChange={handleChange}
+              helper="(Opsional) Jumlah minimum untuk harga grosir."
+            />
           </div>
 
           {/* Inventory Section */}
@@ -441,17 +417,14 @@ const EditProductPage = () => {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Inventori</h2>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-2">Stok Minimum *</label>
-                <input
-                  type="number"
-                  name="stok_minimum"
-                  value={product.stok_minimum}
-                  onChange={handleChange}
-                  required
-                  className="input w-full"
-                />
-              </div>
+              <FloatingLabelInput
+                label="Stok Minimum"
+                type="number"
+                name="stok_minimum"
+                value={product.stok_minimum}
+                onChange={handleChange}
+                required
+              />
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-2">Status</label>
                 <SearchableSelect
@@ -500,7 +473,7 @@ const EditProductPage = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center justify-center rounded-full bg-blue-600 dark:bg-blue-500 text-white text-xs sm:text-sm font-semibold px-6 py-2 hover:bg-blue-700 dark:hover:bg-blue-600 transition disabled:bg-gray-400 transition"
+            className="inline-flex items-center justify-center rounded-full bg-blue-600 dark:bg-blue-500 text-white text-xs sm:text-sm font-semibold px-6 py-2 hover:bg-blue-700 dark:hover:bg-blue-600 transition disabled:bg-gray-400"
             title="Simpan perubahan produk"
           >
             <Save className="w-4 h-4 mr-2" />

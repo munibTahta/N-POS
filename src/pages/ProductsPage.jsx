@@ -15,9 +15,8 @@ import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import DataTable from '../components/DataTable';
 import Pagination from '../components/Pagination';
 import HeaderActionButton from '../components/HeaderActionButton';
-import { Edit, Trash2, Printer, Eye, Plus, Download, Upload, FileText, Info, Globe, Store, Power } from 'lucide-react';
+import { Edit, Trash2, Printer, Eye, Plus, Download, Upload, FileText, Info, Globe, Store, Power, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import useProductOfflineDB from '../hooks/useProductOfflineDB';
-import { usePagination } from '../hooks/usePagination';
 import FileViewerModal from '../components/FileViewerModal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import { useAuth } from '../hooks/useAuth';
@@ -92,6 +91,8 @@ const ProductsPage = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterValues, setFilterValues] = useState({ status: 'aktif', kategori: '' });
+  const [sortBy, setSortBy] = useState('nama_produk');
+  const [sortOrder, setSortOrder] = useState('asc');
 
   const [selectedIds, setSelectedIds] = useState([]);
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
@@ -114,7 +115,9 @@ const ProductsPage = () => {
         katalog_filter: activeCatalogTab,
         id_cabang: activeCatalogTab === 'terpisah' 
           ? (isGlobalAccess ? (selectedBranchId || undefined) : (user?.id_cabang || undefined)) 
-          : undefined
+          : undefined,
+        sortBy,
+        sortOrder
       };
       
       const response = await getProducts(params);
@@ -191,13 +194,13 @@ const ProductsPage = () => {
       setLoading(false);
       setInitialLoadDone(true);
     }
-  }, [page, limit, searchQuery, filterValues, activeCatalogTab, selectedBranchId, isGlobalAccess, user]);
+  }, [page, limit, searchQuery, filterValues, activeCatalogTab, selectedBranchId, isGlobalAccess, user, sortBy, sortOrder]);
 
   const fetchCategoriesAndUnits = useCallback(async () => {
     try {
       const categoriesRes = await getCategories();
       setCategories(categoriesRes.data?.data || categoriesRes.data || []);
-    } catch (_err) {
+    } catch (err) {
       showError('Gagal mengambil kategori');
     }
   }, [showError]);
@@ -739,7 +742,12 @@ const ProductsPage = () => {
               </p>
               <p className="text-xs opacity-90 mt-0.5">
                 {isGlobalAccess && !selectedBranchId
-                  ? '⚠️ Pilih cabang di samping kanan untuk melakukan impor excel ke cabang tertentu. Jika membiarkan "Semua Cabang", fitur tambah/impor tidak tersedia.'
+                  ? (
+                    <span className="inline-flex items-center gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                      Pilih cabang di samping kanan untuk melakukan impor excel ke cabang tertentu. Jika membiarkan "Semua Cabang", fitur tambah/impor tidak tersedia.
+                    </span>
+                  )
                   : `Tindakan tambah atau impor akan dimasukkan secara terisolasi ke katalog cabang **${
                       isGlobalAccess
                         ? branches.find(b => b.id_cabang === parseInt(selectedBranchId))?.nama_cabang || 'terpilih'
@@ -785,7 +793,7 @@ const ProductsPage = () => {
         )}
         {!isSyncing && syncedProducts > 0 && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-            <p className="text-sm text-green-800">✅ {syncedProducts.toLocaleString()} products ready for offline use</p>
+            <p className="text-sm text-green-800 flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 shrink-0" /> {syncedProducts.toLocaleString()} products ready for offline use</p>
           </div>
         )}
 
@@ -804,6 +812,14 @@ const ProductsPage = () => {
           onItemsPerPageChange={setLimit}
           onSearchChange={setSearchQuery}
           onFilterValueChange={(values) => { setFilterValues(values); setPage(1); }}
+          initialSort={{ key: sortBy, direction: sortOrder }}
+          onSortChange={(sortCfg) => {
+            if (sortCfg?.key) {
+              setSortBy(sortCfg.key);
+              setSortOrder(sortCfg.direction || 'asc');
+              setPage(1);
+            }
+          }}
           columns={[
             {
               key: 'gambar',
@@ -861,11 +877,13 @@ const ProductsPage = () => {
             {
               key: 'kode_produk',
               header: 'Kode Produk',
+              sortable: true,
               render: (product) => product.kode_produk
             },
             {
               key: 'nama_produk',
               header: 'Nama Produk',
+              sortable: true,
               render: (product) => product.nama_produk
             },
             {
@@ -931,7 +949,24 @@ const ProductsPage = () => {
             {
               key: 'harga_jual',
               header: 'Harga Jual',
+              sortable: true,
               render: (product) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(product.harga_jual)
+            },
+            {
+              key: 'status',
+              header: 'Status',
+              render: (product) => {
+                const isActive = product.status === 'aktif';
+                return (
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full border ${
+                    isActive
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800'
+                      : 'bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700 line-through'
+                  }`}>
+                    {isActive ? '●' : '○'} {isActive ? 'Aktif' : 'Nonaktif'}
+                  </span>
+                );
+              }
             }
           ]}
           actions={[

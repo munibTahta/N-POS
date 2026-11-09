@@ -58,7 +58,7 @@ async function syncProductsOptimized() {
         if (products && products.length > 0) {
           // Save ALL to SQLite in one go
           if (!window?.electronAPI?.productDB_bulkUpsertProducts) {
-            console.error('❌ No IPC for product DB');
+            console.error('No IPC for product DB');
             return { synced: 0, failed: 0, pages: 0 };
           }
           
@@ -78,7 +78,7 @@ async function syncProductsOptimized() {
               totalSynced += synced;
               totalFailed += failed;
             } catch (chunkErr) {
-              console.error(`❌ Chunk ${chunkIdx + 1} error:`, chunkErr.message);
+              console.error(`Chunk ${chunkIdx + 1} error:`, chunkErr.message);
               totalFailed += chunk.length;
             }
           }
@@ -86,10 +86,10 @@ async function syncProductsOptimized() {
           // Collect first 5000 untuk cache
           cachedProducts.push(...products.slice(0, 5000));
         } else {
-          console.warn('⚠️ No products returned from API');
+          console.warn('No products returned from API');
         }
       } catch (err) {
-        console.error('❌ Full sync error:', err.message);
+        console.error('Full sync error:', err.message);
         throw err;
       }
     } else {
@@ -123,7 +123,7 @@ async function syncProductsOptimized() {
               totalSynced += result?.synced || 0;
               totalFailed += result?.failed || 0;
             } catch (chunkErr) {
-              console.error(`❌ Page ${page} save error:`, chunkErr.message);
+              console.error(`Page ${page} save error:`, chunkErr.message);
               totalFailed += products.length;
             }
           }
@@ -144,7 +144,7 @@ async function syncProductsOptimized() {
           await new Promise(resolve => setTimeout(resolve, 100));
           
         } catch (pageErr) {
-          console.error(`❌ Page ${page} fetch error:`, pageErr.message);
+          console.error(`Page ${page} fetch error:`, pageErr.message);
           hasMore = false; // Stop on error
         }
       }
@@ -163,7 +163,7 @@ async function syncProductsOptimized() {
         dbCount = await window.electronAPI.productDB_getProductCount();
       }
     } catch (verifyErr) {
-      console.warn('⚠️ Verification failed:', verifyErr.message);
+      console.warn('Verification failed:', verifyErr.message);
     }
     
     // Update last sync
@@ -181,7 +181,7 @@ async function syncProductsOptimized() {
     };
     
   } catch (err) {
-    console.error('❌ Optimized sync error:', err);
+    console.error('Optimized sync error:', err);
     return { synced: 0, failed: 0, cached: 0, dbCount: 0 };
   }
 }
@@ -237,7 +237,7 @@ async function syncProductsPaginated() {
         }
         
         if (!window?.electronAPI?.productDB_bulkUpsertProducts) {
-          console.error('❌ No IPC for product DB - cannot save to SQLite!');
+          console.error('No IPC for product DB - cannot save to SQLite!');
           totalSynced += products.length;
         } else {
           // Import to SQLite (IPC call)
@@ -245,18 +245,18 @@ async function syncProductsPaginated() {
             const result = await window.electronAPI.productDB_bulkUpsertProducts(products);
             
             if (!result) {
-              console.error(`❌ Page ${page + 1}: No result from IPC`);
+              console.error(`Page ${page + 1}: No result from IPC`);
               totalFailed += products.length;
             } else {
               const synced = result?.synced || 0;
               const failed = result?.failed || 0;
-              console.warn(`⚠️ Page ${page + 1}: No records saved (synced=0, failed=0)`);
+              console.warn(`Page ${page + 1}: No records saved (synced=0, failed=0)`);
               
               totalSynced += synced;
               totalFailed += failed;
             }
           } catch (ipcErr) {
-            console.error(`❌ Page ${page + 1} IPC error:`, ipcErr);
+            console.error(`Page ${page + 1} IPC error:`, ipcErr);
             totalFailed += products.length;
           }
         }
@@ -283,14 +283,14 @@ async function syncProductsPaginated() {
         page++;
         
       } catch (pageErr) {
-        console.error(`❌ Error fetching page ${page + 1}:`, pageErr.message);
+        console.error(`Error fetching page ${page + 1}:`, pageErr.message);
         // Continue to next page or stop?
         if (page === 0) {
           // First page failed, stop the whole sync
           throw pageErr;
         } else {
           // Partial failure on later page, continue with next
-          console.warn(`⚠️ Continuing with next page after error...`);
+          console.warn(`Continuing with next page after error...`);
           page++;
         }
       }
@@ -309,7 +309,7 @@ async function syncProductsPaginated() {
         dbProductCount = await window.electronAPI.productDB_getProductCount();
       }
     } catch (verifyErr) {
-      console.warn('⚠️ Could not verify SQLite count:', verifyErr.message);
+      console.warn('Could not verify SQLite count:', verifyErr.message);
     }
     
     // Update last sync timestamp
@@ -328,7 +328,7 @@ async function syncProductsPaginated() {
     };
     
   } catch (err) {
-    console.error('❌ Paginated product sync error:', err);
+    console.error('Paginated product sync error:', err);
     return { synced: 0, failed: 0, pages: 0 };
   }
 }
@@ -340,7 +340,7 @@ async function syncProductsPaginated() {
  * The actual syncProducts() is implemented in electron/main.cjs for IPC
  */
 async function _syncProducts() {
-  console.warn('⚠️ [DEPRECATION WARNING] _syncProducts() is deprecated, use syncProductsPaginated()');
+  console.warn('[DEPRECATION WARNING] _syncProducts() is deprecated, use syncProductsPaginated()');
   return await syncProductsPaginated();
 }
 
@@ -354,12 +354,12 @@ async function syncStocks() {
     const stocks = extractArray(response);
     
     if (!stocks || stocks.length === 0) {
-      console.warn('⚠️ [SYNC] No stocks returned from API');
+      console.warn('[SYNC] No stocks returned from API');
       return { synced: 0, failed: 0 };
     }
     
     if (!window?.electronAPI?.productDB_bulkUpsertStocks) {
-      console.error('❌ No IPC for stocks');
+      console.error('No IPC for stocks');
       return { synced: 0, failed: 0 };
     }
     
@@ -367,7 +367,7 @@ async function syncStocks() {
     
     return result || { synced: stocks.length, failed: 0 };
   } catch (err) {
-    console.error('❌ [SYNC] Stock sync error:', err);
+    console.error('[SYNC] Stock sync error:', err);
     return { synced: 0, failed: 0 };
   }
 }
@@ -399,7 +399,7 @@ async function syncMasterData() {
           });
         }
       } catch (e) {
-        console.warn('⚠️ Categories save to DB failed:', e.message);
+        console.warn('Categories save to DB failed:', e.message);
       }
     }
     
@@ -423,7 +423,7 @@ async function syncMasterData() {
           });
         }
       } catch (e) {
-        console.warn('⚠️ Units save to DB failed:', e.message);
+        console.warn('Units save to DB failed:', e.message);
       }
     }
     
@@ -457,7 +457,7 @@ async function syncMasterData() {
           });
         }
       } catch (e) {
-        console.warn('⚠️ Payment methods save to DB failed:', e.message);
+        console.warn('Payment methods save to DB failed:', e.message);
       }
     }
     
@@ -486,14 +486,14 @@ async function syncMasterData() {
           }
           
         } catch (e) {
-          console.warn('⚠️ Customers save to DB failed:', e.message);
+          console.warn('Customers save to DB failed:', e.message);
         }
       }
     } catch (_e) {
-      console.warn('⚠️ Customer sync failed (optional)');
+      console.warn('Customer sync failed (optional)');
     }
   } catch (err) {
-    console.error('❌ Master data sync error:', err);
+    console.error('Master data sync error:', err);
     return results;
   }
 }
@@ -545,7 +545,7 @@ class OfflineDataSync {
         }
       };
     } catch (err) {
-      console.error('❌ SYNC FAILED:', err);
+      console.error('SYNC FAILED:', err);
       return { success: false, error: err.message };
     } finally {
       this.isSyncing = false;
@@ -559,7 +559,7 @@ class OfflineDataSync {
   async loadCachedProducts() {
     try {
       if (!window?.electronAPI?.productDB_searchProducts) {
-        console.warn('⚠️ No IPC for loading cached products');
+        console.warn('No IPC for loading cached products');
         return { loaded: 0 };
       }
       
@@ -587,11 +587,11 @@ class OfflineDataSync {
           sampleCount: Math.min(5, memoryCache.products.length)
         };
       } else {
-        console.warn('⚠️ No cached products found in SQLite');
+        console.warn('No cached products found in SQLite');
         return { loaded: 0 };
       }
     } catch (error) {
-      console.error('❌ Error loading cached products:', error);
+      console.error('Error loading cached products:', error);
       return { loaded: 0, error: error.message };
     }
   }
@@ -615,7 +615,7 @@ class OfflineDataSync {
         sqliteHasData = (count && count > 0);
       }
     } catch (err) {
-      console.warn('⚠️ Could not check SQLite product count:', err.message);
+      console.warn('Could not check SQLite product count:', err.message);
     }
     
     if (!hasProducts || !sqliteHasData) {
@@ -626,7 +626,7 @@ class OfflineDataSync {
       
       // If load failed (SQLite empty), do full sync
       if (loadResult.loaded === 0) {
-        console.warn('⚠️ SQLite empty despite lastProductSync flag - running full sync');
+        console.warn('SQLite empty despite lastProductSync flag - running full sync');
         return await this.startFullSync();
       }
       
@@ -651,7 +651,7 @@ class OfflineDataSync {
           memoryCache.categories = categories;
         }
       } catch (_e) {
-        console.warn('   ⚠️ Categories not available');
+        console.warn('Categories not available');
       }
       
       try {
@@ -660,7 +660,7 @@ class OfflineDataSync {
           memoryCache.units = units;
         }
       } catch (_e) {
-        console.warn('   ⚠️ Units not available');
+        console.warn('Units not available');
       }
       
       try {
@@ -669,7 +669,7 @@ class OfflineDataSync {
           memoryCache.customers = customers;
         }
       } catch (_e) {
-        console.warn('   ⚠️ Customers not available');
+        console.warn('Customers not available');
       }
       
       try {
@@ -678,11 +678,11 @@ class OfflineDataSync {
           memoryCache.paymentMethods = paymentMethods;
         }
       } catch (_e) {
-        console.warn('   ⚠️ Payment methods not available');
+        console.warn('Payment methods not available');
       }
       
     } catch (err) {
-      console.warn('⚠️ Error loading master data from DB:', err.message);
+      console.warn('Error loading master data from DB:', err.message);
     }
   }
 
@@ -732,7 +732,7 @@ class OfflineDataSync {
   async storeOfflineTransaction(transactionData, cartItems = [], paymentInfo = null, customerInfo = null) {
     try {
       if (!window?.electronAPI?.offlineTransaction_store) {
-        console.warn('⚠️ No IPC for offline transactions, falling back to localStorage');
+        console.warn('No IPC for offline transactions, falling back to localStorage');
         // Fallback to localStorage if IPC not available
         const id = `OFFLINE-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const transaction = {
@@ -780,7 +780,7 @@ class OfflineDataSync {
   async getPendingTransactions() {
     try {
       if (!window?.electronAPI?.offlineTransaction_getPending) {
-        console.warn('⚠️ No IPC for offline transactions, falling back to localStorage');
+        console.warn('No IPC for offline transactions, falling back to localStorage');
         // Fallback
         const stored = localStorage.getItem('pendingTransactions');
         const pending = stored ? JSON.parse(stored) : [];
@@ -800,7 +800,7 @@ class OfflineDataSync {
   async getAllOfflineTransactions(limit = 1000, offset = 0) {
     try {
       if (!window?.electronAPI?.offlineTransaction_getAll) {
-        console.warn('⚠️ No IPC for offline transactions');
+        console.warn('No IPC for offline transactions');
         return [];
       }
       
@@ -817,7 +817,7 @@ class OfflineDataSync {
   async markTransactionSynced(transactionId, serverId) {
     try {
       if (!window?.electronAPI?.offlineTransaction_markSynced) {
-        console.warn('⚠️ No IPC for offline transactions, falling back to localStorage');
+        console.warn('No IPC for offline transactions, falling back to localStorage');
         // Fallback
         const stored = localStorage.getItem('pendingTransactions');
         const pending = stored ? JSON.parse(stored) : [];
@@ -879,7 +879,7 @@ class OfflineDataSync {
   async cleanupOfflineTransactions(daysToKeep = 30) {
     try {
       if (!window?.electronAPI?.offlineTransaction_cleanup) {
-        console.warn('⚠️ No IPC for cleanup');
+        console.warn('No IPC for cleanup');
         return { success: false };
       }
       

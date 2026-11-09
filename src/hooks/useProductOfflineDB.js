@@ -33,7 +33,7 @@ const useProductOfflineDB = () => {
       // Debug: check memory cache status
       const memProducts = offlineDataSync.memoryCache?.products || [];
       if (memProducts.length === 0) {
-        console.warn(`⚠️ Memory cache empty! Products not pre-cached yet`);
+        console.warn(`Memory cache empty! Products not pre-cached yet`);
       }
 
       // Build electronSearch wrapper that calls productDB_searchProducts IPC

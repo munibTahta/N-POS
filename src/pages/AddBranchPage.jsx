@@ -1,35 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Save, Loader2, Globe, Store } from 'lucide-react';
 import { addBranch, getBranchById, updateBranch } from '../services/api';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
-
-// SVG Icons
-const BackIcon = ({ className = '' }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="19" y1="12" x2="5" y2="12" />
-    <polyline points="12 19 5 12 12 5" />
-  </svg>
-);
-
-const SaveIcon = ({ className = '' }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-    <polyline points="17 21 17 13 7 13 7 21" />
-    <polyline points="7 3 7 8 15 8" />
-  </svg>
-);
-
-const LoadingSpinner = () => (
-  <svg className="w-8 h-8 text-blue-600 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10" />
-    <path d="M12 2a10 10 0 0 1 0 20" />
-  </svg>
-);
+import { FloatingLabelInput } from '../components/common/FloatingLabelField';
+import { useNotifications } from '../hooks/useNotifications';
 
 const AddBranchPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = !!id;
+  const { success: showSuccess, error: showError } = useNotifications();
 
   const [branch, setBranch] = useState({
     kode_cabang: '',
@@ -41,8 +22,6 @@ const AddBranchPage = () => {
     struk_header: '',
     struk_footer: '',
   });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -56,7 +35,7 @@ const AddBranchPage = () => {
             setBranch(response.data.data);
           }
         } catch (err) {
-          setError('Gagal memuat data cabang untuk diedit.');
+          showError('Gagal memuat data cabang untuk diedit.');
           console.error('Failed to fetch branch:', err);
         } finally {
           setLoading(false);
@@ -73,20 +52,18 @@ const AddBranchPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
     try {
       setSubmitting(true);
       if (isEditMode) {
         await updateBranch(id, branch);
-        setSuccess('Cabang berhasil diperbarui!');
+        showSuccess('Cabang berhasil diperbarui!');
       } else {
         await addBranch(branch);
-        setSuccess('Cabang berhasil ditambahkan!');
+        showSuccess('Cabang berhasil ditambahkan!');
       }
       setTimeout(() => navigate('/cabang'), 1500);
     } catch (err) {
-      setError(err.response?.data?.message || `Gagal ${isEditMode ? 'memperbarui' : 'menambahkan'} cabang.`);
+      showError(err.response?.data?.message || `Gagal ${isEditMode ? 'memperbarui' : 'menambahkan'} cabang.`);
     } finally {
       setSubmitting(false);
     }
@@ -98,9 +75,7 @@ const AddBranchPage = () => {
         <PageContainer>
           <div className="flex items-center justify-center min-h-96">
             <div className="text-center">
-              <div className="inline-block">
-                <LoadingSpinner />
-              </div>
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
               <p className="mt-3 text-slate-600">Memuat data cabang...</p>
             </div>
           </div>
@@ -120,174 +95,154 @@ const AddBranchPage = () => {
               to="/cabang"
               className="inline-flex items-center justify-center rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold px-3 py-2 hover:bg-slate-100 transition"
             >
-              <BackIcon className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline ml-2">Kembali</span>
             </Link>
           }
         />
 
-        {error && (
-          <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-700">
-            {success}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="max-w-2xl mx-auto">
-          <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <div className="p-6 space-y-5">
-              {/* Kode Cabang */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Kode Cabang</label>
-                <input
-                  type="text"
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-6">
+            {/* Informasi Dasar */}
+            <div className="pb-6 border-b border-slate-200">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Informasi Dasar</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FloatingLabelInput
+                  label="Kode Cabang"
                   name="kode_cabang"
                   value={branch.kode_cabang}
                   onChange={handleChange}
                   required
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., CAB001"
+                  helper="Gunakan kode unik untuk identifikasi cabang"
                 />
-                <p className="mt-1 text-xs text-slate-500">Gunakan kode unik untuk identifikasi cabang</p>
-              </div>
 
-              {/* Nama Cabang */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Nama Cabang</label>
-                <input
-                  type="text"
+                <FloatingLabelInput
+                  label="Nama Cabang"
                   name="nama_cabang"
                   value={branch.nama_cabang}
                   onChange={handleChange}
                   required
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Cabang Jakarta Pusat"
+                  helper="Nama lengkap cabang bisnis"
                 />
-                <p className="mt-1 text-xs text-slate-500">Nama lengkap cabang bisnis</p>
-              </div>
 
-              {/* Alamat */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Alamat</label>
-                <input
-                  type="text"
-                  name="alamat"
-                  value={branch.alamat}
-                  onChange={handleChange}
-                  required
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Jalan Sudirman No. 123"
-                />
-                <p className="mt-1 text-xs text-slate-500">Alamat lengkap lokasi cabang</p>
-              </div>
+                <div className="sm:col-span-2">
+                  <FloatingLabelInput
+                    label="Alamat"
+                    name="alamat"
+                    value={branch.alamat}
+                    onChange={handleChange}
+                    required
+                    helper="Alamat lengkap lokasi cabang"
+                  />
+                </div>
 
-              {/* Kota */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Kota</label>
-                <input
-                  type="text"
+                <FloatingLabelInput
+                  label="Kota"
                   name="kota"
                   value={branch.kota}
                   onChange={handleChange}
                   required
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Jakarta"
+                  helper="Nama kota tersebut"
                 />
-                <p className="mt-1 text-xs text-slate-500">Nama kota tersebut</p>
-              </div>
 
-              {/* No. Telepon */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">No. Telepon</label>
-                <input
-                  type="text"
+                <FloatingLabelInput
+                  label="No. Telepon"
                   name="no_telp"
                   value={branch.no_telp}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., +62-21-1234567"
+                  helper="Nomor telepon cabang (opsional)"
                 />
-                <p className="mt-1 text-xs text-slate-500">Nomor telepon cabang (opsional)</p>
               </div>
+            </div>
 
-              {/* Tipe Katalog */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Tipe Katalog</label>
-                <select
-                  name="tipe_katalog"
-                  value={branch.tipe_katalog || 'global'}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            {/* Tipe Katalog */}
+            <div className="pb-6 border-b border-slate-200">
+              <h2 className="text-lg font-semibold text-slate-900 mb-1">Tipe Katalog</h2>
+              <p className="text-xs text-slate-500 mb-4">Tentukan apakah cabang ini berbagi katalog produk dengan pusat atau mengelola katalognya sendiri</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setBranch(prev => ({ ...prev, tipe_katalog: 'global' }))}
+                  className={`flex items-start gap-3 text-left rounded-lg border p-4 transition ${
+                    (branch.tipe_katalog || 'global') === 'global'
+                      ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
+                      : 'border-slate-300 hover:border-slate-400'
+                  }`}
                 >
-                  <option value="global">🌐 Global — Produk dibagikan dengan semua cabang</option>
-                  <option value="terpisah">🏠 Terpisah — Produk dikelola sendiri oleh cabang ini</option>
-                </select>
-                <p className="mt-1 text-xs text-slate-500">
-                  <strong>Global:</strong> Cabang menggunakan katalog produk yang sama dengan pusat.<br />
-                  <strong>Terpisah:</strong> Cabang memiliki katalog produk sendiri yang terpisah.
-                </p>
-              </div>
+                  <Globe className={`w-5 h-5 shrink-0 mt-0.5 ${(branch.tipe_katalog || 'global') === 'global' ? 'text-blue-600' : 'text-slate-400'}`} />
+                  <span>
+                    <span className="block text-sm font-semibold text-slate-800">Global</span>
+                    <span className="block text-xs text-slate-500 mt-0.5">Produk dibagikan dengan semua cabang</span>
+                  </span>
+                </button>
 
-              {/* Header Struk */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Header Struk</label>
-                <input
-                  type="text"
+                <button
+                  type="button"
+                  onClick={() => setBranch(prev => ({ ...prev, tipe_katalog: 'terpisah' }))}
+                  className={`flex items-start gap-3 text-left rounded-lg border p-4 transition ${
+                    branch.tipe_katalog === 'terpisah'
+                      ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
+                      : 'border-slate-300 hover:border-slate-400'
+                  }`}
+                >
+                  <Store className={`w-5 h-5 shrink-0 mt-0.5 ${branch.tipe_katalog === 'terpisah' ? 'text-blue-600' : 'text-slate-400'}`} />
+                  <span>
+                    <span className="block text-sm font-semibold text-slate-800">Terpisah</span>
+                    <span className="block text-xs text-slate-500 mt-0.5">Produk dikelola sendiri oleh cabang ini</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Struk */}
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Pengaturan Struk</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FloatingLabelInput
+                  label="Header Struk"
                   name="struk_header"
                   value={branch.struk_header}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Selamat Datang di Toko Kami"
+                  helper="Pesan yang muncul di atas struk penjualan"
                 />
-                <p className="mt-1 text-xs text-slate-500">Pesan yang muncul di atas struk penjualan</p>
-              </div>
 
-              {/* Footer Struk */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Footer Struk</label>
-                <input
-                  type="text"
+                <FloatingLabelInput
+                  label="Footer Struk"
                   name="struk_footer"
                   value={branch.struk_footer}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Terima Kasih Atas Kunjungannya"
+                  helper="Pesan yang muncul di bawah struk penjualan"
                 />
-                <p className="mt-1 text-xs text-slate-500">Pesan yang muncul di bawah struk penjualan</p>
               </div>
             </div>
+          </div>
 
-            {/* Form Actions */}
-            <div className="border-t border-slate-200 bg-slate-50 px-6 py-4 flex gap-3 justify-end">
-              <Link
-                to="/cabang"
-                className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-100 transition"
-              >
-                Batal
-              </Link>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submitting ? (
-                  <>
-                    <LoadingSpinner />
-                    <span className="ml-2">Menyimpan...</span>
-                  </>
-                ) : (
-                  <>
-                    <SaveIcon className="w-4 h-4" />
-                    <span className="hidden sm:inline ml-2">{isEditMode ? 'Perbarui Cabang' : 'Simpan Cabang'}</span>
-                    <span className="sm:hidden ml-2">{isEditMode ? 'Perbarui' : 'Simpan'}</span>
-                  </>
-                )}
-              </button>
-            </div>
+          {/* Form Actions */}
+          <div className="mt-6 pt-6 border-t border-slate-200 flex gap-3 justify-end">
+            <Link
+              to="/cabang"
+              className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-100 transition"
+            >
+              Batal
+            </Link>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="ml-2">Menyimpan...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-2">{isEditMode ? 'Perbarui Cabang' : 'Simpan Cabang'}</span>
+                  <span className="sm:hidden ml-2">{isEditMode ? 'Perbarui' : 'Simpan'}</span>
+                </>
+              )}
+            </button>
           </div>
         </form>
       </PageContainer>

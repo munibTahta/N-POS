@@ -1,25 +1,37 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { MoreVertical } from 'lucide-react';
 import ActionButton from '../ActionButton';
 
 export const DropdownActionMenu = ({ actions = [], item, onActionClick }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [openUpward, setOpenUpward] = useState(false);
-  const menuRef = useRef(null);
+  const [menuPosition, setMenuPosition] = useState(null);
+  const triggerRef = useRef(null);
+  const panelRef = useRef(null);
+
+  const closeMenu = useCallback(() => setIsOpen(false), [setIsOpen]);
 
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
+      const clickedTrigger = triggerRef.current && triggerRef.current.contains(event.target);
+      const clickedPanel = panelRef.current && panelRef.current.contains(event.target);
+      if (!clickedTrigger && !clickedPanel) closeMenu();
     };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+    // Close on any ancestor scroll (table horizontal scroll, page scroll, etc.)
+    // so the fixed-position menu never drifts away from its trigger button.
+    const handleScrollOrResize = () => closeMenu();
+
+    document.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
     };
-  }, [isOpen]);
+  }, [isOpen, closeMenu]);
 
   const activeActions = actions.filter(action => {
     if (action.show === false) return false;
@@ -54,25 +66,27 @@ export const DropdownActionMenu = ({ actions = [], item, onActionClick }) => {
 
   const handleToggle = (e) => {
     e.stopPropagation();
-    if (!isOpen && menuRef.current) {
-      const rect = menuRef.current.getBoundingClientRect();
+    if (!isOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+      const approxHeight = (activeActions.length * 36) + 16;
       const spaceBelow = viewportHeight - rect.bottom;
       const spaceAbove = rect.top;
-      
-      const approxHeight = (activeActions.length * 36) + 16;
-      
-      if (spaceBelow < approxHeight && spaceAbove > spaceBelow) {
-        setOpenUpward(true);
-      } else {
-        setOpenUpward(false);
-      }
+      const openUpward = spaceBelow < approxHeight && spaceAbove > spaceBelow;
+
+      setMenuPosition({
+        openUpward,
+        top: openUpward ? undefined : rect.bottom + 4,
+        bottom: openUpward ? viewportHeight - rect.top + 4 : undefined,
+        right: Math.max(8, viewportWidth - rect.right),
+      });
     }
-    setIsOpen(!isOpen);
+    setIsOpen((prev) => !prev);
   };
 
   return (
-    <div className="relative inline-block text-left" ref={menuRef} onClick={(e) => e.stopPropagation()}>
+    <div className="relative inline-block text-left" ref={triggerRef} onClick={(e) => e.stopPropagation()}>
       <button
         onClick={handleToggle}
         className="inline-flex items-center justify-center w-8 h-8 text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
@@ -81,16 +95,19 @@ export const DropdownActionMenu = ({ actions = [], item, onActionClick }) => {
         <MoreVertical className="w-5 h-5" />
       </button>
 
-      {isOpen && (
-        <div className={`absolute right-0 w-44 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-2xl z-50 py-1 focus:outline-none ${
-          openUpward ? 'bottom-full mb-1 origin-bottom-right' : 'top-full mt-1 origin-top-right'
-        }`}>
+      {isOpen && menuPosition && createPortal(
+        <div
+          ref={panelRef}
+          onClick={(e) => e.stopPropagation()}
+          style={{ position: 'fixed', top: menuPosition.top, bottom: menuPosition.bottom, right: menuPosition.right }}
+          className="w-44 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-2xl z-[9999] py-1 focus:outline-none"
+        >
           {activeActions.map((action, index) => {
             const isDisabled = action.disabled && (typeof action.disabled === 'function' ? action.disabled(item) : action.disabled);
             const Icon = action.icon;
             const titleVal = typeof action.title === 'function' ? action.title(item) : (action.title || action.label || 'Aksi');
             const variantVal = typeof action.variant === 'function' ? action.variant(item) : (action.variant || 'gray');
-            
+
             const variantColors = {
               danger: 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 disabled:text-red-300 dark:disabled:text-red-900',
               primary: 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 disabled:text-blue-300 dark:disabled:text-blue-900',
@@ -108,7 +125,7 @@ export const DropdownActionMenu = ({ actions = [], item, onActionClick }) => {
                 key={index}
                 disabled={isDisabled}
                 onClick={() => {
-                  setIsOpen(false);
+                  closeMenu();
                   if (onActionClick) onActionClick(action.key, item);
                   action.onClick && action.onClick(item);
                 }}
@@ -119,7 +136,8 @@ export const DropdownActionMenu = ({ actions = [], item, onActionClick }) => {
               </button>
             );
           })}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

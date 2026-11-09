@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Download, BarChart3 } from 'lucide-react';
 import HeaderActionButton from '../components/HeaderActionButton';
 import DataTable from '../components/DataTable';
-import { getSales, getStockReport, getStock, getBranches, getProducts, getSalesReport, getPaymentMethodStats, getPaymentHistory, getSalesReturns } from '../services/api';
+import { getSales, getStockReport, getStock, getBranches, getSalesReport, getPaymentMethodStats, getPaymentHistory, getSalesReturns } from '../services/api';
 import { extractArray, extractData } from '../utils/apiResponseHelper';
 import { SearchFilterBar, FilterPanel } from '../components/SearchFilterBar';
 import useSearchAndFilter from '../hooks/useSearchAndFilter';
@@ -46,6 +46,8 @@ const ReportsPage = () => {
   const [error, setError] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
   const [branches, setBranches] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState('');
   const [priceTypeFilter, setPriceTypeFilter] = useState('all'); // 'all' | 'eceran' | 'grosir'
@@ -92,7 +94,7 @@ const ReportsPage = () => {
                 }));
               }
             } catch (_localStockError) {
-              if (import.meta.env.DEV) {
+              if (import.meta.env.DEV) { /* intentionally empty */ 
 
               }
             }
@@ -265,17 +267,34 @@ const ReportsPage = () => {
   }, [granularity]);
 
   const filteredSales = useMemo(() => {
-    // If granularity is 'all' and no manual date filters, return all sales
-    if (granularity === 'all' && !startDate && !endDate && !selectedBranch && priceTypeFilter === 'all') return sales;
-    
-    const start = startDate ? new Date(`${startDate}T00:00:00`) : null;
-    const end = endDate ? new Date(`${endDate}T23:59:59`) : null;
+    // If granularity is 'all' and no manual date/time filters, return all sales
+    if (granularity === 'all' && !startDate && !endDate && !startTime && !endTime && !selectedBranch && priceTypeFilter === 'all') return sales;
+
+    const start = startDate ? new Date(`${startDate}T${startTime || '00:00'}:00`) : null;
+    const end = endDate ? new Date(`${endDate}T${endTime || '23:59'}:59`) : null;
+    // Jam-only filter (tanpa tanggal): berlaku ke semua hari, berguna untuk
+    // memisahkan transaksi shift kasir dalam 1 akun yang sama (mis. shift 1
+    // sampai jam 16:00, shift 2 jam 16:00-20:00) tanpa perlu batasi tanggal.
+    const hasTimeOnlyFilter = (startTime || endTime) && !startDate && !endDate;
     const filtered = (sales || []).filter(s => {
       if (!s.tanggal) return false;
       const d = new Date(s.tanggal);
       if (isNaN(d)) return false;
-      if (start && d < start) return false;
-      if (end && d > end) return false;
+      if (hasTimeOnlyFilter) {
+        // Bandingkan jam:menit saja terhadap semua tanggal (mis. semua transaksi jam 16:00-20:00)
+        const minutesOfDay = d.getHours() * 60 + d.getMinutes();
+        if (startTime) {
+          const [sh, sm] = startTime.split(':').map(Number);
+          if (minutesOfDay < sh * 60 + sm) return false;
+        }
+        if (endTime) {
+          const [eh, em] = endTime.split(':').map(Number);
+          if (minutesOfDay > eh * 60 + em) return false;
+        }
+      } else {
+        if (start && d < start) return false;
+        if (end && d > end) return false;
+      }
       // Apply branch filter if selected
       if (selectedBranch) {
         const idCabang = s.cabang?.id_cabang || s.Cabang?.id_cabang || s.id_cabang || s.branch_id || '';
@@ -293,7 +312,7 @@ const ReportsPage = () => {
       return true;
     });
     return filtered;
-  }, [sales, startDate, endDate, selectedBranch, priceTypeFilter, granularity]);
+  }, [sales, startDate, endDate, startTime, endTime, selectedBranch, priceTypeFilter, granularity]);
 
   const { filteredItems: searchedSales } = useSearchAndFilter(filteredSales, {
     searchTerm: searchQuery,
@@ -844,10 +863,12 @@ const ReportsPage = () => {
           onClearSearch={() => setSearchQuery('')}
           onFilterToggle={() => setShowFilterPanel(prev => !prev)}
           isFilterActive={showFilterPanel}
-          hasActiveFilters={Boolean(searchQuery) || selectedBranch || priceTypeFilter !== 'all' || startDate || endDate || granularity !== 'all'}
+          hasActiveFilters={Boolean(searchQuery) || selectedBranch || priceTypeFilter !== 'all' || startDate || endDate || startTime || endTime || granularity !== 'all'}
           onClearFilters={() => {
             setStartDate('');
             setEndDate('');
+            setStartTime('');
+            setEndTime('');
             setSelectedBranch('');
             setPriceTypeFilter('all');
             setGranularity('all');
@@ -861,10 +882,12 @@ const ReportsPage = () => {
             <div className="flex items-center gap-2">
               <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Dari</label>
               <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="p-2 border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-xl flex-1 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} title="Jam mulai" className="p-2 border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-xl w-28 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
             </div>
             <div className="flex items-center gap-2">
               <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Sampai</label>
               <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="p-2 border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-xl flex-1 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} title="Jam selesai" className="p-2 border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-xl w-28 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
             </div>
             <div className="flex items-center gap-2">
               <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Cabang</label>
@@ -893,6 +916,10 @@ const ReportsPage = () => {
               </select>
             </div>
           </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Isi jam untuk memisahkan transaksi per shift kasir (mis. shift 1 sampai jam 16:00, shift 2 jam 16:00-20:00) dari akun kasir yang sama.
+            Jika tanggal dikosongkan, filter jam berlaku ke semua tanggal.
+          </p>
         </FilterPanel>
         <div className="mt-6">
           <h4 className="text-sm font-semibold mb-2">Grafik Metode Pembayaran</h4>

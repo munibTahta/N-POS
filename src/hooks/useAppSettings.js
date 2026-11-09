@@ -45,7 +45,7 @@ export const useAppSettings = () => {
     try {
       await dbBatchInsert('settings', records);
     } catch (err) {
-      console.warn('⚠️ Failed to persist settings:', err);
+      console.warn('Failed to persist settings:', err);
     }
   }, []);
 
@@ -60,7 +60,7 @@ export const useAppSettings = () => {
       });
       return result || [];
     } catch (dbErr) {
-      console.warn('⚠️ Failed to load settings from offline DB:', dbErr);
+      console.warn('Failed to load settings from offline DB:', dbErr);
       return [];
     }
   }, []);

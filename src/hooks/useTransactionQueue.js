@@ -50,38 +50,6 @@ export const useTransactionQueue = () => {
   const processQueueRef = useRef(null);
 
   /**
-   * Initialize queue on mount
-   */
-  useEffect(() => {
-    const initQueue = async () => {
-      await initializeTransactionQueue();
-      await refreshStats();
-    };
-    
-    initQueue().catch(err => {
-      console.error('Failed to initialize queue:', err);
-      setError(err.message);
-    });
-
-    return () => {
-      if (retryTimeoutRef.current) {
-        clearTimeout(retryTimeoutRef.current);
-      }
-    };
-  }, [refreshStats]);
-
-  /**
-   * Auto-process queue when coming online
-   */
-  useEffect(() => {
-    if (isOnline && pendingCount > 0 && !isProcessing && !processingRef.current) {
-      processQueue().catch(err => {
-        console.error('Auto-sync failed:', err);
-      });
-    }
-  }, [isOnline, pendingCount, isProcessing, processQueue]);
-
-  /**
    * Refresh queue statistics
    */
   const refreshStats = useCallback(async () => {
@@ -134,7 +102,7 @@ export const useTransactionQueue = () => {
         return true;
       } catch (err) {
         const errorMsg = err.message || 'Unknown error';
-        console.error(`❌ Transaction failed: ${transaction.transaction_id}`, errorMsg);
+        console.error(`Transaction failed: ${transaction.transaction_id}`, errorMsg);
 
         // Mark failed (will retry if under limit)
         await markFailed(transaction.transaction_id, errorMsg);
@@ -290,6 +258,47 @@ export const useTransactionQueue = () => {
     },
     [isOnline, processQueue, refreshStats]
   );
+
+  // Keep the ref in sync so processTransaction's retry scheduling (which
+  // intentionally goes through the ref instead of a direct closure, to avoid
+  // a circular dependency between processTransaction and processQueue) can
+  // actually reach the latest processQueue. This was previously never
+  // assigned, so scheduled retries silently did nothing.
+  useEffect(() => {
+    processQueueRef.current = processQueue;
+  }, [processQueue]);
+
+  /**
+   * Initialize queue on mount
+   */
+  useEffect(() => {
+    const initQueue = async () => {
+      await initializeTransactionQueue();
+      await refreshStats();
+    };
+
+    initQueue().catch(err => {
+      console.error('Failed to initialize queue:', err);
+      setError(err.message);
+    });
+
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+      }
+    };
+  }, [refreshStats]);
+
+  /**
+   * Auto-process queue when coming online
+   */
+  useEffect(() => {
+    if (isOnline && pendingCount > 0 && !isProcessing && !processingRef.current) {
+      processQueue().catch(err => {
+        console.error('Auto-sync failed:', err);
+      });
+    }
+  }, [isOnline, pendingCount, isProcessing, processQueue]);
 
   return {
     // State

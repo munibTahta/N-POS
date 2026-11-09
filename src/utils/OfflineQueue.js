@@ -254,7 +254,7 @@ class OfflineQueue {
           failed++;
         }
       } catch (error) {
-        console.error(`❌ Sync error: ${req.method} ${req.url}`, error);
+        console.error(`Sync error: ${req.method} ${req.url}`, error);
         failed++;
       }
     }
@@ -433,7 +433,7 @@ class OfflineQueue {
               await new Promise(resolve => setTimeout(resolve, 500));
             }
           } catch (error) {
-            console.error(`❌ Batch sync error for ${endpoint}:`, error);
+            console.error(`Batch sync error for ${endpoint}:`, error);
             totalFailed += batch.length;
           }
         }

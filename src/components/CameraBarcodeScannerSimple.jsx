@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { X } from 'lucide-react';
 
 /**
  * Simple Camera Barcode Scanner Component
@@ -60,7 +61,7 @@ const CameraBarcodeScanner = ({ onScan, onClose }) => {
             onClick={handleClose}
             className="text-gray-500 hover:text-gray-700 text-xl font-bold"
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
 

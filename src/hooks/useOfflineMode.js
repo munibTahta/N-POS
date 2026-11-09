@@ -45,7 +45,7 @@ export const useOfflineMode = () => {
       setCacheSize(count);
       
       if (ageHours > 24) {
-        console.warn(`⚠️ Cache outdated (${ageHours.toFixed(1)} hours old)`);
+        console.warn(`Cache outdated (${ageHours.toFixed(1)} hours old)`);
       }
     } catch (err) {
       console.error('Error checking cache freshness:', err);
@@ -71,7 +71,7 @@ export const useOfflineMode = () => {
       lastSyncFailed,
       syncRetrying,
       status: {
-        indicator: isOnline ? '🟢' : '🔴',
+        indicator: isOnline ? '' : '',
         message: isOnline 
           ? (cacheAge === null ? 'Online - No cached data' : `Online - Cache ${cacheAge.toFixed(1)}h old`)
           : (hasCache ? (isFresh ? 'Offline - Using fresh cache' : 'Offline - Cache is outdated') : 'Offline - No cached data'),
@@ -130,7 +130,7 @@ export const useOfflineMode = () => {
         setCacheSize(count);
         
         if (ageHours > 24) {
-          console.warn(`⚠️ Cache outdated (${ageHours.toFixed(1)} hours old)`);
+          console.warn(`Cache outdated (${ageHours.toFixed(1)} hours old)`);
         }
       } catch (err) {
         console.error('Error checking cache freshness:', err);

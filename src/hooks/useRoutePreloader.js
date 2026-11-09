@@ -37,7 +37,7 @@ export const preloadComponent = async (componentPromise, name) => {
       componentCache.set(name, true);
     }
   } catch (error) {
-    console.warn(`⚠️ Failed to preload ${name}:`, error.message);
+    console.warn(`Failed to preload ${name}:`, error.message);
   }
 };
 

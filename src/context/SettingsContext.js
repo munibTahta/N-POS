@@ -78,7 +78,7 @@ export const SettingsProvider = ({ children }) => {
   useEffect(() => {
     fetchSettings();
     
-    // ⚠️ REMOVED: Auto-refresh interval was causing Settings page to blink/flicker
+    // REMOVED: Auto-refresh interval was causing Settings page to blink/flicker
     // Refresh is now triggered only on demand via refreshSettings() or when user/token changes
     // This prevents excessive API calls and improves performance
     

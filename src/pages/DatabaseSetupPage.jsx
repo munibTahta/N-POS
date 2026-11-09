@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { Download, Upload, ArrowLeft } from 'lucide-react';
+import { Download, Upload, ArrowLeft, Database, Search, Zap, Lightbulb } from 'lucide-react';
 import LoadingButton from '../components/common/LoadingButton';
 import HeaderActionButton from '../components/HeaderActionButton';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
@@ -170,7 +170,7 @@ const DatabaseSetupPage = () => {
           <div className="space-y-4">
             {/* Offline DB */}
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-medium text-gray-800 mb-2">📊 Database Umum (offline.db)</h3>
+              <h3 className="font-medium text-gray-800 mb-2 flex items-center gap-1.5"><Database className="w-4 h-4" /> Database Umum (offline.db)</h3>
               <div className="text-sm text-gray-600 space-y-1 mb-3">
                 <p><strong>Fungsi:</strong> Menyimpan data transaksi, pelanggan, kategori, satuan</p>
                 <p><strong>Path:</strong> <code className="bg-gray-200 px-1 rounded text-xs">~/AppData/Roaming/n-pos/offline.db</code></p>
@@ -179,20 +179,20 @@ const DatabaseSetupPage = () => {
 
             {/* Product DB */}
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <h3 className="font-medium text-blue-800 mb-2">🔍 Database Produk (product_offline.db)</h3>
+              <h3 className="font-medium text-blue-800 mb-2 flex items-center gap-1.5"><Search className="w-4 h-4" /> Database Produk (product_offline.db)</h3>
               <div className="text-sm text-blue-700 space-y-1 mb-3">
                 <p><strong>Fungsi:</strong> Index produk teroptimasi untuk pencarian cepat & offline</p>
                 <p><strong>Path:</strong> <code className="bg-blue-100 px-1 rounded text-xs">~/AppData/Roaming/n-pos/product_offline.db</code></p>
                 <p><strong>Size (per 1000 produk):</strong> ~2.5MB</p>
               </div>
-              <div className="mt-2 p-2 bg-blue-100 rounded text-xs text-blue-800">
-                ⚡ Query time: 5-50ms (indexed), Delta sync setiap 1 jam
+              <div className="mt-2 p-2 bg-blue-100 rounded text-xs text-blue-800 flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5" /> Query time: 5-50ms (indexed), Delta sync setiap 1 jam
               </div>
             </div>
 
             {/* Tips */}
             <div className="p-3 bg-amber-50 border border-amber-200 rounded">
-              <h4 className="font-medium text-amber-800 mb-1">💡 Tips Backup</h4>
+              <h4 className="font-medium text-amber-800 mb-1 flex items-center gap-1.5"><Lightbulb className="w-4 h-4" /> Tips Backup</h4>
               <ul className="text-xs text-amber-700 space-y-1">
                 <li>• Backup kedua database secara berkala sebelum update aplikasi</li>
                 <li>• Product database auto-recreate jika dihapus saat sync berikutnya</li>

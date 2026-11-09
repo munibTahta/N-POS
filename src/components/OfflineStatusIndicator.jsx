@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { WifiOff, Clock, CheckCircle2, Check, Lightbulb } from 'lucide-react';
 import { useNetworkState } from '../hooks/useNetworkState';
 
 /**
@@ -38,7 +39,7 @@ export const OfflineStatusIndicator = () => {
       setIsSyncing(false);
       setSyncStatus('complete');
       if (detail.synced > 0) {
-        showNotification(`✅ Synced ${detail.synced} requests`, 'success', 2000);
+        showNotification(`Synced ${detail.synced} requests`, 'success', 2000);
       }
       setTimeout(() => setSyncStatus('idle'), 3000);
     };
@@ -46,7 +47,7 @@ export const OfflineStatusIndicator = () => {
     const handleSyncError = (detail) => {
       setIsSyncing(false);
       setSyncStatus('error');
-      showNotification(`⚠️ Sync error: ${detail.failed} failed`, 'error', 3000);
+      showNotification(`Sync error: ${detail.failed} failed`, 'error', 3000);
     };
 
     window.addEventListener('syncStart', handleSyncStart);
@@ -113,27 +114,27 @@ export const OfflineStatusIndicator = () => {
           onClick={(e) => e.stopPropagation()}
         >
           <div className="font-bold mb-3 flex items-center gap-2">
-            <span className="text-lg">📴</span>
+            <WifiOff className="w-5 h-5" />
             <span>Mode Offline Aktif</span>
           </div>
-          <p className="text-xs mb-3 bg-yellow-100 px-2 py-1 rounded">⏱️ Offline sejak: {offlineTimeFormatted}</p>
+          <p className="text-xs mb-3 bg-yellow-100 px-2 py-1 rounded flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Offline sejak: {offlineTimeFormatted}</p>
           <div className="mb-3">
-            <h4 className="text-xs font-semibold mb-2 text-yellow-900">✅ Fitur yang Tersedia:</h4>
+            <h4 className="text-xs font-semibold mb-2 text-yellow-900 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Fitur yang Tersedia:</h4>
             <ul className="text-xs space-y-1 ml-2">
-              <li>✓ Lihat & cari produk (dari cache)</li>
-              <li>✓ Lihat data pelanggan</li>
-              <li>✓ Buat penjualan & transaksi</li>
-              <li>✓ Cetak struk offline</li>
-              <li>✓ Navigasi ke semua halaman</li>
+              <li className="flex items-center gap-1"><Check className="w-3 h-3" /> Lihat & cari produk (dari cache)</li>
+              <li className="flex items-center gap-1"><Check className="w-3 h-3" /> Lihat data pelanggan</li>
+              <li className="flex items-center gap-1"><Check className="w-3 h-3" /> Buat penjualan & transaksi</li>
+              <li className="flex items-center gap-1"><Check className="w-3 h-3" /> Cetak struk offline</li>
+              <li className="flex items-center gap-1"><Check className="w-3 h-3" /> Navigasi ke semua halaman</li>
             </ul>
           </div>
           {queueCount > 0 && (
             <div className="bg-orange-100 border border-orange-300 rounded px-2 py-2 text-xs">
-              <div className="font-semibold text-orange-900">⏳ Menunggu Sinkronisasi:</div>
+              <div className="font-semibold text-orange-900 flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Menunggu Sinkronisasi:</div>
               <div className="font-bold text-orange-700 mt-1">{queueCount} transaksi akan tersinkron saat online</div>
             </div>
           )}
-          <p className="text-xs mt-3 text-yellow-700 italic">💡 Klik badge di bawah untuk tutup panel ini</p>
+          <p className="text-xs mt-3 text-yellow-700 italic flex items-center gap-1"><Lightbulb className="w-3.5 h-3.5" /> Klik badge di bawah untuk tutup panel ini</p>
         </div>
       )}
 
@@ -180,7 +181,7 @@ export const OfflineStatusIndicator = () => {
         )}
 
         {syncStatus === 'complete' && (
-          <span className="ml-2 text-xs text-green-700">✓ Tersinkron</span>
+          <span className="ml-2 text-xs text-green-700 inline-flex items-center gap-1"><Check className="w-3 h-3" /> Tersinkron</span>
         )}
       </button>
     </div>

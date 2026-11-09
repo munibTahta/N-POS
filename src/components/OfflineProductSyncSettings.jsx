@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Smartphone, HardDrive, Clock, RefreshCw, Download, Trash2, Lightbulb } from 'lucide-react';
 import { useSmartProductSync } from '../hooks/useSmartProductSync';
 import { getCategories } from '../services/api';
 
@@ -60,14 +61,14 @@ export const OfflineProductSyncSettings = () => {
 
   return (
     <div className="p-6 bg-white rounded-lg shadow">
-      <h2 className="text-2xl font-bold mb-4">📱 Offline Product Sync</h2>
+      <h2 className="text-2xl font-bold mb-4 flex items-center gap-2"><Smartphone className="w-6 h-6" /> Offline Product Sync</h2>
 
       {/* Storage Info */}
       <div className="mb-6 p-4 bg-blue-50 rounded border border-blue-200">
         <div className="text-sm text-gray-600">
-          <p>💾 Produk di-cache: <strong>{cachedProductCount}</strong> items</p>
+          <p className="flex items-center gap-1.5"><HardDrive className="w-4 h-4" /> Produk di-cache: <strong>{cachedProductCount}</strong> items</p>
           {lastSyncTime && (
-            <p>🕐 Last sync: {lastSyncTime.toLocaleString('id-ID')}</p>
+            <p className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> Last sync: {lastSyncTime.toLocaleString('id-ID')}</p>
           )}
         </div>
       </div>
@@ -121,20 +122,22 @@ export const OfflineProductSyncSettings = () => {
           disabled={isSyncing || selectedCategories.length === 0}
           className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
         >
-          {isSyncing ? '🔄 Syncing...' : '📥 Sync Sekarang'}
+          {isSyncing
+            ? <span className="inline-flex items-center gap-1.5"><RefreshCw className="w-4 h-4 animate-spin" /> Syncing...</span>
+            : <span className="inline-flex items-center gap-1.5"><Download className="w-4 h-4" /> Sync Sekarang</span>}
         </button>
         <button
           onClick={clearCache}
           disabled={isSyncing || cachedProductCount === 0}
           className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-400"
         >
-          🗑️ Clear
+          <span className="inline-flex items-center gap-1.5"><Trash2 className="w-4 h-4" /> Clear</span>
         </button>
       </div>
 
       {/* Info */}
       <div className="mt-6 p-4 bg-gray-50 rounded text-sm text-gray-600">
-        <h4 className="font-semibold mb-2">💡 Tips:</h4>
+        <h4 className="font-semibold mb-2 flex items-center gap-1.5"><Lightbulb className="w-4 h-4" /> Tips:</h4>
         <ul className="list-disc list-inside space-y-1">
           <li>Sync kategori yang sering dijual untuk offline access</li>
           <li>Setiap kategori bisa berisi ratusan produk</li>

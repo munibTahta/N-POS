@@ -122,7 +122,7 @@ class OptimizedDataSync {
     }
 
     if (!window?.electronAPI?.dbBatch) {
-      console.warn('⚠️ No IPC for batch DB operations');
+      console.warn('No IPC for batch DB operations');
       return { saved: 0, failed: 0 };
     }
 
@@ -157,7 +157,7 @@ class OptimizedDataSync {
    */
   async performFullSync() {
     if (!this.isOnline) {
-      console.warn('⚠️ Offline - skipping full sync');
+      console.warn('Offline - skipping full sync');
       return { success: false, reason: 'offline' };
     }
 
@@ -276,7 +276,7 @@ class OptimizedDataSync {
    */
   async syncOfflineQueue() {
     if (!window?.electronAPI?.dbSelect) {
-      console.warn('⚠️ No IPC for transaction queue access');
+      console.warn('No IPC for transaction queue access');
       return { synced: 0, failed: 0 };
     }
 

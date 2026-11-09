@@ -35,7 +35,7 @@ const blockedTables = [
 function validateIPCMessage(channel, args) {
   // Whitelist check
   if (!allowedChannels[channel]) {
-    throw new Error(`❌ Blocked IPC channel: ${channel}`);
+    throw new Error(`Blocked IPC channel: ${channel}`);
   }
 
   const spec = allowedChannels[channel];
@@ -43,7 +43,7 @@ function validateIPCMessage(channel, args) {
   // Argument count check
   if (!Array.isArray(args) || args.length !== spec.args.length) {
     throw new Error(
-      `❌ Invalid argument count for ${channel}. Expected ${spec.args.length}, got ${args.length}`
+      `Invalid argument count for ${channel}. Expected ${spec.args.length}, got ${args.length}`
     );
   }
 
@@ -73,16 +73,16 @@ function validateIPCMessage(channel, args) {
  */
 function validateTableAccess(tableName) {
   if (typeof tableName !== 'string') {
-    throw new Error('❌ Table name must be string');
+    throw new Error('Table name must be string');
   }
 
   if (blockedTables.includes(tableName)) {
-    throw new Error(`❌ Access denied to table: ${tableName}`);
+    throw new Error(`Access denied to table: ${tableName}`);
   }
 
   // Prevent SQL injection: only alphanumeric, underscore
   if (!/^[a-zA-Z0-9_]+$/.test(tableName)) {
-    throw new Error(`❌ Invalid table name: ${tableName}`);
+    throw new Error(`Invalid table name: ${tableName}`);
   }
 }
 
@@ -93,20 +93,20 @@ function validatePrintMessage(args) {
   const [printerName, content, paperWidth] = args;
 
   if (typeof printerName !== 'string' || !printerName.trim()) {
-    throw new Error('❌ Printer name must be non-empty string');
+    throw new Error('Printer name must be non-empty string');
   }
 
   if (typeof content !== 'string') {
-    throw new Error('❌ Receipt content must be string');
+    throw new Error('Receipt content must be string');
   }
 
   // Content size limit: 100KB
   if (content.length > 102400) {
-    throw new Error('❌ Receipt content too large (max 100KB)');
+    throw new Error('Receipt content too large (max 100KB)');
   }
 
   if (paperWidth && !['58mm', '80mm', '100mm'].includes(paperWidth)) {
-    throw new Error(`❌ Invalid paper width: ${paperWidth}`);
+    throw new Error(`Invalid paper width: ${paperWidth}`);
   }
 }
 
@@ -115,27 +115,27 @@ function validatePrintMessage(args) {
  */
 function validateProductBulkOp(products) {
   if (!Array.isArray(products)) {
-    throw new Error('❌ Products must be array');
+    throw new Error('Products must be array');
   }
 
   if (products.length === 0) {
-    throw new Error('❌ Products array cannot be empty');
+    throw new Error('Products array cannot be empty');
   }
 
   // Limit bulk operations to prevent DoS
   if (products.length > 50000) {
-    throw new Error('❌ Too many products (max 50000 per batch)');
+    throw new Error('Too many products (max 50000 per batch)');
   }
 
   // Validate first few items
   for (let i = 0; i < Math.min(3, products.length); i++) {
     const product = products[i];
     if (typeof product !== 'object' || product === null) {
-      throw new Error(`❌ Invalid product at index ${i}`);
+      throw new Error(`Invalid product at index ${i}`);
     }
 
     if (typeof product.id_produk !== 'number') {
-      throw new Error(`❌ Missing id_produk at index ${i}`);
+      throw new Error(`Missing id_produk at index ${i}`);
     }
   }
 }
@@ -188,7 +188,7 @@ class RateLimiter {
 
     // Check if within limit
     if (data.count >= allowedPerMinute) {
-      console.warn(`⚠️ Rate limit exceeded for ${channel}`);
+      console.warn(`Rate limit exceeded for ${channel}`);
       return false;
     }
 
@@ -224,7 +224,7 @@ export async function handleSecureIPC(channel, args = []) {
       args
     };
   } catch (error) {
-    console.error('❌ IPC validation error:', error.message);
+    console.error('IPC validation error:', error.message);
     return {
       valid: false,
       error: error.message,
@@ -245,14 +245,14 @@ export function createSecureIPCBridge() {
         // Safe to invoke
         return true;
       } catch (error) {
-        console.error('❌ IPC validation failed:', error.message);
+        console.error('IPC validation failed:', error.message);
         return false;
       }
     },
     
     on: (channel) => {
       if (!allowedChannels[channel]) {
-        console.warn(`⚠️ Listening to unknown channel: ${channel}`);
+        console.warn(`Listening to unknown channel: ${channel}`);
       }
     }
   };

@@ -36,7 +36,7 @@ export const useCustomers = () => {
     try {
       await dbBatchInsert('customers', records);
     } catch (err) {
-      console.warn('⚠️ Failed to persist customers to offline DB:', err);
+      console.warn('Failed to persist customers to offline DB:', err);
     }
   }, []);
 
@@ -51,7 +51,7 @@ export const useCustomers = () => {
       });
       return result || [];
     } catch (dbErr) {
-      console.warn('⚠️ Failed to load customers from offline DB:', dbErr);
+      console.warn('Failed to load customers from offline DB:', dbErr);
       return [];
     }
   }, []);
