@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense } from 'react';
 import { X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Check, Flame, History, ShoppingCart } from 'lucide-react';
+import { Check, Flame, History, Keyboard, ShoppingCart } from 'lucide-react';
 import Drawer from '../components/common/Drawer';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { getCategories, getBranchById, getStockReport } from '../services/api';
@@ -34,6 +34,8 @@ import ConfirmDialog from '../components/common/ConfirmDialog';
 import { usePosKeyboardShortcuts } from '../features/pos/hooks/usePosKeyboardShortcuts';
 import { usePosCheckout } from '../features/pos/hooks/usePosCheckout';
 import { useProductBrowse } from '../features/pos/hooks/useProductBrowse';
+import { isWebMode, saveStocks, loadStocks } from '../services/webProductCache';
+import { useWebCatalogSnapshot } from '../features/pos/hooks/useWebCatalogSnapshot';
 import { useCart } from '../features/pos/hooks/useCart';
 import { usePosCartActions } from '../features/pos/hooks/usePosCartActions';
 
@@ -169,6 +171,7 @@ const PosPage = () => {
   const idCabangPengguna = user?.id_cabang;
   const [tipeKatalog, setTipeKatalog] = useState('global');
   const [tipeKatalogKnown, setTipeKatalogKnown] = useState(false);
+  useWebCatalogSnapshot({ idCabangPengguna, tipeKatalog, tipeKatalogKnown, isOnline });
 
   // Penjaga katalog (defensif; server tetap penentu). Produk tanpa info pemilik dianggap sah.
   const belongsToCatalog = useCallback((p) => {
@@ -499,6 +502,12 @@ const PosPage = () => {
         return;
       }
 
+      // Mode web: simpan ke IndexedDB
+      if (isWebMode()) {
+        await saveStocks(idCabangPengguna, stocks);
+        return;
+      }
+
       // Save ke offline database
       if (!window.electronAPI?.productDB_bulkUpsertStocks) {
         console.warn('No IPC for saving stocks');
@@ -513,7 +522,7 @@ const PosPage = () => {
     } catch (err) {
       console.error('Error caching stock data:', err);
     }
-  }, []);
+  }, [idCabangPengguna]);
 
   /**
    * Load stock data dari offline cache
@@ -524,6 +533,17 @@ const PosPage = () => {
       if (!idCabangPengguna) {
         console.warn('No cabang info to load stocks');
         return [];
+      }
+
+      // Mode web: baca dari IndexedDB
+      if (isWebMode()) {
+        const snap = await loadStocks(idCabangPengguna);
+        return (snap?.stocks || []).map(s => ({
+          id_produk: s.id_produk,
+          detail_lokasi: { cabang: [{ id_cabang: s.id_cabang, stok: s.stok }] },
+          lokasi_rak: s.lokasi_rak,
+          updated_at: s.updated_at
+        }));
       }
 
       // Load stock dari offline database
@@ -1052,6 +1072,16 @@ const PosPage = () => {
             Kasir: {user?.nama || user?.username || 'Tidak diketahui'}
           </div>
           <PrinterStatusIndicator />
+          <button
+            type="button"
+            onClick={() => setShowShortcutsModal(true)}
+            className="btn-icon btn-text text-gray-600"
+            aria-label="Bantuan pintasan keyboard"
+            aria-haspopup="dialog"
+            title="Pintasan keyboard (?)"
+          >
+            <Keyboard className="h-5 w-5" aria-hidden="true" />
+          </button>
         </div>
       </div>
 

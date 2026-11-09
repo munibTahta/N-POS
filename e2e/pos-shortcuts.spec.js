@@ -11,7 +11,7 @@ test.describe('pintasan keyboard kasir (desktop)', () => {
   });
 
   test('F1 membuka dan menutup bantuan shortcut', async ({ page }) => {
-    const modal = page.getByRole('heading', { name: 'Shortcut Keyboard POS' });
+    const modal = page.getByRole('heading', { name: 'Pintasan keyboard' });
     await expect(modal).toHaveCount(0);
     await page.keyboard.press('F1');
     await expect(modal).toBeVisible();
@@ -46,5 +46,43 @@ test.describe('pintasan keyboard kasir (desktop)', () => {
     await expect(page.locator('[data-payment-modal]')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.locator('[data-payment-modal]')).toHaveCount(0);
+  });
+  test('"/" memfokuskan pencarian, tetapi tidak saat sedang mengetik', async ({ page }) => {
+    const input = page.getByPlaceholder(/Cari produk atau scan/);
+    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('/');
+    await expect(input).toBeFocused();
+    await expect(input).toHaveValue('');
+    await page.keyboard.type('a/b');
+    await expect(input).toHaveValue('a/b');
+  });
+
+  test('Ctrl+K memfokuskan pencarian bahkan dari kolom lain', async ({ page }) => {
+    const input = page.getByPlaceholder(/Cari produk atau scan/);
+    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('Control+k');
+    await expect(input).toBeFocused();
+  });
+
+  test('"?" membuka bantuan; Esc menutup dan mengembalikan fokus', async ({ page }) => {
+    const input = page.getByPlaceholder(/Cari produk atau scan/);
+    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('?');
+    const heading = page.getByRole('heading', { name: 'Pintasan keyboard' });
+    await expect(heading).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Pintasan keyboard' })).toBeVisible();
+    await page.getByLabel('Cari pintasan').fill('diskon');
+    await expect(page.getByText('Terapkan diskon')).toBeVisible();
+    await expect(page.getByText('Buka cash drawer')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(heading).toHaveCount(0);
+    await expect(input).not.toBeFocused();
+  });
+
+  test('tombol ikon keyboard di bilah atas membuka bantuan', async ({ page }) => {
+    await page.getByRole('button', { name: 'Bantuan pintasan keyboard' }).click();
+    await expect(page.getByRole('dialog', { name: 'Pintasan keyboard' })).toBeVisible();
+    await page.getByRole('button', { name: 'Tutup bantuan pintasan' }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 });

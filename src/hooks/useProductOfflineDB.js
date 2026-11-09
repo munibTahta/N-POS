@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useNetworkState } from './useNetworkState';
 import searchStrategy from '../utils/searchStrategy';
 import offlineDataSync from '../services/offlineDataSync';
+import { isWebMode, productScope, loadProducts, filterProducts } from '../services/webProductCache';
 
 /**
  * Hook untuk offline product database SQLite
@@ -26,6 +27,14 @@ const useProductOfflineDB = () => {
    */
   const searchOfflineProducts = useCallback(async (query, isBarcode = false, branchInfo = {}) => {
     try {
+      // Mode web: sajikan dari snapshot IndexedDB (juga untuk penelusuran tanpa kata kunci).
+      if (isWebMode()) {
+        const snap = await loadProducts(productScope(branchInfo?.id_cabang, branchInfo?.tipe_katalog));
+        if (snap?.products?.length) {
+          return filterProducts(snap.products, { query, isBarcode, kategori: branchInfo?.kategori, limit: isBarcode ? 10 : 200 });
+        }
+      }
+
       if (!query || query.trim().length === 0) {
         return [];
       }

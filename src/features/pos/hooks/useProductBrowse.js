@@ -183,7 +183,7 @@ export function useProductBrowse({ activeCategory, browseRetry, getConnectionSta
           barcode: p.barcode || p.kode_produk,
         });
         const loadOffline = async () => {
-          const rows = await searchOfflineProducts('', false, { id_cabang: idCabangPengguna, tipe_katalog: tipeKatalog });
+          const rows = await searchOfflineProducts('', false, { id_cabang: idCabangPengguna, tipe_katalog: tipeKatalog, kategori: activeCategory });
           return (rows || []).map(normalize);
         };
 

@@ -169,3 +169,19 @@ Urutan di bawah adalah urutan kerja yang disarankan; tiap fase bisa dikerjakan b
 - `npm run test:electron`: tes unit murni untuk `electron/receiptFormat.cjs` (berjalan di CI).
 - `npm run smoke:electron` (perlu xvfb): meluncurkan aplikasi Electron sungguhan dan menulis daftar channel IPC, API preload, dan berkas database. Bandingkan keluaran sebelum/sesudah memecah `electron/main.cjs` (baseline: 55 channel, 56 fungsi preload, `offline.db` + `product_offline.db`).
 - Pemecahan `main.cjs` dilakukan bertahap; sudah keluar: `receiptFormat.cjs`. Berikutnya: modul QZ Tray (duplikat dengan `thermalPrintService.cjs`), lalu grup handler `db-*`, `offline-transaction-*`, dan penyatuan dua database SQLite.
+
+## Pintasan keyboard & bantuan
+
+- Sumber tunggal daftar pintasan: `src/features/pos/shortcuts.js` (dipakai `ShortcutModal`); perilaku ada di `hooks/usePosKeyboardShortcuts.js`. Ubah keduanya bersamaan.
+- Standar aplikasi yang didukung: `/` dan `Ctrl/Cmd+K` fokus ke pencarian, `?` dan `F1` membuka bantuan, `Esc` menutup. `/` dan `?` tidak aktif saat mengetik di kolom isian atau saat dialog terbuka.
+- Bantuan: dialog aksesibel (role=dialog, jebakan fokus, Esc, fokus dikembalikan), dapat dicari, bagian tips, dan tombol ikon keyboard di bilah atas untuk layar sentuh.
+
+## Cadangan katalog mode web (IndexedDB)
+
+- `services/webProductCache.js` + `features/pos/hooks/useWebCatalogSnapshot.js`: di browser (bukan Electron), saat online katalog aktif cabang disimpan ke IndexedDB (diperbarui bila > 30 menit); stok disimpan lewat jalur cache stok yang ada.
+- Saat API tidak terjangkau, pencarian dan penelusuran memakai snapshot (`useProductOfflineDB.searchOfflineProducts`). Harga dan stok yang tampil adalah data terakhir tersimpan.
+- Data tersimpan per cabang+tipe katalog; tidak dihapus otomatis saat logout.
+
+## CORS backend
+
+- Daftar asal tepercaya di `app.js`; tambah lewat env `CORS_ORIGINS` (pisahkan koma). Di luar produksi (`NODE_ENV` bukan `production`) semua `localhost`/`127.0.0.1` diizinkan. Asal di luar daftar membuat browser melaporkan "Network Error".
