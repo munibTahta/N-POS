@@ -834,7 +834,7 @@ const FinancialReportsPage = () => {
                             ))}
                           </select>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 text-right tabular-nums">
                           <input
                             type="number"
                             value={line.debit}
@@ -844,7 +844,7 @@ const FinancialReportsPage = () => {
                             step="1"
                           />
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 text-right tabular-nums">
                           <input
                             type="number"
                             value={line.kredit}

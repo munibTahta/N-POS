@@ -10,6 +10,7 @@ import StatusBadge from '../components/StatusBadge';
 import HeaderActionButton from '../components/HeaderActionButton';
 import { exportToExcel } from '../utils/exportHelper';
 import { todayISO } from '../utils/dateRange';
+import StockAnomalyBanner from '../components/stock/StockAnomalyBanner';
 
 const StockViewKasirPage = () => {
   const navigate = useNavigate();
@@ -125,6 +126,7 @@ const StockViewKasirPage = () => {
             />
           }
         />
+        <StockAnomalyBanner />
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">

@@ -345,7 +345,7 @@ const PurchaseHistoryPage = () => {
                       <tr key={p.id_pembelian || p.id || p.kode_pembelian || p.no_struk} className="hover:bg-gray-50">
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">{p.kode_pembelian || p.no_struk || p.id}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700"><RelativeDate value={p.tanggal || p.created_at || p.createdAt} /></td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 text-right">Rp {formatCurrency(p.total || p.grand_total || 0)}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 text-right tabular-nums">Rp {formatCurrency(p.total || p.grand_total || 0)}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">{getSupplierName(p)}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">{getDestinationName(p)}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-center">
@@ -442,9 +442,9 @@ const PurchaseHistoryPage = () => {
                           <tr key={idx} className="border-b border-gray-200">
                             <td className="px-4 py-3 text-sm text-gray-900">{idx + 1}</td>
                             <td className="px-4 py-3 text-sm text-gray-900">{getProductName(it)}</td>
-                            <td className="px-4 py-3 text-sm text-right text-gray-900">{qty}</td>
-                            <td className="px-4 py-3 text-sm text-right text-gray-900">Rp {formatCurrency(price)}</td>
-                            <td className="px-4 py-3 text-sm text-right font-medium text-gray-900">Rp {formatCurrency(qty * price)}</td>
+                            <td className="px-4 py-3 text-sm text-right text-gray-900 tabular-nums">{qty}</td>
+                            <td className="px-4 py-3 text-sm text-right text-gray-900 tabular-nums">Rp {formatCurrency(price)}</td>
+                            <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 tabular-nums">Rp {formatCurrency(qty * price)}</td>
                           </tr>
                         );
                       })

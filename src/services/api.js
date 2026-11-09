@@ -488,7 +488,13 @@ export const getSales = (params = {}) => {
 };
 
 // Ringkasan agregat penjualan (jumlah, total, belum lunas) untuk rentang tanggal; cakupan cabang ditentukan server.
-export const getSalesSummary = (params = {}) => apiClient.get('/penjualan/ringkasan', { params });
+// Pola penjualan: kalender harian + heatmap hari x jam (agregat; cakupan cabang oleh server; tz_offset = menit di depan UTC)
+export const getSalesPattern = (params = {}) => apiClient.get('/laporan/pola-penjualan', { params });
+
+// Stok tidak wajar (stok sangat besar seperti 9999, atau minus) + nilai persediaan tercatat
+export const getStockAnomalies = (params = {}) => apiClient.get('/laporan/stok-anomali', { params });
+
+export const getSalesSummary = (params = {}) => coalesceGet(`sales-summary:${JSON.stringify(params)}`, () => apiClient.get('/penjualan/ringkasan', { params }));
 
 export const getSaleById = (id) => {
   return apiClient.get(`/penjualan/${id}`);

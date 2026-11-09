@@ -436,7 +436,7 @@ const StockDistributionPage = () => {
                 <thead>
                   <tr className="bg-gray-100 border-b border-gray-200">
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Cabang Tujuan</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">Jumlah</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide text-right">Jumlah</th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">Stok Saat Ini</th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide w-20">Aksi</th>
                   </tr>
@@ -464,7 +464,7 @@ const StockDistributionPage = () => {
                             </select>
                           </td>
 
-                          <td className="px-4 py-3 text-center">
+                          <td className="px-4 py-3 text-right tabular-nums">
                             <input
                               type="number"
                               min="1"
@@ -474,7 +474,7 @@ const StockDistributionPage = () => {
                             />
                           </td>
 
-                          <td className="px-4 py-3 text-right font-medium text-gray-900">
+                          <td className="px-4 py-3 text-right font-medium text-gray-900 tabular-nums">
                             {branchStock} unit
                           </td>
 

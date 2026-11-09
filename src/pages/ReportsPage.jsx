@@ -15,6 +15,7 @@ import { exportToExcel } from '../utils/exportHelper';
 import { Bar, Pie } from 'react-chartjs-2';
 import DateRangeFilter from '../components/common/DateRangeFilter';
 import { toISODate, todayISO } from '../utils/dateRange';
+import SalesPatternPanel from '../components/reports/SalesPatternPanel';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -1023,6 +1024,11 @@ const ReportsPage = () => {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Pola penjualan: kalender harian dan heatmap jam sibuk */}
+      <div className="bg-white p-4 rounded-xl shadow-sm mb-7">
+        <SalesPatternPanel />
       </div>
 
       {/* Payment Method Revenue Breakdown */}

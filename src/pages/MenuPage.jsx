@@ -4,12 +4,8 @@ import { useAuth } from '../hooks/useAuth';
 import { usePermissions } from '../hooks/usePermissions';
 import { useMenuContext } from '../context/MenuContext';
 import { useRoleContext } from '../context/RoleContext';
-import { PageLayout, PageContainer, PageHeader, MetaLine } from '../components/layouts/index.jsx';
+import { PageLayout, PageContainer, PageHeader } from '../components/layouts/index.jsx';
 import { renderLucideIcon } from '../utils/lucideIconHelper';
-import { useSettings } from '../context/SettingsContext';
-import { useTodaySales } from '../hooks/useTodaySales';
-import { formatFullDate } from '../utils/dateRange';
-import { formatCurrency } from '../utils/formatHelper';
 // import { getUserMenus } from '../services/api';
 
 // Add custom animations
@@ -119,9 +115,6 @@ const MenuPage = () => {
   const { getRoleById } = useRoleContext();
   const { hasMenuAccess, canManage } = usePermissions();
   const navigate = useNavigate();
-  const { storeInfo } = useSettings();
-  // Ringkasan hari ini hanya untuk pengguna yang boleh melihat penjualan (cakupan cabang ditentukan server)
-  const todaySales = useTodaySales({ enabled: hasMenuAccess('penjualan') || hasMenuAccess('pos') });
   const [menuItems, setMenuItems] = useState([]);
 
   useEffect(() => {
@@ -217,15 +210,7 @@ const MenuPage = () => {
       <PageContainer>
         <PageHeader
           title="Menu Utama"
-          subtitle={(
-            <MetaLine parts={[
-              storeInfo?.nama_cabang,
-              formatFullDate(new Date(), false),
-              todaySales.data && `${todaySales.data.jumlah_transaksi.toLocaleString('id-ID')} transaksi hari ini`,
-              todaySales.data && todaySales.data.jumlah_transaksi > 0 && `Rp ${formatCurrency(todaySales.data.total_penjualan)}`,
-              todaySales.data && todaySales.data.belum_lunas > 0 && { text: `${todaySales.data.belum_lunas} belum lunas`, tone: 'warn' },
-            ]} />
-          )}
+          subtitle="Pilih menu di bawah, atau tekan Ctrl K untuk membuka halaman mana pun dengan cepat."
         />
         <style>{styles}</style>
         <div className="space-y-6 pt-2">

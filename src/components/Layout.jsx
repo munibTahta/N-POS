@@ -20,6 +20,9 @@ import ShortcutModal from './ShortcutModal';
 import UserMenu from './UserMenu';
 import { useGlobalShortcuts } from '../hooks/useGlobalShortcuts';
 import { GO_SHORTCUTS } from '../hooks/globalNav';
+import { useTodaySales } from '../hooks/useTodaySales';
+import { formatWeekdayDate } from '../utils/dateRange';
+import { formatCurrency } from '../utils/formatHelper';
 // Note: OfflineStatusIndicator removed - already rendered globally in App.jsx
 
 const Layout = () => {
@@ -310,6 +313,8 @@ const Layout = () => {
     }
   };
 
+  // Ringkasan penjualan hari ini (satu query agregat; cakupan cabang ditentukan server) untuk baris info di bawah nama toko
+  const todaySales = useTodaySales({ enabled: hasMenuAccess('penjualan') || hasMenuAccess('pos') });
   const roleLabel = (() => {
     const r = String(user?.role_display || user?.role || user?.nama_role || 'Pengguna');
     return r.charAt(0).toUpperCase() + r.slice(1).toLowerCase();
@@ -347,16 +352,34 @@ const Layout = () => {
       <nav className="bg-white shadow-md border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link to="/" className="text-xl font-bold text-blue-600 hover:text-blue-700 transition-colors" onClick={closeMenu}>
-              {loadingSettings ? (
-                <div className="flex items-center gap-2">
-                  <div className="spinner w-5 h-5"></div>
-                  <span className="text-gray-600">Memuat...</span>
-                </div>
-              ) : (
-                storeInfo.nama_cabang || 'N-POS'
-              )}
-            </Link>
+            {/* Merek: nama toko/cabang (tautan ke Beranda) + baris info di bawahnya: hari ini dan ringkasan penjualan hari ini */}
+            <div className="flex min-w-0 flex-col justify-center leading-tight">
+              <Link to="/" title="Beranda (Menu Utama)" className="truncate text-xl font-bold text-blue-700 transition-colors hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-200" onClick={closeMenu}>
+                {loadingSettings ? (
+                  <span className="flex items-center gap-2">
+                    <span className="spinner w-5 h-5"></span>
+                    <span className="text-gray-600">Memuat...</span>
+                  </span>
+                ) : (
+                  storeInfo.nama_cabang || 'N-POS'
+                )}
+              </Link>
+              <span data-brand-meta className="mt-0.5 flex min-w-0 items-center gap-x-1.5 truncate text-xs text-gray-600 dark:text-zinc-400" aria-live="polite">
+                <span className="shrink-0">{formatWeekdayDate(new Date())}</span>
+                {todaySales.data && (
+                  <>
+                    <span aria-hidden="true" className="hidden text-gray-400 sm:inline">&bull;</span>
+                    <span className="hidden truncate sm:inline">
+                      {todaySales.data.jumlah_transaksi.toLocaleString('id-ID')} transaksi
+                      {todaySales.data.jumlah_transaksi > 0 && <> &middot; Rp {formatCurrency(todaySales.data.total_penjualan)}</>}
+                    </span>
+                    {todaySales.data.belum_lunas > 0 && (
+                      <span className="hidden shrink-0 font-medium text-amber-700 dark:text-amber-300 md:inline">&middot; {todaySales.data.belum_lunas} belum lunas</span>
+                    )}
+                  </>
+                )}
+              </span>
+            </div>
 
             {/* Navigasi utama (desktop): tautan langsung ke halaman yang paling sering dipakai; sisanya di "Lainnya" dan palet Ctrl K.
                 Logo/nama toko = Beranda (Menu Utama), jadi tidak perlu tautan "Dashboard"/"Menu" terpisah. */}

@@ -273,9 +273,9 @@ const AdminReconciliationPage = () => {
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-700">{new Date(sale.tanggal).toLocaleString('id-ID')}</td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-700">{sale.kasir?.nama_lengkap || sale.kasir?.username || 'Unknown'}</td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-700">{sale.cabang?.nama_cabang || 'Unknown'}</td>
-                          <td className="px-4 py-4 whitespace-nowrap text-right font-medium text-slate-900">{formatCurrency(sale.totalOwed)}</td>
-                          <td className="px-4 py-4 whitespace-nowrap text-right text-sm text-slate-700">{formatCurrency(sale.totalPaid)}</td>
-                          <td className="px-4 py-4 whitespace-nowrap text-right font-semibold" style={{ color: sale.sisaPembayaran > 0 ? '#dc2626' : '#10b981' }}>
+                          <td className="px-4 py-4 whitespace-nowrap text-right font-medium text-slate-900 tabular-nums">{formatCurrency(sale.totalOwed)}</td>
+                          <td className="px-4 py-4 whitespace-nowrap text-right text-sm text-slate-700 tabular-nums">{formatCurrency(sale.totalPaid)}</td>
+                          <td className="px-4 py-4 whitespace-nowrap text-right font-semibold tabular-nums" style={{ color: sale.sisaPembayaran > 0 ? '#dc2626' : '#10b981' }}>
                             {formatCurrency(Math.max(0, sale.sisaPembayaran))}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
@@ -375,7 +375,7 @@ const AdminReconciliationPage = () => {
                             <tr key={idx} className="hover:bg-slate-50">
                               <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-700">{formattedDate}</td>
                               <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-900 font-medium">{payment.metodePembayaran?.nama_metode || payment.metode?.nama_metode || 'Unknown'}</td>
-                              <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium text-slate-900">{formatCurrency(payment.jumlah_bayar)}</td>
+                              <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium text-slate-900 tabular-nums">{formatCurrency(payment.jumlah_bayar)}</td>
                               <td className="px-4 py-4 whitespace-nowrap text-sm">
                                 <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${
                                   statusText === 'approved' || statusText === 'selesai' 

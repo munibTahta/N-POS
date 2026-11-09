@@ -210,3 +210,10 @@ export function describeRange(start, end, now = new Date()) {
   const preset = DATE_PRESETS.find((p) => p.id === id);
   return preset && id !== 'all' ? `${preset.label} (${span})` : span;
 }
+
+/** Hari + tanggal singkat untuk bilah navigasi: "Senin, 9 Nov" (tahun hanya bila bukan tahun ini). */
+export function formatWeekdayDate(value, now = new Date()) {
+  const d = toDate(value);
+  if (!d || Number.isNaN(d.getTime())) return '';
+  return `${DAYS_LONG[d.getDay()]}, ${formatShortDate(d, now)}`;
+}

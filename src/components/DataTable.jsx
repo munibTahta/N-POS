@@ -8,6 +8,8 @@ import { usePagination } from '../hooks/usePagination';
 import useSearchAndFilter from '../hooks/useSearchAndFilter';
 import ActionButton from './ActionButton';
 import DropdownActionMenu from './common/DropdownActionMenu';
+import { resolveColumnAlign } from '../utils/columnAlign';
+import { togglePage, pageSelectionState, rangeIds, toggleId } from '../utils/bulk';
 
 /**
  * Standardized Data Table component with built-in pagination, search, filters, and sorting
@@ -68,6 +70,7 @@ const DataTable = ({
   onSearchChange = null,
   onFilterValueChange = null,
 }) => {
+  const lastClickedRef = useRef(null); // jangkar untuk pilih rentang dengan Shift+klik
   const [searchTerm, setSearchTerm] = useState('');
   const [filterValues, setFilterValues] = useState({});
   const [showFilters, setShowFilters] = useState(false);
@@ -279,26 +282,28 @@ const DataTable = ({
                   <th className="px-2 sm:px-4 py-3 text-left w-10">
                     <input
                       type="checkbox"
-                      checked={actualData.length > 0 && actualData.every(item => selectedRows.includes(getItemId(item)))}
+                      aria-label="Pilih semua baris di halaman ini"
+                      checked={pageSelectionState(selectedRows, actualData.map(getItemId)) === 'all'}
+                      ref={(el) => { if (el) el.indeterminate = pageSelectionState(selectedRows, actualData.map(getItemId)) === 'some'; }}
                       onChange={(e) => {
                         if (!onSelectedRowsChange) return;
-                        const pageIds = actualData.map(item => getItemId(item));
-                        if (e.target.checked) onSelectedRowsChange([...new Set([...selectedRows, ...pageIds])]);
-                        else onSelectedRowsChange(selectedRows.filter(id => !pageIds.includes(id)));
+                        onSelectedRowsChange(togglePage(selectedRows, actualData.map(getItemId), e.target.checked));
                       }}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                     />
                   </th>
                 )}
-                {columns.map((column, index) => (
+                {columns.map((column, index) => {
+                  const align = resolveColumnAlign(column); // angka/uang rata kanan, judul mengikuti isinya
+                  return (
                   <th
                     key={column.key || index}
-                    className={`px-2 sm:px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider ${column.headerClassName || ''} ${column.sortable ? 'cursor-pointer hover:bg-gray-100 active:bg-gray-200 transition-colors select-none' : ''} ${sortConfig.key === (column.sortKey || column.key) ? 'bg-blue-50 text-blue-700' : ''}`}
+                    className={`px-2 sm:px-4 py-3 ${align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left'} text-xs font-semibold text-gray-600 uppercase tracking-wider ${column.headerClassName || ''} ${column.sortable ? 'cursor-pointer hover:bg-gray-100 active:bg-gray-200 transition-colors select-none' : ''} ${sortConfig.key === (column.sortKey || column.key) ? 'bg-blue-50 text-blue-700' : ''}`}
                     onClick={() => column.sortable && handleSort(column.sortKey || column.key)}
                     style={column.width ? { width: column.width, minWidth: column.width } : {}}
                     title={column.sortable ? (sortConfig.key === (column.sortKey || column.key) ? (sortConfig.direction === 'asc' ? 'Urut menurun ▼' : 'Urut menaik ▲') : `Urutkan: ${column.header}`) : undefined}
                   >
-                    <div className="flex items-center gap-1">
+                    <div className={`flex items-center gap-1 ${align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : ''}`}>
                       <span className="hidden sm:inline">{column.header}</span>
                       <span className="sm:hidden">{column.header.length > 10 ? column.header.substring(0, 8) + '...' : column.header}</span>
                       {column.sortable && (
@@ -310,7 +315,8 @@ const DataTable = ({
                       )}
                     </div>
                   </th>
-                ))}
+                  );
+                })}
                 {actions.length > 0 && (
                   <th className="px-2 sm:px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-16 sm:w-24">
                     <span className="hidden sm:inline">Aksi</span>
@@ -326,27 +332,38 @@ const DataTable = ({
                 </tr>
               ) : (
                 actualData.map((item, rowIndex) => (
-                  <tr key={item.id || rowIndex} className={`hover:bg-gray-50 transition-colors duration-100 ${onRowClick ? 'cursor-pointer' : ''}`} onClick={() => onRowClick && onRowClick(item)}>
+                  <tr key={item.id || rowIndex} aria-selected={selectable ? selectedRows.includes(getItemId(item)) : undefined} className={`transition-colors duration-100 ${selectable && selectedRows.includes(getItemId(item)) ? 'bg-blue-50 dark:bg-blue-500/10' : 'hover:bg-gray-50'} ${onRowClick ? 'cursor-pointer' : ''}`} onClick={() => onRowClick && onRowClick(item)}>
                     {selectable && (
                       <td className="px-2 sm:px-4 py-4 w-10" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
+                          aria-label={`Pilih baris ${rowIndex + 1}`}
                           checked={selectedRows.includes(getItemId(item))}
                           onChange={(e) => {
                             if (!onSelectedRowsChange) return;
                             const itemId = getItemId(item);
-                            if (e.target.checked) onSelectedRowsChange([...selectedRows, itemId]);
-                            else onSelectedRowsChange(selectedRows.filter(id => id !== itemId));
+                            const on = e.target.checked;
+                            // Shift+klik memilih/melepas rentang dari baris terakhir yang diklik (seperti Gmail/Excel)
+                            if (e.nativeEvent && e.nativeEvent.shiftKey && lastClickedRef.current !== null) {
+                              const ids = rangeIds(actualData.map(getItemId), lastClickedRef.current, itemId);
+                              onSelectedRowsChange(on ? togglePage(selectedRows, ids, true) : togglePage(selectedRows, ids, false));
+                            } else {
+                              onSelectedRowsChange(toggleId(selectedRows, itemId, on));
+                            }
+                            lastClickedRef.current = itemId;
                           }}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                         />
                       </td>
                     )}
-                    {columns.map((column, colIndex) => (
-                      <td key={column.key || colIndex} className={`px-2 sm:px-4 py-4 text-sm text-gray-900 break-words ${column.cellClassName || ''}`} style={column.width ? { width: column.width, minWidth: column.width } : {}}>
+                    {columns.map((column, colIndex) => {
+                      const align = resolveColumnAlign(column);
+                      return (
+                      <td key={column.key || colIndex} className={`px-2 sm:px-4 py-4 text-sm text-gray-900 ${align === 'right' ? 'text-right tabular-nums whitespace-nowrap' : align === 'center' ? 'text-center break-words' : 'break-words'} ${column.cellClassName || ''}`} style={column.width ? { width: column.width, minWidth: column.width } : {}}>
                         <div className="max-w-full overflow-hidden">{column.render ? column.render(item, rowIndex) : item[column.key]}</div>
                       </td>
-                    ))}
+                      );
+                    })}
                     {actions.length > 0 && (
                       <td className="px-2 sm:px-4 py-4 whitespace-nowrap text-sm font-medium text-center w-16 sm:w-24">
                         <DropdownActionMenu actions={actions} item={item} onActionClick={onActionClick} />

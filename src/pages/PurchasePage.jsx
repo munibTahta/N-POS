@@ -459,9 +459,9 @@ const PurchasePage = () => {
                           <tr key={idx} className="border-b border-gray-200">
                             <td className="px-4 py-3 text-sm text-gray-900">{idx + 1}</td>
                             <td className="px-4 py-3 text-sm text-gray-900">{getProductName(it)}</td>
-                            <td className="px-4 py-3 text-sm text-right text-gray-900">{qty}</td>
-                            <td className="px-4 py-3 text-sm text-right text-gray-900">Rp {formatCurrency(price)}</td>
-                            <td className="px-4 py-3 text-sm text-right font-medium text-gray-900">Rp {formatCurrency(qty * price)}</td>
+                            <td className="px-4 py-3 text-sm text-right text-gray-900 tabular-nums">{qty}</td>
+                            <td className="px-4 py-3 text-sm text-right text-gray-900 tabular-nums">Rp {formatCurrency(price)}</td>
+                            <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 tabular-nums">Rp {formatCurrency(qty * price)}</td>
                           </tr>
                         );
                       })

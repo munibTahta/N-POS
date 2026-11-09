@@ -12,6 +12,7 @@ import StatusBadge from '../components/StatusBadge';
 import HeaderActionButton from '../components/HeaderActionButton';
 import { MapPin, Warehouse, Pencil, Clock, AlertCircle, AlertTriangle, Info, Download, ArrowDownUp, Share2 } from 'lucide-react';
 import { todayISO } from '../utils/dateRange';
+import StockAnomalyBanner from '../components/stock/StockAnomalyBanner';
 
 const StockAdjustmentModal = ({ item, onClose, onAdjust }) => {
   const { success: _showSuccess, error: _showError } = useNotifications();
@@ -285,6 +286,7 @@ const StockPage = () => {
           </div>
         }
       />
+      <StockAnomalyBanner />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">

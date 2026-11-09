@@ -170,7 +170,7 @@ test.describe('bilah navigasi ringkas', () => {
 });
 
 test.describe('subjudul header informatif', () => {
-  test('Menu Utama: cabang, tanggal, dan ringkasan penjualan hari ini dari server', async ({ page }) => {
+  test('bilah navigasi: di bawah nama toko tampil hari ini + ringkasan penjualan hari ini dari server', async ({ page }) => {
     const calls = [];
     await setupPos(page, [], {
       cabang: { id_cabang: 1, nama_cabang: 'Cabang Uji', tipe_katalog: 'global' },
@@ -184,14 +184,16 @@ test.describe('subjudul header informatif', () => {
       },
     });
     await page.setViewportSize({ width: 1366, height: 768 });
-    await page.goto('/');
-    const sub = page.locator('h1', { hasText: 'Menu Utama' }).locator('xpath=following-sibling::div');
-    await expect(sub).toContainText('19 transaksi hari ini', { timeout: 15000 });
-    await expect(sub).toContainText('Rp 541.000');
-    await expect(sub).toContainText('2 belum lunas');
-    await expect(sub).toContainText(String(new Date().getFullYear()));      // tanggal lengkap hari ini
+    await page.goto('/penjualan'); // bukan Menu Utama: info ada di bilah navigasi semua halaman
+    const meta = page.locator('[data-brand-meta]');
+    await expect(meta).toContainText('19 transaksi', { timeout: 15000 });
+    await expect(meta).toContainText('Rp 541.000');
+    await expect(meta).toContainText('2 belum lunas');
+    const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][new Date().getDay()];
+    await expect(meta).toContainText(hari);
     const u = new URL(calls[0]);
     expect(new Date(u.searchParams.get('start_date')).getHours()).toBe(0);  // rentang hari LOKAL
+    expect(calls.length).toBe(1);                                            // satu permintaan, tidak berganda per halaman
   });
 
   test('Riwayat Penjualan: periode, cakupan, dan waktu pembaruan (bukan teks promosi)', async ({ page }) => {
@@ -205,11 +207,12 @@ test.describe('subjudul header informatif', () => {
     await expect(sub).toContainText('7 hari terakhir (');
   });
 
-  test('tanpa ringkasan (server gagal) subjudul tetap menampilkan konteks', async ({ page }) => {
+  test('tanpa ringkasan (server gagal) baris info tetap menampilkan hari', async ({ page }) => {
     await setupPos(page, [], { onApi: (route, req) => { if (/\/penjualan\/ringkasan/.test(req.url())) { route.fulfill({ status: 500, json: { success: false } }); return true; } return false; } });
+    await page.setViewportSize({ width: 1366, height: 768 });
     await page.goto('/');
-    const sub = page.locator('h1', { hasText: 'Menu Utama' }).locator('xpath=following-sibling::div');
-    await expect(sub).toContainText(String(new Date().getFullYear()), { timeout: 15000 });
-    await expect(sub).not.toContainText('transaksi hari ini');
+    const meta = page.locator('[data-brand-meta]');
+    await expect(meta).toContainText(['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][new Date().getDay()], { timeout: 15000 });
+    await expect(meta).not.toContainText('transaksi');
   });
 });

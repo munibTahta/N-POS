@@ -178,7 +178,7 @@ const ReturnPage = () => {
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">ID Retur</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Kode Transaksi</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Produk</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Jumlah</th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 text-right">Jumlah</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Alasan</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Tanggal</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">User</th>
@@ -190,7 +190,7 @@ const ReturnPage = () => {
                           <td className="whitespace-nowrap px-4 py-4 text-sm font-medium text-slate-900">#{retur.id_retur}</td>
                           <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-900">{retur.penjualan?.kode_transaksi || `TRX${retur.id_penjualan}`}</td>
                           <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-900">{retur.produk?.nama_produk || `Produk ${retur.id_produk}`}</td>
-                          <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-900">{retur.jumlah}</td>
+                          <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-900 text-right tabular-nums">{retur.jumlah}</td>
                           <td className="max-w-xs truncate px-4 py-4 text-sm text-slate-900">{retur.alasan}</td>
                           <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-900"><RelativeDate value={retur.tanggal} /></td>
                           <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-900">{retur.user?.nama_lengkap || retur.user?.username || `User ID: ${retur.id_user || 'N/A'}`}</td>

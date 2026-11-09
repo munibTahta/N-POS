@@ -14,6 +14,8 @@ import HeaderActionButton from '../components/HeaderActionButton';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import { FloatingLabelInput, FloatingLabelSelect, FloatingLabelTextarea } from '../components/common/FloatingLabelField';
 import { Eye, Edit, Trash2, Plus, Download, Upload, FileText } from 'lucide-react';
+import BulkActionBar from '../components/common/BulkActionBar';
+import { pruneSelection } from '../utils/bulk';
 
 const CustomersPage = () => {
   const navigate = useNavigate();
@@ -41,7 +43,6 @@ const CustomersPage = () => {
   const [_successMsg, setSuccessMsg] = useState('');
 
   const [selectedIds, setSelectedIds] = useState([]);
-  const [isDeletingBulk, setIsDeletingBulk] = useState(false);
   const [importProgress, setImportProgress] = useState({ active: false, current: 0, total: 0, successCount: 0, failCount: 0 });
   const [importOptions, setImportOptions] = useState({ ignoreDuplicates: true, updateDuplicates: false });
   const [showImportOptionsModal, setShowImportOptionsModal] = useState(false);
@@ -54,9 +55,14 @@ const CustomersPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterValues, setFilterValues] = useState({ tipe_pelanggan: '' });
 
+  // Pilihan dibersihkan saat pindah halaman/ukuran halaman; saat DATA dimuat ulang hanya id yang sudah tidak ada yang dibuang
+  // (dulu semuanya dikosongkan sehingga item yang gagal dihapus ikut tidak terpilih lagi).
   useEffect(() => {
     setSelectedIds([]);
-  }, [page, limit, customers]);
+  }, [page, limit]);
+  useEffect(() => {
+    setSelectedIds((cur) => pruneSelection(cur, customers.map((c) => c.id_pelanggan)));
+  }, [customers]);
   
   const fetchCustomersData = useCallback(async () => {
     try {
@@ -381,37 +387,6 @@ const CustomersPage = () => {
     }, 5000);
   };
 
-  const handleBulkDelete = () => {
-    if (selectedIds.length === 0) return;
-    
-    setConfirmDialog({
-      isOpen: true,
-      title: 'Hapus Massal Pelanggan',
-      message: `Apakah Anda yakin ingin menghapus ${selectedIds.length} pelanggan terpilih?`,
-      confirmText: 'Ya, Hapus',
-      variant: 'danger',
-      onConfirm: async () => {
-        try {
-          setIsDeletingBulk(true);
-          const response = await bulkDeletePelanggan(selectedIds);
-          if (response.data?.success) {
-            showSuccess(`Berhasil menghapus ${selectedIds.length} pelanggan`);
-            setSelectedIds([]);
-            fetchCustomersData();
-          } else {
-            showError(`Gagal menghapus pelanggan: ${response.data?.message || 'Unknown error'}`);
-          }
-        } catch (err) {
-          handleError(err);
-          showError('Gagal melakukan hapus massal');
-        } finally {
-          setIsDeletingBulk(false);
-          setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-        }
-      }
-    });
-  };
-
   if (loading) return <div className="text-center mt-10">Memuat data pelanggan...</div>;
 
   return (
@@ -421,17 +396,6 @@ const CustomersPage = () => {
         subtitle="Kelola data pelanggan dan informasi kontak"
         actions={
           <div className="flex gap-2">
-            {selectedIds.length > 0 && (
-              <button
-                type="button"
-                onClick={handleBulkDelete}
-                disabled={isDeletingBulk}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded shadow transition"
-              >
-                <Trash2 className="h-4 w-4" />
-                Hapus ({selectedIds.length})
-              </button>
-            )}
             <HeaderActionButton
               icon={Plus}
               label="Tambah"
@@ -575,6 +539,18 @@ const CustomersPage = () => {
         )}
 
         {/* Data Table dengan Internal Search, Filter, dan Pagination */}
+        <BulkActionBar
+          noun="pelanggan"
+          items={selectedIds.map((id) => customers.find((c) => c.id_pelanggan === id) || { id_pelanggan: id })}
+          labelOf={(c) => c.nama_pelanggan || `ID ${c.id_pelanggan}`}
+          onClear={() => setSelectedIds([])}
+          onDone={({ failed }) => { setSelectedIds(failed.map((c) => c.id_pelanggan)); fetchCustomersData(); }}
+          actions={[
+            { id: 'hapus', label: 'Hapus', icon: Trash2, variant: 'danger', verb: 'dihapus',
+              confirm: { title: 'Hapus pelanggan terpilih', message: (n) => `Hapus ${n} pelanggan? Tindakan ini tidak dapat dibatalkan.`, confirmText: 'Ya, hapus' },
+              runAll: async (items) => { const res = await bulkDeletePelanggan(items.map((c) => c.id_pelanggan)); if (res.data?.success) return { ok: items.map((item) => ({ item })), failed: [] }; throw new Error(res.data?.message || 'Server menolak penghapusan'); } },
+          ]}
+        />
         <DataTable
           data={customers}
           loading={loading}

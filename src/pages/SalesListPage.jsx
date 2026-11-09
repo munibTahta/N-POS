@@ -573,10 +573,10 @@ const SalesListPage = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Metode Pembayaran
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">
                       Total
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">
                       Kurang
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -618,10 +618,10 @@ const SalesListPage = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                           {getPaymentMethodLabel(sale) || '-'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium text-right tabular-nums">
                           Rp {Number(sale.total || 0).toLocaleString('id-ID')}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium text-right tabular-nums">
                           Rp {Number(getRemainingPayment(sale) || 0).toLocaleString('id-ID')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

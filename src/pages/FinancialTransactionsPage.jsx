@@ -492,8 +492,8 @@ const FinancialTransactionsPage = () => {
                       <thead className="bg-gray-50">
                         <tr>
                           <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600">Akun</th>
-                          <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600">Debit</th>
-                          <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600">Kredit</th>
+                          <th className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Debit</th>
+                          <th className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Kredit</th>
                           <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600">Keterangan</th>
                           <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600">Aksi</th>
                         </tr>
@@ -516,7 +516,7 @@ const FinancialTransactionsPage = () => {
                                 ))}
                               </select>
                             </td>
-                            <td className="px-3 py-2">
+                            <td className="px-3 py-2 text-right tabular-nums">
                               <input
                                 type="number"
                                 value={line.debit}
@@ -525,7 +525,7 @@ const FinancialTransactionsPage = () => {
                                 min="0"
                               />
                             </td>
-                            <td className="px-3 py-2">
+                            <td className="px-3 py-2 text-right tabular-nums">
                               <input
                                 type="number"
                                 value={line.kredit}

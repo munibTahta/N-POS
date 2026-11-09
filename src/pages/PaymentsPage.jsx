@@ -322,9 +322,9 @@ const PaymentsPage = () => {
                         <tr key={idx} className="hover:bg-slate-50">
                           <td className="px-4 py-2 text-sm text-slate-900">{idx + 1}</td>
                           <td className="px-4 py-2 text-sm text-slate-900">{item.nama_produk || item.Produk?.nama_produk || `Produk ${item.id_produk}`}</td>
-                          <td className="px-4 py-2 text-right text-sm text-slate-900">{item.jumlah}</td>
-                          <td className="px-4 py-2 text-right text-sm text-slate-900">{formatCurrency(item.harga_jual)}</td>
-                          <td className="px-4 py-2 text-right text-sm text-slate-900">{formatCurrency(item.jumlah * item.harga_jual)}</td>
+                          <td className="px-4 py-2 text-right text-sm text-slate-900 tabular-nums">{item.jumlah}</td>
+                          <td className="px-4 py-2 text-right text-sm text-slate-900 tabular-nums">{formatCurrency(item.harga_jual)}</td>
+                          <td className="px-4 py-2 text-right text-sm text-slate-900 tabular-nums">{formatCurrency(item.jumlah * item.harga_jual)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -360,7 +360,7 @@ const PaymentsPage = () => {
                           <tr key={idx} className={`hover:bg-slate-50 ${payment.id_detail === selectedPayment.id_detail ? 'bg-amber-50' : ''}`}>
                             <td className="px-4 py-2 text-sm text-slate-900">{formattedDate}</td>
                             <td className="px-4 py-2 text-sm text-slate-900">{payment.metodePembayaran?.nama_metode || payment.metode?.nama_metode || 'Unknown'}</td>
-                            <td className="px-4 py-2 text-right text-sm font-semibold text-slate-900">{formatCurrency(payment.jumlah_bayar)}</td>
+                            <td className="px-4 py-2 text-right text-sm font-semibold text-slate-900 tabular-nums">{formatCurrency(payment.jumlah_bayar)}</td>
                             <td className="px-4 py-2">
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                 statusText === 'approved' || statusText === 'selesai' ? 'bg-emerald-100 text-emerald-800' :

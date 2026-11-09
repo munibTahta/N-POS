@@ -20,6 +20,8 @@ import useProductOfflineDB from '../hooks/useProductOfflineDB';
 import FileViewerModal from '../components/FileViewerModal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import { useAuth } from '../hooks/useAuth';
+import BulkActionBar from '../components/common/BulkActionBar';
+import { pruneSelection } from '../utils/bulk';
 
 const ProductsPage = () => {
   const navigate = useNavigate();
@@ -95,7 +97,6 @@ const ProductsPage = () => {
   const [sortOrder, setSortOrder] = useState('asc');
 
   const [selectedIds, setSelectedIds] = useState([]);
-  const [isDeletingBulk, setIsDeletingBulk] = useState(false);
   const [importProgress, setImportProgress] = useState({ active: false, current: 0, total: 0, successCount: 0, failCount: 0 });
   const [importOptions, setImportOptions] = useState({ ignoreDuplicates: true, updateDuplicates: false });
   const [showImportOptionsModal, setShowImportOptionsModal] = useState(false);
@@ -264,9 +265,14 @@ const ProductsPage = () => {
     return () => window.removeEventListener('resetProductsPageState', handleResetState);
   }, []);
 
+  // Pilihan dibersihkan saat pindah halaman/ukuran halaman; saat data dimuat ulang hanya id yang hilang yang dibuang
+  // (item yang gagal dihapus tetap terpilih agar bisa dicoba lagi).
   useEffect(() => {
     setSelectedIds([]);
-  }, [page, limit, allProducts]);
+  }, [page, limit]);
+  useEffect(() => {
+    setSelectedIds((cur) => pruneSelection(cur, allProducts.map((p) => p.id_produk)));
+  }, [allProducts]);
 
   const handleExportExcel = async () => {
     try {
@@ -500,43 +506,6 @@ const ProductsPage = () => {
     }, 5000);
   };
 
-  const handleBulkPrintBarcodes = () => {
-    const selectedProducts = allProducts.filter(p => selectedIds.includes(p.id_produk));
-    if (selectedProducts.length === 0) return;
-    setProductsToPrint(selectedProducts);
-    setIsBarcodePrintModalOpen(true);
-  };
-
-  const handleBulkDelete = () => {
-    if (selectedIds.length === 0) return;
-    
-    setConfirmDialog({
-      isOpen: true,
-      title: 'Hapus Massal Produk',
-      message: `Apakah Anda yakin ingin menghapus ${selectedIds.length} produk terpilih?`,
-      confirmText: 'Ya, Hapus',
-      variant: 'danger',
-      onConfirm: async () => {
-        try {
-          setIsDeletingBulk(true);
-          const response = await bulkDeleteProducts(selectedIds);
-          if (response.data?.success) {
-            showSuccess(`Berhasil menghapus ${selectedIds.length} produk`);
-            setSelectedIds([]);
-            fetchProducts();
-          } else {
-            showError(`Gagal menghapus produk: ${response.data?.message || 'Unknown error'}`);
-          }
-        } catch (err) {
-          handleError(err);
-          showError('Gagal melakukan hapus massal');
-        } finally {
-          setIsDeletingBulk(false);
-          setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-        }
-      }
-    });
-  };
 
   const handleDelete = (id) => {
     setConfirmDialog({
@@ -583,27 +552,6 @@ const ProductsPage = () => {
         title="Manajemen Produk"
         actions={
           <div className="flex gap-2">
-            {selectedIds.length > 0 && (
-              <button
-                type="button"
-                onClick={handleBulkPrintBarcodes}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-xl shadow transition"
-              >
-                <Printer className="h-4 w-4" />
-                Cetak Barcode ({selectedIds.length})
-              </button>
-            )}
-            {selectedIds.length > 0 && hasPermission('MANAGE_PRODUCTS') && (
-              <button
-                type="button"
-                onClick={handleBulkDelete}
-                disabled={isDeletingBulk}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-xl shadow transition"
-              >
-                <Trash2 className="h-4 w-4" />
-                Hapus ({selectedIds.length})
-              </button>
-            )}
             {hasPermission('MANAGE_PRODUCTS') && (
               <HeaderActionButton
                 icon={Plus}
@@ -802,6 +750,20 @@ const ProductsPage = () => {
           </div>
         )}
 
+        <BulkActionBar
+          noun="produk"
+          items={selectedIds.map((id) => allProducts.find((p) => p.id_produk === id) || { id_produk: id })}
+          labelOf={(p) => p.nama_produk || p.kode_produk || `ID ${p.id_produk}`}
+          onClear={() => setSelectedIds([])}
+          onDone={({ failed, action }) => { if (action.id === 'hapus') { setSelectedIds(failed.map((p) => p.id_produk)); fetchProducts(); } }}
+          actions={[
+            { id: 'cetak', label: 'Cetak barcode', icon: Printer, silentSuccess: true,
+              runAll: async (items) => { const known = items.filter((p) => p.nama_produk); if (known.length === 0) return { ok: [], failed: items.map((item) => ({ item, error: new Error('Produk ada di halaman lain; buka halamannya untuk mencetak') })) }; setProductsToPrint(known); setIsBarcodePrintModalOpen(true); return { ok: known.map((item) => ({ item })), failed: [] }; } },
+            ...(hasPermission('MANAGE_PRODUCTS') ? [{ id: 'hapus', label: 'Hapus', icon: Trash2, variant: 'danger', verb: 'dihapus',
+              confirm: { title: 'Hapus produk terpilih', message: (n) => `Hapus ${n} produk? Tindakan ini tidak dapat dibatalkan.`, confirmText: 'Ya, hapus' },
+              runAll: async (items) => { const res = await bulkDeleteProducts(items.map((p) => p.id_produk)); if (res.data?.success) return { ok: items.map((item) => ({ item })), failed: [] }; throw new Error(res.data?.message || 'Server menolak penghapusan'); } }] : []),
+          ]}
+        />
         <DataTable
           data={allProducts}
           loading={loading}
