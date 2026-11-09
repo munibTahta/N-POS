@@ -1,0 +1,19 @@
+# Semua teks disimpan sebagai LF di repo; mencegah diff satu-file-penuh akibat CRLF/LF.
+* text=auto eol=lf
+
+# Skrip Windows tetap CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Biner: jangan disentuh
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.zip binary
+*.rar binary
+*.7z binary
+*.p12 binary
+*.pfx binary
