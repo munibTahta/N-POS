@@ -14,24 +14,30 @@ export function CartPanel({ dueDate, setDueDate, appliedVoucher, cart, cartFocus
 <div 
           id="pos-cart-card"
           className={`bg-white rounded-lg shadow-md p-3 sm:p-6 transition-all duration-300 cursor-pointer ${focusedSection === 'cart' ? 'ring-2 ring-blue-500/50 border border-blue-300' : 'border border-gray-200'}`}
-          onClick={() => {
+          onClick={(e) => {
             setFocusedSection('cart');
-            const firstCartItem = document.querySelector('[data-cart-item]');
-            if (firstCartItem) {
-              firstCartItem.focus();
-              setCartFocusedIndex(0);
+            // Klik di dalam sebuah baris ditangani baris itu sendiri (memilih baris yang diklik). Klik di area kartu lain:
+            // pertahankan baris yang sudah disorot, atau mulai dari baris pertama bila belum ada.
+            if (e.target.closest('[data-cart-item]')) return;
+            const idx = cartFocusedIndex >= 0 && cartFocusedIndex < cart.length ? cartFocusedIndex : 0;
+            const el = document.querySelectorAll('[data-cart-item]')[idx];
+            if (el) {
+              el.focus();
+              setCartFocusedIndex(idx);
             }
           }}
           tabIndex={0}
           title="Klik untuk fokus ke Keranjang (Alt+C)"
           onKeyDown={(e) => {
+            if (e.target !== e.currentTarget) return; // tombol Enter/Spasi pada elemen di dalam baris tidak boleh dibajak kartu
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
               setFocusedSection('cart');
-              const firstCartItem = document.querySelector('[data-cart-item]');
-              if (firstCartItem) {
-                firstCartItem.focus();
-                setCartFocusedIndex(0);
+              const idx = cartFocusedIndex >= 0 && cartFocusedIndex < cart.length ? cartFocusedIndex : 0;
+              const el = document.querySelectorAll('[data-cart-item]')[idx];
+              if (el) {
+                el.focus();
+                setCartFocusedIndex(idx);
               }
             }
           }}
@@ -62,7 +68,15 @@ export function CartPanel({ dueDate, setDueDate, appliedVoucher, cart, cartFocus
               </div>
             ) : (
               cart.map((item, index) => (
-                <div key={item.id_produk} data-cart-item tabIndex={0} className="focus:outline-none rounded">
+                <div
+                  key={item.id_produk}
+                  data-cart-item
+                  data-cart-index={index}
+                  tabIndex={0}
+                  className="focus:outline-none rounded"
+                  onClick={() => { setFocusedSection('cart'); setCartFocusedIndex(index); }}
+                  onFocus={() => { setFocusedSection('cart'); setCartFocusedIndex(index); }}
+                >
                   <CartItem
                     item={item}
                     onUpdateQuantity={handleUpdateQuantity}

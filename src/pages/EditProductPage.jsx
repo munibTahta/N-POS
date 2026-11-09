@@ -1,3 +1,4 @@
+import { grosirWarning } from '../features/pos/pricing';
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getProductById, updateProduct, getCategories, getUnits, getSuppliers } from '../services/api';
@@ -408,7 +409,7 @@ const EditProductPage = () => {
               name="min_qty_grosir"
               value={product.min_qty_grosir}
               onChange={handleChange}
-              helper="(Opsional) Jumlah minimum untuk harga grosir."
+              helper={grosirWarning(product) || '(Opsional) Jumlah minimum untuk harga grosir.'}
             />
           </div>
 

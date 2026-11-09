@@ -1,3 +1,4 @@
+import { grosirWarning } from '../features/pos/pricing';
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Camera, Image as ImageIcon, Save, ChevronLeft, Info } from 'lucide-react';
@@ -333,6 +334,7 @@ const AddProductPage = () => {
                   name="min_qty_grosir"
                   value={product.min_qty_grosir}
                   onChange={handleChange}
+                  helper={grosirWarning(product) || undefined}
                 />
 
                 <FloatingLabelInput

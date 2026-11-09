@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
+import { computeProductPricing } from '../pricing';
 
 const MAX_SNAPSHOTS = 5;
 
@@ -23,34 +24,11 @@ export function useCart({ showSuccess, showError }) {
     return m;
   }, [cart]);
 
-  // Helper function to determine pricing based on wholesale conditions
-  const getProductPricing = useCallback((product, quantity) => {
-    const hargaJual = Number(product.harga_jual || 0);
-    const hargaGrosir = Number(product.harga_grosir || 0);
-    const minQtyGrosir = Number(product.min_qty_grosir || 0);
-    const override = manualPricingOverrides[product.id_produk];
-
-    let price, priceType, isWholesale;
-
-    if (override === 'eceran') {
-      price = hargaJual;
-      priceType = 'eceran';
-      isWholesale = false;
-    } else if (override === 'grosir') {
-      price = hargaGrosir > 0 ? hargaGrosir : hargaJual;
-      priceType = 'grosir';
-      isWholesale = true;
-    } else {
-      // Auto mode - check if wholesale pricing applies
-      isWholesale = hargaGrosir > 0 && minQtyGrosir > 0 && quantity >= minQtyGrosir;
-      price = isWholesale ? hargaGrosir : hargaJual;
-      priceType = isWholesale ? 'grosir' : 'eceran';
-    }
-
-    const result = { price, priceType, isWholesale };
-    
-    return result;
-  }, [manualPricingOverrides]);
+  // Aturan harga eceran/grosir: fungsi murni di ../pricing.js (diuji unit); di sini hanya menambahkan pilihan manual per produk.
+  const getProductPricing = useCallback(
+    (product, quantity) => computeProductPricing(product, quantity, manualPricingOverrides[product.id_produk]),
+    [manualPricingOverrides]
+  );
 
   // Save cart snapshot for undo (Ctrl+Z) - bounded stack prevents memory leak
   const saveCartSnapshot = useCallback(() => {
@@ -121,34 +99,7 @@ export function useCart({ showSuccess, showError }) {
     setCart(prevCart => {
       return prevCart.map(item => {
         if (item.id_produk === productId) {
-          // Create a temporary pricing function with the new override
-          const tempPricingFunc = (product, quantity) => {
-            const hargaJual = Number(product.harga_jual || 0);
-            const hargaGrosir = Number(product.harga_grosir || 0);
-            const minQtyGrosir = Number(product.min_qty_grosir || 0);
-            const override = newOverride; // Use the new override value
-
-            let price, priceType, isWholesale;
-
-            if (override === 'eceran') {
-              price = hargaJual;
-              priceType = 'eceran';
-              isWholesale = false;
-            } else if (override === 'grosir') {
-              price = hargaGrosir > 0 ? hargaGrosir : hargaJual;
-              priceType = 'grosir';
-              isWholesale = true;
-            } else {
-              // Auto mode - check if wholesale pricing applies
-              isWholesale = hargaGrosir > 0 && minQtyGrosir > 0 && quantity >= minQtyGrosir;
-              price = isWholesale ? hargaGrosir : hargaJual;
-              priceType = isWholesale ? 'grosir' : 'eceran';
-            }
-
-            return { price, priceType, isWholesale };
-          };
-          
-          const pricing = tempPricingFunc(item, item.jumlah);
+          const pricing = computeProductPricing(item, item.jumlah, newOverride);
           return {
             ...item,
             harga_satuan: pricing.price,

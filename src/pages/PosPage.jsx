@@ -36,6 +36,7 @@ import { usePosCheckout } from '../features/pos/hooks/usePosCheckout';
 import { useProductBrowse } from '../features/pos/hooks/useProductBrowse';
 import { isWebMode, saveStocks, loadStocks } from '../services/webProductCache';
 import { useWebCatalogSnapshot } from '../features/pos/hooks/useWebCatalogSnapshot';
+import { useCartFocusSync } from '../features/pos/hooks/useCartFocusSync';
 import { useBranchCategories } from '../features/pos/hooks/useBranchCategories';
 import { useCart } from '../features/pos/hooks/useCart';
 import { usePosCartActions } from '../features/pos/hooks/usePosCartActions';
@@ -130,6 +131,7 @@ const PosPage = () => {
   const [focusedSection, setFocusedSection] = useState('search'); // 'search', 'cart', 'payment', 'payment-amount', 'payment-pending', 'payment-submit'
   const [selectedProductIndex, setSelectedProductIndex] = useState(-1); // -1 means no product selected
   const [cartFocusedIndex, setCartFocusedIndex] = useState(-1); // -1 = no focus, index = focused cart item
+  useCartFocusSync(cart, cartFocusedIndex, setCartFocusedIndex); // sorotan baris keranjang mengikuti produknya saat isi keranjang berubah
   
   // NEW: Dialog states
   const [showDiscountDialog, setShowDiscountDialog] = useState(false);
