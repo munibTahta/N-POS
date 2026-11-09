@@ -53,6 +53,8 @@ React UI (src/)  ──REST──▶  Backend API (terpisah, VITE_API_BASE_URL)
 | `features/pos/hooks/usePosKeyboardShortcuts.js` | seluruh pintasan keyboard (F1-F12, Alt+, Esc, panah) | 685 |
 | `features/pos/hooks/usePosCheckout.js` | validasi stok, `handleSubmit`, `handleOfflineConfirm` | 581 |
 | `features/pos/hooks/useProductBrowse.js` | jelajah, pencarian ber-debounce, fallback offline, penjaga race | 233 |
+| `features/pos/components/{ProductPanel,CartPanel,PaymentModal,CustomerPopup}.jsx` | panel produk, keranjang, modal bayar, pilih pelanggan | 268/411/175/36 |
+| `features/pos/lazyComponents.jsx` | komponen lazy + fallback | - |
 | `features/pos/hooks/usePosCartActions.js` | tambah ke keranjang, scan barcode, undo, harga grosir | 371 |
 | `pages/PosPage.jsx` | state, handler keranjang/scan, dan JSX | 2.625 |
 
