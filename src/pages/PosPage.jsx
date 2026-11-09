@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Check, Flame, History, Keyboard, ShoppingCart } from 'lucide-react';
 import Drawer from '../components/common/Drawer';
 import { useMediaQuery } from '../hooks/useMediaQuery';
-import { getCategories, getBranchById, getStockReport } from '../services/api';
+import { getBranchById, getStockReport } from '../services/api';
 import APIWithOfflineSupport from '../services/apiWithOfflineSupport';
 import { formatCurrency } from '../utils/formatHelper';
 import TimeoutManager from '../utils/TimeoutManager';
@@ -36,6 +36,7 @@ import { usePosCheckout } from '../features/pos/hooks/usePosCheckout';
 import { useProductBrowse } from '../features/pos/hooks/useProductBrowse';
 import { isWebMode, saveStocks, loadStocks } from '../services/webProductCache';
 import { useWebCatalogSnapshot } from '../features/pos/hooks/useWebCatalogSnapshot';
+import { useBranchCategories } from '../features/pos/hooks/useBranchCategories';
 import { useCart } from '../features/pos/hooks/useCart';
 import { usePosCartActions } from '../features/pos/hooks/usePosCartActions';
 
@@ -95,7 +96,6 @@ const PosPage = () => {
   const [stockInfo, setStockInfo] = useState({});
   const { cart, setCart, cartQtyMap, manualPricingOverrides, setManualPricingOverrides, getProductPricing, saveCartSnapshot, handleUndo, handleSetManualPricing, handleRemoveFromCart } = useCart({ showSuccess, showError });
   const [searchTerm, setSearchTerm] = useState('');
-  const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState('all'); // 'all' | id_kategori (string)
   const [browseLoading, setBrowseLoading] = useState(false);
   const [browseError, setBrowseError] = useState(false);
@@ -716,18 +716,14 @@ const PosPage = () => {
     };
   }, [idCabangPengguna, fetchPaymentMethods, cacheStockReportData, loadStockFromCache, getConnectionStatus]);
 
-  // Load kategori untuk chips filter
+  // Kategori untuk chips filter: hanya yang dipakai produk katalog cabang ini (bukan semua kategori master)
+  const { categories, totalProduk: totalProdukKatalog } = useBranchCategories({ idCabangPengguna, tipeKatalog, tipeKatalogKnown, isOnline });
+
+  // Kategori terpilih yang tidak ada lagi di daftar (ganti cabang/katalog) -> kembali ke "Semua"
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await getCategories();
-        const list = res?.data?.data || res?.data || [];
-        if (!cancelled && Array.isArray(list)) setCategories(list);
-      } catch (_e) { /* chips opsional */ }
-    })();
-    return () => { cancelled = true; };
-  }, []);
+    if (['all', 'fav', 'recent'].includes(String(activeCategory))) return;
+    if (categories.length > 0 && !categories.some((c) => String(c.id_kategori) === String(activeCategory))) setActiveCategory('all');
+  }, [categories, activeCategory]);
 
   useProductBrowse({ activeCategory, browseRetry, idCabangPengguna, isOnline, readUsage, searchIdRef, searchOfflineProducts, searchTerm, setBrowseError, setBrowseLoading, setProducts, showError, stockInfo, tipeKatalog });
 
@@ -1090,7 +1086,7 @@ const PosPage = () => {
 
       <div className="flex flex-col lg:flex-row gap-3 sm:gap-6">
       {/* Left Panel - Products */}
-      <ProductPanel activeCategory={activeCategory} barcodeInputRef={barcodeInputRef} browseError={browseError} browseLoading={browseLoading} cart={cart} cartQtyMap={cartQtyMap} categories={categories} changeDensity={changeDensity} filteredProducts={filteredProducts} focusedSection={focusedSection} gridDensity={gridDensity} handleAddToCart={handleAddToCart} handleBarcodeScan={handleBarcodeScan} isScannerLikeInput={isScannerLikeInput} loading={loading} paymentAmountInputRef={paymentAmountInputRef} searchInputRef={searchInputRef} searchKeyTimesRef={searchKeyTimesRef} searchTerm={searchTerm} selectedProductIndex={selectedProductIndex} setActiveCategory={setActiveCategory} setBrowseRetry={setBrowseRetry} setCartOpen={setCartOpen} setFocusedSection={setFocusedSection} setSearchTerm={setSearchTerm} setSelectedProductIndex={setSelectedProductIndex} setShowCameraScanner={setShowCameraScanner} setShowShortcutsModal={setShowShortcutsModal} showCameraScanner={showCameraScanner} showCustomerPopup={showCustomerPopup} showPaymentModal={showPaymentModal} showShortcutsModal={showShortcutsModal} stockInfo={stockInfo} />
+      <ProductPanel totalProduk={totalProdukKatalog} activeCategory={activeCategory} barcodeInputRef={barcodeInputRef} browseError={browseError} browseLoading={browseLoading} cart={cart} cartQtyMap={cartQtyMap} categories={categories} changeDensity={changeDensity} filteredProducts={filteredProducts} focusedSection={focusedSection} gridDensity={gridDensity} handleAddToCart={handleAddToCart} handleBarcodeScan={handleBarcodeScan} isScannerLikeInput={isScannerLikeInput} loading={loading} paymentAmountInputRef={paymentAmountInputRef} searchInputRef={searchInputRef} searchKeyTimesRef={searchKeyTimesRef} searchTerm={searchTerm} selectedProductIndex={selectedProductIndex} setActiveCategory={setActiveCategory} setBrowseRetry={setBrowseRetry} setCartOpen={setCartOpen} setFocusedSection={setFocusedSection} setSearchTerm={setSearchTerm} setSelectedProductIndex={setSelectedProductIndex} setShowCameraScanner={setShowCameraScanner} setShowShortcutsModal={setShowShortcutsModal} showCameraScanner={showCameraScanner} showCustomerPopup={showCustomerPopup} showPaymentModal={showPaymentModal} showShortcutsModal={showShortcutsModal} stockInfo={stockInfo} />
 
       {/* Camera Scanner Modal */}
       {showCameraScanner && (

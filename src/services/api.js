@@ -444,6 +444,10 @@ const categoriesCRUD = createCRUDOperations('/kategori', {
   skipPaginationByDefault: true 
 });
 export const getCategories = () => coalesceGet('categories', () => categoriesCRUD.getAll());
+
+// Kategori yang punya produk aktif pada katalog cabang pemanggil (dengan jumlah_produk). Untuk chip kategori di kasir.
+// Cabang berkatalog terpisah hanya melihat kategori dari produknya sendiri; GET /kategori mengembalikan SEMUA kategori master.
+export const getCatalogCategories = (params = {}) => coalesceGet(`catalog-categories:${JSON.stringify(params)}`, () => apiClient.get('/kategori/katalog', { params }));
 export const getCategoryById = (id) => categoriesCRUD.getById(id);
 export const addCategory = (categoryData) => categoriesCRUD.create(categoryData);
 export const updateCategory = (id, categoryData) => categoriesCRUD.update(id, categoryData);

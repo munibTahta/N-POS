@@ -1,7 +1,7 @@
 import { Check, Flame, History, ShoppingCart } from 'lucide-react';
 import ProductGrid from '../../../components/pos/ProductGrid';
 
-export function ProductPanel({ activeCategory, barcodeInputRef, browseError, browseLoading, cart, cartQtyMap, categories, changeDensity, filteredProducts, focusedSection, gridDensity, handleAddToCart, handleBarcodeScan, isScannerLikeInput, loading, paymentAmountInputRef, searchInputRef, searchKeyTimesRef, searchTerm, selectedProductIndex, setActiveCategory, setBrowseRetry, setCartOpen, setFocusedSection, setSearchTerm, setSelectedProductIndex, setShowCameraScanner, setShowShortcutsModal, showCameraScanner, showCustomerPopup, showPaymentModal, showShortcutsModal, stockInfo }) {
+export function ProductPanel({ totalProduk, activeCategory, barcodeInputRef, browseError, browseLoading, cart, cartQtyMap, categories, changeDensity, filteredProducts, focusedSection, gridDensity, handleAddToCart, handleBarcodeScan, isScannerLikeInput, loading, paymentAmountInputRef, searchInputRef, searchKeyTimesRef, searchTerm, selectedProductIndex, setActiveCategory, setBrowseRetry, setCartOpen, setFocusedSection, setSearchTerm, setSelectedProductIndex, setShowCameraScanner, setShowShortcutsModal, showCameraScanner, showCustomerPopup, showPaymentModal, showShortcutsModal, stockInfo }) {
   return (
 <div className="flex-1 min-w-0">
         <div 
@@ -163,7 +163,7 @@ export function ProductPanel({ activeCategory, barcodeInputRef, browseError, bro
               aria-label="Filter kategori produk"
               onClick={(e) => e.stopPropagation()}
             >
-              {[{ id_kategori: 'all', nama_kategori: 'Semua' }, { id_kategori: 'fav', nama_kategori: 'Terlaris', Icon: Flame }, { id_kategori: 'recent', nama_kategori: 'Terakhir', Icon: History }, ...categories].map((cat) => {
+              {[{ id_kategori: 'all', nama_kategori: 'Semua', jumlah_produk: totalProduk }, { id_kategori: 'fav', nama_kategori: 'Terlaris', Icon: Flame }, { id_kategori: 'recent', nama_kategori: 'Terakhir', Icon: History }, ...categories].map((cat) => {
                 const id = String(cat.id_kategori);
                 const active = String(activeCategory) === id;
                 return (
@@ -182,6 +182,7 @@ export function ProductPanel({ activeCategory, barcodeInputRef, browseError, bro
                   >
                     {active ? <Check className="w-4 h-4" aria-hidden="true" /> : (cat.Icon && <cat.Icon className="w-4 h-4" aria-hidden="true" />)}
                     {cat.nama_kategori}
+                    {cat.jumlah_produk != null && <span className="text-xs font-normal tabular-nums opacity-70">{cat.jumlah_produk}</span>}
                   </button>
                 );
               })}
