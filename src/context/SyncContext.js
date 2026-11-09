@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import syncEngine from '../services/syncEngine';
 import networkStateService from '../services/NetworkStateService';
 
@@ -204,23 +204,24 @@ export const SyncProvider = ({ children }) => {
     }
   };
 
-  const getConnectionStatus = () => {
-    return {
-      isOnline: syncStatus.isOnline,
-      statusText: syncStatus.isOnline ? 'Online' : 'Offline',
-      statusColor: syncStatus.isOnline ? 'text-green-600' : 'text-red-600',
-      icon: syncStatus.isOnline ? '●' : '●'
-    };
-  };
+  // Identitas stabil (berubah hanya saat status online berubah): fungsi ini dipakai sebagai dependensi efek
+  // di halaman kasir; bila dibuat ulang tiap render, efek pemuatan produk/stok ikut berjalan ulang dan UI berkedip.
+  const connectedNow = syncStatus.isOnline;
+  const getConnectionStatus = useCallback(() => ({
+    isOnline: connectedNow,
+    statusText: connectedNow ? 'Online' : 'Offline',
+    statusColor: connectedNow ? 'text-green-600' : 'text-red-600',
+    icon: '●'
+  }), [connectedNow]);
 
-  const getSyncInfo = () => {
-    return {
-      lastSyncTime: syncStatus.lastSyncTime,
-      pendingCount: syncStatus.pendingCount,
-      failedCount: syncStatus.failedCount,
-      isSyncing: syncStatus.syncInProgress || isManualSyncing
-    };
-  };
+  const { lastSyncTime, pendingCount, failedCount, syncInProgress } = syncStatus;
+  const getSyncInfo = useCallback(() => ({
+    lastSyncTime,
+    pendingCount,
+    failedCount,
+    isSyncing: syncInProgress || isManualSyncing
+  }), [lastSyncTime, pendingCount, failedCount, syncInProgress, isManualSyncing]);
+  const isSyncLocked = useCallback(() => syncEngine.isSyncLocked(), []);
 
   const value = {
     isOnline: syncStatus.isOnline,  // Expose isOnline directly
@@ -229,7 +230,7 @@ export const SyncProvider = ({ children }) => {
     getConnectionStatus,
     getSyncInfo,
     isManualSyncing,
-    isSyncLocked: () => syncEngine.isSyncLocked()
+    isSyncLocked
   };
 
   return React.createElement(SyncContext.Provider, { value }, children);

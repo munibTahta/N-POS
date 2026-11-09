@@ -21,9 +21,9 @@ React UI (src/)  ──REST──▶  Backend API (terpisah, VITE_API_BASE_URL)
    `apiWithOfflineSupport` / `offlineAPIFallback` untuk membaca dari data lokal.
 3. **Transaksi offline**: disimpan ke antrean (`transactionQueue`, `OfflineQueue`, tabel `offline_transactions` / `sync_queue`).
 4. **Sinkronisasi**: `syncEngine` mengirim antrean saat online lagi (maksimal 3 percobaan per item).
-   Konflik stok ditangani `StockConflictError` dan `ConflictResolver`.
+   Konflik stok ditangani `StockConflictError`.
 5. **Data master** (produk, stok, pelanggan, pajak, diskon, metode bayar) diunduh berkala oleh
-   `offlineDataSync` / `optimizedDataSync` ke penyimpanan lokal.
+   `offlineDataSync` ke penyimpanan lokal.
 
 ## 3. Halaman kasir (`src/pages/PosPage.jsx`)
 
@@ -110,7 +110,7 @@ dan pemulihan dari error server produk. Alur transaksi lengkap (keranjang, bayar
 - Skema SQLite ganda (lihat bagian 4). Satukan dengan migrasi berversi (`PRAGMA user_version`).
 - (Selesai) `scripts/remove-console.cjs` dihapus; build produksi membuang `console.log/debug/info` lewat `esbuild.pure` di Vite, sedangkan `warn`/`error` tetap ada.
 - ESLint 0 error; tersisa 10 peringatan (`exhaustive-deps`, 1 `only-export-components`). CI (`.github/workflows/ci.yml`) menjalankan lint, build, dan e2e.
-- `FinancialReportsPageNew.jsx` tidak dipakai rute mana pun.
+- Kode mati dibersihkan (±9.000 baris, 66 berkas yang tidak pernah diimpor, termasuk `FinancialReportsPageNew.jsx`); riwayatnya ada di git.
 - `npm audit`: 10 kerentanan high (rantai `exceljs` → `tmp`).
 
 ## 8. Backend (toko.nusasoft.my.id, repo terpisah)
@@ -154,7 +154,7 @@ Urutan di bawah adalah urutan kerja yang disarankan; tiap fase bisa dikerjakan b
 - **Sinkronisasi delta**: unduh perubahan sejak `updated_at` terakhir, bukan seluruh ±9.000 produk; kebijakan konflik tertulis (stok: server yang menentukan); antrean keluar (outbox) dengan status terlihat di UI.
 - **Data**: partisi bulanan untuk `audit_trail`, `log_aktivitas`, `log_stok`, `jurnal_*`; pagination berbasis kursor untuk penjualan; indeks gabungan untuk daftar produk (`status`, `id_cabang_pemilik`, `nama_produk`).
 - **Beban kerja berat** (jurnal, laporan, ekspor) lewat antrean (BullMQ) dan cache master data (Redis); WebSocket yang sudah ada dipakai untuk stok real-time.
-- **Observabilitas**: aktifkan Sentry (`utils/sentry.js` sudah ada) di klien dan backend, monitor uptime, dan uji pemulihan cadangan secara berkala.
+- **Observabilitas**: aktifkan Sentry di klien dan backend (stub `utils/sentry.js` lama sudah dihapus; pasang SDK resmi), monitor uptime, dan uji pemulihan cadangan secara berkala.
 - **Multi-tenant** bila akan dijual sebagai layanan: `tenant_id` di semua tabel atau skema per tenant, ditentukan sebelum jumlah data membesar.
 
 ## Sertifikat QZ Tray (penandatanganan cetak)

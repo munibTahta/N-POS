@@ -94,7 +94,9 @@ const GRID_CLASS = {
 };
 
 const ProductGrid = ({ products, stockInfo, onAddToCart, loading = false, selectedProductIndex = -1, density = 'normal', cartQty = {} }) => {
-  if (loading) {
+  const hasProducts = Array.isArray(products) && products.length > 0;
+  // Skeleton hanya untuk muat pertama; saat memuat ulang (ganti kategori/kata kunci) data lama tetap tampil agar tidak berkedip.
+  if (loading && !hasProducts) {
     return <ProductGridSkeleton count={15} />;
   }
 
@@ -110,7 +112,7 @@ const ProductGrid = ({ products, stockInfo, onAddToCart, loading = false, select
   }
 
   return (
-    <div className={`grid ${GRID_CLASS[density] || GRID_CLASS.normal} gap-2 sm:gap-4`}>
+    <div aria-busy={loading} className={`grid ${GRID_CLASS[density] || GRID_CLASS.normal} gap-2 sm:gap-4 transition-opacity duration-150 ${loading ? 'opacity-60' : 'opacity-100'}`}>
       {products.map((product, index) => (
         <ProductCard
           key={product.id_produk}

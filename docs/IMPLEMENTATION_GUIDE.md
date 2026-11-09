@@ -1,3 +1,5 @@
+> **Arsip:** panduan ini menyangkut `FinancialReportsPageNew.jsx` yang sudah dihapus karena tidak pernah dipakai rute. Dipertahankan hanya sebagai catatan sejarah.
+
 # 🚀 Panduan Implementasi Laporan Keuangan CRUD
 
 **Status:** ✅ Ready to Deploy  

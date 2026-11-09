@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { getProducts } from '../../../services/api';
 import { logger } from '../../../utils/logger';
 
-export function useProductBrowse({ activeCategory, browseRetry, getConnectionStatus, idCabangPengguna, isOnline, readUsage, searchIdRef, searchOfflineProducts, searchTerm, setBrowseError, setBrowseLoading, setProducts, showError, stockInfo, tipeKatalog }) {
+export function useProductBrowse({ activeCategory, browseRetry, idCabangPengguna, isOnline, readUsage, searchIdRef, searchOfflineProducts, searchTerm, setBrowseError, setBrowseLoading, setProducts, showError, stockInfo, tipeKatalog }) {
   // Debounced search effect
   useEffect(() => {
     if (!idCabangPengguna) return;
@@ -227,7 +227,7 @@ export function useProductBrowse({ activeCategory, browseRetry, getConnectionSta
       setBrowseLoading(false); // jangan tinggalkan skeleton menggantung bila pemuatan dibatalkan
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, activeCategory, browseRetry, idCabangPengguna, tipeKatalog, isOnline, searchOfflineProducts, getConnectionStatus]);
+  }, [searchTerm, activeCategory, browseRetry, idCabangPengguna, tipeKatalog, isOnline, searchOfflineProducts]);
 }
 
 export default useProductBrowse;

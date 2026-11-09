@@ -40,7 +40,12 @@ export async function setupPos(page, log = [], opts = {}) {
     if (opts.cabang && /\/cabang(\/|\?|$)/.test(url)) {
       return route.fulfill({ json: { success: true, data: /\/cabang\/\d+/.test(url) ? opts.cabang : [opts.cabang] } });
     }
-    const data = /kategori/.test(url) ? cats : /produk/.test(url) ? productList : [];
+    // cocokkan pada PATH (bukan seluruh URL): "/produk?kategori=3" bukan endpoint kategori
+    const path = url.split('?')[0];
+    const kat = new URL(url).searchParams.get('kategori');
+    const data = /\/kategori/.test(path) ? cats
+      : /\/produk/.test(path) ? (kat ? productList.filter((p) => String(p.id_kategori) === String(kat)) : productList)
+      : [];
     return route.fulfill({ json: { success: true, data, pagination: { total: data.length } } });
   });
 }

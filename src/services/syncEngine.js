@@ -1463,15 +1463,27 @@ class SyncEngine {
   }
 
   // Helper: Pull Products (PRIORITAS TERTINGGI)
+  // Satu unduhan katalog penuh dibagi antar pullProducts/pullStocks (tanpa ini katalog diunduh dua kali per sinkronisasi).
+  fetchAllProductsShared() {
+    const now = Date.now();
+    if (this._allProductsPromise && now - this._allProductsAt < 30000) return this._allProductsPromise;
+    this._allProductsAt = now;
+    this._allProductsPromise = import('./api.js')
+      .then(({ getProducts }) => getProducts({ skip_pagination: true }))
+      .catch((err) => { this._allProductsPromise = null; throw err; });
+    return this._allProductsPromise;
+  }
+
   async pullProducts() {
+    // Seluruh pekerjaan di sini menulis ke SQLite Electron; di web tidak ada gunanya mengunduh katalog.
+    if (!window.electronAPI?.dbSelect) return;
     try {
-      const { getProducts } = await import('./api.js');
       // Without skip_pagination the backend defaults to a 50-item page, so a
       // regular sync only ever refreshed the first 50 products (and, in
       // pullStocks's case, only their stock too) and left the rest stale
       // indefinitely (offlineDataSync.js's separate sync path already got
       // this right — this one hadn't).
-      const productsResponse = await getProducts({ skip_pagination: true });
+      const productsResponse = await this.fetchAllProductsShared();
       const productsData = extractArray(productsResponse);
 
       for (const product of productsData) {
@@ -1540,14 +1552,14 @@ class SyncEngine {
 
   // Helper: Pull Stocks dari detail lokasi cabang di products
   async pullStocks() {
+    if (!window.electronAPI?.productDB_bulkUpsertStocks) return;
     try {
-      const { getProducts } = await import('./api.js');
       // Without skip_pagination the backend defaults to a 50-item page, so a
       // regular sync only ever refreshed the first 50 products (and, in
       // pullStocks's case, only their stock too) and left the rest stale
       // indefinitely (offlineDataSync.js's separate sync path already got
       // this right — this one hadn't).
-      const productsResponse = await getProducts({ skip_pagination: true });
+      const productsResponse = await this.fetchAllProductsShared();
       const productsData = extractArray(productsResponse);
 
       const stocks = [];

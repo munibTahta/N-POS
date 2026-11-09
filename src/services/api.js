@@ -290,8 +290,18 @@ export const login = (credentials) => {
   return apiClient.post('/auth/login', credentials);
 };
 
+// Gabungkan GET identik yang sedang berjalan menjadi satu permintaan (tanpa cache: begitu selesai, panggilan berikut ke server lagi).
+// Beberapa pemanggil (halaman, sinkronisasi, hook) meminta data master yang sama pada saat bersamaan saat aplikasi dimulai.
+const inflightGets = new Map();
+const coalesceGet = (key, fn) => {
+  if (inflightGets.has(key)) return inflightGets.get(key);
+  const p = Promise.resolve().then(fn).finally(() => inflightGets.delete(key));
+  inflightGets.set(key, p);
+  return p;
+};
+
 export const getMySettings = () => {
-  return apiClient.get('/auth/my-settings');
+  return coalesceGet('my-settings', () => apiClient.get('/auth/my-settings'));
 };
 
 // --- User Management (via CRUD factory) ---
@@ -304,8 +314,8 @@ export const deleteUser = (id) => usersCRUD.delete(id);
 
 // --- Cabang / Branches (via CRUD factory) ---
 const branchesCRUD = createCRUDOperations('/cabang', { useRateLimit: true });
-export const getBranches = () => branchesCRUD.getAll();
-export const getBranchById = (id) => branchesCRUD.getById(id);
+export const getBranches = () => coalesceGet('branches', () => branchesCRUD.getAll());
+export const getBranchById = (id) => coalesceGet(`branch:${id}`, () => branchesCRUD.getById(id));
 export const addBranch = (branchData) => branchesCRUD.create(branchData);
 export const updateBranch = (id, branchData) => branchesCRUD.update(id, branchData);
 export const deleteBranch = (id) => branchesCRUD.delete(id);
@@ -433,7 +443,7 @@ const categoriesCRUD = createCRUDOperations('/kategori', {
   useRateLimit: true, 
   skipPaginationByDefault: true 
 });
-export const getCategories = () => categoriesCRUD.getAll();
+export const getCategories = () => coalesceGet('categories', () => categoriesCRUD.getAll());
 export const getCategoryById = (id) => categoriesCRUD.getById(id);
 export const addCategory = (categoryData) => categoriesCRUD.create(categoryData);
 export const updateCategory = (id, categoryData) => categoriesCRUD.update(id, categoryData);
@@ -445,7 +455,7 @@ const unitsCRUD = createCRUDOperations('/satuan', {
   useRateLimit: true, 
   skipPaginationByDefault: true 
 });
-export const getUnits = () => unitsCRUD.getAll();
+export const getUnits = () => coalesceGet('units', () => unitsCRUD.getAll());
 export const getUnitById = (id) => unitsCRUD.getById(id);
 export const addUnit = (unitData) => unitsCRUD.create(unitData);
 export const updateUnit = (id, unitData) => unitsCRUD.update(id, unitData);
@@ -528,11 +538,11 @@ export const getPaymentMethodStatsExtended = () => {
 };
 
 export const getPaymentMethods = () => {
-  return limitedGet('/metode-pembayaran', {
+  return coalesceGet('payment-methods', () => limitedGet('/metode-pembayaran', {
     params: {
       skip_pagination: true
     }
-  });
+  }));
 };
 
 // --- LAPORAN ---
@@ -543,7 +553,7 @@ export const getSalesReport = (params) => {
 
 // Laporan stok
 export const getStockReport = (params = {}) => {
-  return apiClient.get('/laporan/stok', { params });
+  return coalesceGet(`stock-report:${JSON.stringify(params)}`, () => apiClient.get('/laporan/stok', { params }));
 };
 
 // Get stock data (alternative endpoint)
@@ -731,7 +741,7 @@ export const updateSetting = (key, value) => {
 
 // Fungsi untuk mendapatkan metode pembayaran
 export const getMetodePembayaran = () => {
-  return apiClient.get('/metode-pembayaran');
+  return coalesceGet('metode-pembayaran', () => apiClient.get('/metode-pembayaran'));
 };
 
 // Fungsi untuk mendapatkan satu metode pembayaran by ID
@@ -756,7 +766,7 @@ export const deleteMetodePembayaran = (id) => {
 
 // Fungsi untuk mendapatkan default payment method
 export const getDefaultPaymentMethod = () => {
-  return apiClient.get('/metode-pembayaran/default');
+  return coalesceGet('payment-default', () => apiClient.get('/metode-pembayaran/default'));
 };
 
 // Fungsi untuk mengatur metode pembayaran sebagai default
@@ -1116,7 +1126,7 @@ export const healthCheck = () => {
 
 // --- ROLE MANAGEMENT ---
 export const getRoles = () => {
-  return apiClient.get('/roles');
+  return coalesceGet('roles', () => apiClient.get('/roles'));
 };
 
 export const getRoleById = (id) => {

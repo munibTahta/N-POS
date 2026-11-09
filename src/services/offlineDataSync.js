@@ -34,7 +34,11 @@ const memoryCache = {
  * Handles millions of products efficiently
  */
 async function syncProductsOptimized() {
-  
+  // Tanpa SQLite lokal (mode web) hasil unduhan tidak bisa disimpan: jangan mengunduh seluruh katalog percuma.
+  if (!window?.electronAPI?.productDB_bulkUpsertProducts) {
+    return { synced: 0, failed: 0, pages: 0 };
+  }
+
   try {
     const lastSync = localStorage.getItem('lastProductSync');
     let totalSynced = 0;

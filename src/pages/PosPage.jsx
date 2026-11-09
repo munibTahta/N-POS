@@ -187,7 +187,9 @@ const PosPage = () => {
 
     const term = String(searchTerm || '').trim().toLowerCase();
     const inCatalog = products.filter(belongsToCatalog);
-    const byCategory = (activeCategory === 'all' || activeCategory === 'recent' || activeCategory === 'fav')
+    // Selama daftar baru dimuat (browseLoading), jangan menyaring daftar LAMA dengan kategori BARU: hasilnya kosong sesaat
+    // ("Tidak ada produk") lalu terisi lagi = kedipan. Server sudah mengembalikan produk sesuai kategori terpilih.
+    const byCategory = (browseLoading || activeCategory === 'all' || activeCategory === 'recent' || activeCategory === 'fav')
       ? inCatalog
       : inCatalog.filter((p) => String(p?.id_kategori ?? '') === String(activeCategory));
     if (!term) return byCategory;
@@ -197,7 +199,7 @@ const PosPage = () => {
       const kode = String(product?.kode_produk || '').toLowerCase();
       return name.includes(term) || (kode && kode.includes(term));
     });
-  }, [products, searchTerm, loading, activeCategory, belongsToCatalog]);
+  }, [products, searchTerm, loading, browseLoading, activeCategory, belongsToCatalog]);
 
   // Riwayat pencarian lama sudah dihapus dari UI: bersihkan data tersimpan sekali.
   useEffect(() => {
@@ -726,7 +728,7 @@ const PosPage = () => {
     return () => { cancelled = true; };
   }, []);
 
-  useProductBrowse({ activeCategory, browseRetry, getConnectionStatus, idCabangPengguna, isOnline, readUsage, searchIdRef, searchOfflineProducts, searchTerm, setBrowseError, setBrowseLoading, setProducts, showError, stockInfo, tipeKatalog });
+  useProductBrowse({ activeCategory, browseRetry, idCabangPengguna, isOnline, readUsage, searchIdRef, searchOfflineProducts, searchTerm, setBrowseError, setBrowseLoading, setProducts, showError, stockInfo, tipeKatalog });
 
   const { getProductStock, handleAddToCart, handleBarcodeScan, handleUpdateQuantity } = usePosCartActions({ barcodeInputRef, belongsToCatalog, getProductPricing, idCabangPengguna, isOnline, lastScanTimeRef, loading, products, recordUsage, saveCartSnapshot, searchInputRef, searchOfflineProducts, setCart, setProducts, setSearchTerm, setSelectedProductIndex, showErrorDebounced, showSuccess, stockInfo, timeoutManager, tipeKatalog });
 
