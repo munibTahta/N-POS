@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { X, Search, Settings, ShoppingCart, Users, CreditCard, Printer, Keyboard, Lightbulb } from 'lucide-react';
+import { X, Search, Settings, ShoppingCart, Users, CreditCard, Printer, Keyboard, Lightbulb, Compass } from 'lucide-react';
 import { SHORTCUT_GROUPS, SHORTCUT_TIPS } from '../features/pos/shortcuts';
 
-const ICONS = { Settings, Search, ShoppingCart, Users, CreditCard, Printer };
+const ICONS = { Settings, Search, ShoppingCart, Users, CreditCard, Printer, Compass };
 const IS_MAC = typeof navigator !== 'undefined' && /mac|iphone|ipad/i.test(navigator.platform || navigator.userAgent || '');
 const keyLabel = (k) => (k === 'Mod' ? (IS_MAC ? '⌘' : 'Ctrl') : k);
 

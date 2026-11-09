@@ -22,7 +22,7 @@ export function usePosKeyboardShortcuts({ appliedVoucher, cart, cartFocusedIndex
         return;
       }
 
-      // Pintasan standar aplikasi: "/" dan Ctrl/Cmd+K = fokus pencarian, "?" = bantuan.
+      // Pintasan standar aplikasi: "/" = fokus pencarian, "?" = bantuan. (Ctrl/Cmd+K = palet perintah GLOBAL, ditangani Layout.)
       // "/" dan "?" hanya aktif bila pengguna tidak sedang mengetik di kolom isian.
       const anyDialogOpen = showPaymentModal || showCustomerPopup || showCameraScanner || showPrintModal;
       if (!anyDialogOpen) {
@@ -35,11 +35,6 @@ export function usePosKeyboardShortcuts({ appliedVoucher, cart, cartFocusedIndex
           setSelectedProductIndex(-1);
           setCurrentKeyboardHint('Ketik untuk cari produk \u2022 Panah Bawah untuk navigasi \u2022 Enter untuk pilih');
         };
-        if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && String(e.key).toLowerCase() === 'k') {
-          e.preventDefault();
-          focusSearch();
-          return;
-        }
         if (!e.ctrlKey && !e.metaKey && !e.altKey && !isTypingTarget(e.target)) {
           if (e.key === '/') { e.preventDefault(); focusSearch(); return; }
           if (e.key === '?') { e.preventDefault(); setShowShortcutsModal(true); return; }

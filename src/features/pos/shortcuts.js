@@ -6,6 +6,16 @@
  */
 export const SHORTCUT_GROUPS = [
   {
+    group: 'Navigasi (semua halaman)',
+    icon: 'Compass',
+    items: [
+      { keys: [['Mod', 'K']], description: 'Buka pencarian cepat: lompat ke halaman atau jalankan aksi dengan mengetik' },
+      { keys: [['g'], ['p']], description: 'Kasir (POS)  \u2022  lalu j = Riwayat, b = Pembelian, k = Produk, s = Stok' },
+      { keys: [['g'], ['c']], description: 'Pelanggan  \u2022  lalu l = Laporan, a = Pengaturan, d = Dashboard' },
+      { keys: [['?']], description: 'Buka bantuan pintasan ini (di halaman kasir juga F1)' },
+    ],
+  },
+  {
     group: 'Umum',
     icon: 'Settings',
     items: [
@@ -18,7 +28,7 @@ export const SHORTCUT_GROUPS = [
     group: 'Pencarian & Scan',
     icon: 'Search',
     items: [
-      { keys: [['/'], ['Mod', 'K'], ['F2']], description: 'Fokus ke kolom pencarian produk' },
+      { keys: [['/'], ['F2']], description: 'Fokus ke kolom pencarian produk' },
       { keys: [['Alt', 'P']], description: 'Fokus ke panel produk' },
       { keys: [['↓'], ['↑'], ['←'], ['→']], description: 'Pilih produk pada daftar hasil' },
       { keys: [['Enter']], description: 'Tambahkan produk terpilih ke keranjang' },
@@ -74,7 +84,8 @@ export const SHORTCUT_GROUPS = [
 ];
 
 export const SHORTCUT_TIPS = [
-  'Tekan / dari mana saja untuk langsung mengetik pencarian (seperti di GitHub atau Gmail).',
+  'Tekan / di halaman kasir untuk langsung mengetik pencarian produk, dan Ctrl+K di mana saja untuk lompat ke halaman atau aksi (seperti di GitHub atau Gmail).',
+  'Navigasi cepat dua tombol: tekan g lalu huruf tujuan (mis. g lalu j = Riwayat Penjualan). Hanya aktif saat tidak sedang mengetik.',
   'Scanner barcode: pastikan kolom pencarian aktif (tekan /), lalu scan. Kode yang diketik cepat diakhiri Enter otomatis ditambahkan ke keranjang.',
   'Di layar sentuh, ketuk ikon keyboard di bilah atas untuk membuka bantuan ini.',
 ];

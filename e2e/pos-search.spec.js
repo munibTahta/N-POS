@@ -9,7 +9,8 @@ test('tidak ada dropdown riwayat pencarian saat fokus/mengetik', async ({ page }
   await input.click();
   await input.pressSequentially('pro', { delay: 150 });
   await expect(page.locator('[data-search-suggestion]')).toHaveCount(0);
-  await expect(page.getByText('Riwayat', { exact: true })).toHaveCount(0);
+  // hanya area halaman (<main>): bilah navigasi kini punya tautan "Riwayat" (Riwayat Penjualan) yang sah
+  await expect(page.locator('main').getByText('Riwayat', { exact: true })).toHaveCount(0);
 });
 
 test('debounce: mengetik cepat hanya mengirim satu request pencarian', async ({ page }) => {

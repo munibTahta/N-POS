@@ -49,14 +49,15 @@ export const PageContainer = ({ children, className = '' }) => {
  * PageHeader - Page title and actions component
  * Provides consistent page title styling with optional subtitle and actions
  */
-export const PageHeader = ({ title, subtitle, actions, className = '' }) => {
+export const PageHeader = ({ title, subtitle, description, actions, className = '' }) => {
+  const sub = subtitle ?? description; // beberapa halaman memakai `description`
   return (
     <div className={`mb-6 ${className}`}>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-          {subtitle && (
-            <p className="mt-1 text-sm text-gray-600">{subtitle}</p>
+          {sub && (
+            <div className="mt-1 text-sm text-gray-600">{sub}</div>
           )}
         </div>
         {actions && (
@@ -66,5 +67,26 @@ export const PageHeader = ({ title, subtitle, actions, className = '' }) => {
         )}
       </div>
     </div>
+  );
+};
+/**
+ * Subjudul informatif: bagian-bagian dipisah titik tengah, boleh membungkus di layar sempit.
+ * Aturan isi: KONTEKS + KESEGARAN data (periode, cabang, diperbarui pukul), bukan mengulang angka yang sudah ada di kartu ringkasan.
+ * `parts`: string | node | { text, tone: 'warn' }. Bagian kosong dilewati.
+ */
+export const MetaLine = ({ parts = [], className = '' }) => {
+  const items = parts.filter((p) => p !== null && p !== undefined && p !== false && p !== '');
+  return (
+    <p className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 ${className}`}>
+      {items.map((p, i) => {
+        const obj = typeof p === 'object' && p && 'text' in p ? p : { text: p };
+        return (
+          <React.Fragment key={i}>
+            {i > 0 && <span aria-hidden="true" className="text-gray-400">&bull;</span>}
+            <span className={obj.tone === 'warn' ? 'font-medium text-amber-700 dark:text-amber-300' : undefined}>{obj.text}</span>
+          </React.Fragment>
+        );
+      })}
+    </p>
   );
 };

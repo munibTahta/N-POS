@@ -152,7 +152,7 @@ const EditMenuPage = () => {
                   value={formData.menu_key}
                   onChange={handleChange}
                   placeholder="contoh: produk, penjualan, laporan"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-control w-full"
                   required
                 />
               </div>
@@ -165,7 +165,7 @@ const EditMenuPage = () => {
                   value={formData.nama_menu}
                   onChange={handleChange}
                   placeholder="contoh: Manajemen Produk"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-control w-full"
                   required
                 />
               </div>
@@ -178,7 +178,7 @@ const EditMenuPage = () => {
                   value={formData.icon}
                   onChange={handleChange}
                   placeholder="contoh: Home, ShoppingCart, Menu"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-control w-full"
                 />
                 <p className="text-xs text-slate-500 mt-1">Isi nama ikon Lucide React atau gunakan emoji sederhana.</p>
                 {formData.icon && (
@@ -199,7 +199,7 @@ const EditMenuPage = () => {
                   value={formData.path}
                   onChange={handleChange}
                   placeholder="contoh: /produk, /laporan"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-control w-full"
                 />
               </div>
 
@@ -209,7 +209,7 @@ const EditMenuPage = () => {
                   name="parent_menu"
                   value={formData.parent_menu}
                   onChange={handleChange}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-select w-full"
                 >
                   <option value="">-- Pilih Parent Menu (opsional) --</option>
                   {menus
@@ -228,7 +228,7 @@ const EditMenuPage = () => {
                   name="grup"
                   value={formData.grup}
                   onChange={handleChange}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-select w-full"
                 >
                   {grupOptions.map(option => (
                     <option key={option.value} value={option.value}>
@@ -246,7 +246,7 @@ const EditMenuPage = () => {
                   value={formData.urutan}
                   onChange={handleChange}
                   min="0"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-control w-full"
                 />
               </div>
 

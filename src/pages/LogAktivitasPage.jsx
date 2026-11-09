@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { getLogAktivitas } from '../services/api';
 import DataTable from '../components/DataTable';
-import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import { PageLayout, PageContainer, PageHeader, MetaLine } from '../components/layouts';
 import DateRangeFilter from '../components/common/DateRangeFilter';
 import { getPresetRange, isDateInRange, parseFlexibleDate, formatDateTimeID } from '../utils/dateRange';
+import { describeRange } from '../utils/dateRange';
 
 
 const normalizeLog = (item = {}, index) => {
@@ -91,7 +92,7 @@ const LogAktivitasPage = () => {
       <PageContainer>
         <PageHeader
           title="Log Aktivitas"
-          description="Pantau aktivitas bisnis penting dengan tampilan tabel interaktif yang mudah difilter dan dicari."
+          subtitle={<MetaLine parts={[describeRange(range.start, range.end), `${logsInRange.length.toLocaleString('id-ID')} aktivitas`]} />}
         />
 
         <div className="space-y-6">

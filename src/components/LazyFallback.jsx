@@ -1,11 +1,31 @@
-import { WifiOff, AlertTriangle } from 'lucide-react';
+import { WifiOff, AlertTriangle, RefreshCw } from 'lucide-react';
 
 /**
  * Fallback Component untuk Lazy Routes
  * Digunakan ketika lazy loading gagal (offline atau error)
  */
 
-export const LazyFallback = ({ error, retry, isOffline }) => {
+export const LazyFallback = ({ error, retry, isOffline, stale = false, updating = false }) => {
+  if (updating) {
+    return (
+      <div role="status" className="flex min-h-screen items-center justify-center bg-gray-100">
+        <p className="text-sm text-gray-700">Memperbarui aplikasi ke versi terbaru...</p>
+      </div>
+    );
+  }
+  if (stale && !isOffline) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
+        <div role="alert" className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-md">
+          <div className="mb-4 flex justify-center"><RefreshCw className="h-12 w-12 text-blue-600" aria-hidden="true" /></div>
+          <h2 className="mb-2 text-xl font-semibold text-gray-900">Versi baru aplikasi tersedia</h2>
+          <p className="mb-6 text-sm text-gray-600">Halaman ini berubah sejak Anda membuka aplikasi. Muat ulang untuk melanjutkan; data di keranjang yang belum disimpan tidak terpengaruh.</p>
+          <button type="button" onClick={() => window.location.reload()} className="btn-primary btn-lg btn-block">Muat ulang</button>
+        </div>
+      </div>
+    );
+  }
+
   if (isOffline) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">

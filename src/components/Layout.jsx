@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Outlet, Link, NavLink } from 'react-router-dom';
+import { Outlet, Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { usePermissions } from '../hooks/usePermissions';
 import { useMenuContext } from '../context/MenuContext';
 import { useAuth } from '../hooks/useAuth';
@@ -14,7 +14,12 @@ import { renderLucideIcon } from '../utils/lucideIconHelper';
 import Drawer from './common/Drawer';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import syncEngine from '../services/syncEngine';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Search, Keyboard, LogOut } from 'lucide-react';
+import CommandPalette from './common/CommandPalette';
+import ShortcutModal from './ShortcutModal';
+import UserMenu from './UserMenu';
+import { useGlobalShortcuts } from '../hooks/useGlobalShortcuts';
+import { GO_SHORTCUTS } from '../hooks/globalNav';
 // Note: OfflineStatusIndicator removed - already rendered globally in App.jsx
 
 const Layout = () => {
@@ -185,6 +190,16 @@ const Layout = () => {
     }))
   );
 
+  // Halaman utama di bilah navigasi (urut prioritas, hanya yang boleh diakses), maks. 3 di md dan 5 di lg+; sisanya "Lainnya".
+  const isLgUp = useMediaQuery('(min-width: 1024px)');
+  const PRIMARY_ORDER = ['/pos', '/penjualan', '/produk', '/stok', '/stok/kasir', '/laporan', '/pembelian'];
+  const rankOf = (path) => { const i = PRIMARY_ORDER.indexOf(path && !path.startsWith('/') ? `/${path}` : path); return i === -1 ? Infinity : i; };
+  const primaryLimit = isLgUp ? 5 : 3;
+  const primaryNavItems = [...visibleMenuItems].filter((m) => rankOf(m.path) !== Infinity).sort((a, b) => rankOf(a.path) - rankOf(b.path)).slice(0, primaryLimit)
+    .map((m) => ({ ...m, path: m.path && !m.path.startsWith('/') ? `/${m.path}` : m.path }));
+  const primaryIds = new Set(primaryNavItems.map((m) => m.id));
+  const overflowNavItems = navDropdownItems.filter((m) => !primaryIds.has(m.id));
+
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -295,6 +310,38 @@ const Layout = () => {
     }
   };
 
+  const roleLabel = (() => {
+    const r = String(user?.role_display || user?.role || user?.nama_role || 'Pengguna');
+    return r.charAt(0).toUpperCase() + r.slice(1).toLowerCase();
+  })();
+
+  // ---- Palet perintah (Ctrl/Cmd+K), bantuan pintasan (?), dan navigasi g+huruf ----
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const normPath = (p) => (p && !p.startsWith('/') ? `/${p}` : p);
+  const accessiblePaths = new Set(['/', '/pengaturan', ...visibleMenuItems.map((m) => normPath(m.path))]);
+  const canAccessPath = (path) => accessiblePaths.has(path);
+
+  useGlobalShortcuts({
+    onOpenPalette: () => setPaletteOpen(true),
+    onOpenHelp: () => setHelpOpen(true),
+    onNavigate: (path) => navigate(path),
+    canAccess: canAccessPath,
+    pathname,
+  });
+
+  const goHint = (path) => { const g = GO_SHORTCUTS.find((x) => x.path === path); return g ? `g ${g.key}` : undefined; };
+  const paletteItems = [
+    ...visibleMenuItems.map((m) => ({ id: `menu-${m.id}`, label: m.name, group: 'Halaman', keywords: [m.path], icon: m.icon, hint: goHint(normPath(m.path)), run: () => navigate(normPath(m.path)) })),
+    ...(visibleMenuItems.some((m) => normPath(m.path) === '/') ? [] : [{ id: 'menu-dashboard', label: 'Dashboard', group: 'Halaman', keywords: ['beranda', 'home'], hint: goHint('/'), run: () => navigate('/') }]),
+    ...(visibleMenuItems.some((m) => normPath(m.path) === '/pengaturan') ? [] : [{ id: 'menu-pengaturan', label: 'Pengaturan', group: 'Halaman', keywords: ['setting', 'konfigurasi'], hint: goHint('/pengaturan'), run: () => navigate('/pengaturan') }]),
+    { id: 'act-tema', label: theme === 'light' ? 'Ganti ke tema gelap' : 'Ganti ke tema terang', group: 'Aksi', keywords: ['tema', 'dark', 'light', 'gelap', 'terang'], icon: theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />, run: toggleTheme },
+    { id: 'act-bantuan', label: 'Bantuan pintasan keyboard', group: 'Aksi', keywords: ['shortcut', 'keyboard', 'bantuan', 'help'], hint: '?', icon: <Keyboard className="w-4 h-4" />, run: () => setHelpOpen(true) },
+    { id: 'act-logout', label: 'Keluar (logout)', group: 'Aksi', keywords: ['logout', 'keluar', 'sign out'], icon: <LogOut className="w-4 h-4" />, run: handleLogout },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-md border-b border-gray-200 sticky top-0 z-40">
@@ -311,72 +358,27 @@ const Layout = () => {
               )}
             </Link>
 
-            {/* Desktop Menu */}
-            <div className="hidden md:flex items-center gap-4">
-              {menus && menus.length > 0 ? (
-                <>
-                  {/* Dropdown untuk semua menu dinamis */}
-                  <NavDropdown
-                    label="Menu"
-                    items={navDropdownItems}
-                  />
-                </>
-              ) : (
-                <>
-                  {/* Dropdown untuk default menus saat database kosong */}
-                  <NavDropdown
-                    label="Menu"
-                    items={groupMenuItems([
-                      ...(hasMenuAccess('pos') ? [{
-                        id: 'pos',
-                        name: 'POS',
-                        path: '/pos'
-                      }] : []),
-                      ...(hasMenuAccess('penjualan') ? [{
-                        id: 'penjualan',
-                        name: 'Riwayat',
-                        path: '/penjualan'
-                      }] : []),
-                      ...(hasMenuAccess('stok') || hasMenuAccess('stok/kasir') ? [{
-                        id: 'stok',
-                        name: 'Stok',
-                        path: hasMenuAccess('stok') ? '/stok' : '/stok/kasir'
-                      }] : [])
-                    ]).flatMap(group =>
-                      group.items.map(item => ({
-                        ...item,
-                        group: group.key,
-                        groupLabel: group.label
-                      }))
-                    )}
-                  />
-                </>
+            {/* Navigasi utama (desktop): tautan langsung ke halaman yang paling sering dipakai; sisanya di "Lainnya" dan palet Ctrl K.
+                Logo/nama toko = Beranda (Menu Utama), jadi tidak perlu tautan "Dashboard"/"Menu" terpisah. */}
+            <div className="hidden md:flex items-center gap-1" role="navigation" aria-label="Navigasi utama">
+              {primaryNavItems.map((item) => (
+                <NavLink
+                  key={item.id}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `inline-flex min-h-[40px] items-center rounded-full px-4 text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'bg-blue-50 text-blue-800 dark:bg-blue-500/15 dark:text-blue-200'
+                        : 'text-gray-700 hover:bg-gray-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
+                    }`
+                  }
+                >
+                  {item.name}
+                </NavLink>
+              ))}
+              {overflowNavItems.length > 0 && (
+                <NavDropdown label="Lainnya" items={overflowNavItems} />
               )}
-              <NavLink
-                to="/"
-                end
-                className={({ isActive }) =>
-                  `px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                    isActive
-                      ? 'text-blue-600 bg-blue-50 border border-blue-200'
-                      : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
-                  }`
-                }
-              >
-                Dashboard
-              </NavLink>
-              <NavLink
-                to="/pengaturan"
-                className={({ isActive }) =>
-                  `px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                    isActive
-                      ? 'text-blue-600 bg-blue-50 border border-blue-200'
-                      : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
-                  }`
-                }
-              >
-                Pengaturan
-              </NavLink>
             </div>
 
             {/* User Info & Connection Status - Desktop */}
@@ -462,12 +464,14 @@ const Layout = () => {
                       )}
                     </>
                   ) : (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-sm font-medium">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0 9c-1.657 0-3-4.03-3-9s1.343-9 3-9m0 18c1.657 0 3-4.03 3-9s-1.343-9-3-9" />
-                      </svg>
-                      <span>Web Mode</span>
-                    </div>
+                    // Web: tidak ada yang perlu dilaporkan saat online (dulu chip "Web Mode" selalu tampil tanpa informasi);
+                    // saat koneksi putus tampilkan peringatan yang jelas.
+                    !connectionStatus.isOnline && (
+                      <div role="status" className="inline-flex min-h-[36px] items-center gap-2 rounded-full bg-red-50 px-3 text-sm font-medium text-red-800 dark:bg-red-500/15 dark:text-red-200">
+                        <span className="h-2 w-2 rounded-full bg-red-600 dark:bg-red-400" aria-hidden="true" />
+                        Offline
+                      </div>
+                    )
                   )}
 
                   {/* Pending count badge - Only in Electron */}
@@ -488,58 +492,43 @@ const Layout = () => {
                   )}
                 </div>
 
-                {/* Theme Toggle Button */}
+                {/* Pencarian cepat / palet perintah */}
                 <button
-                  onClick={toggleTheme}
-                  className="p-2.5 rounded-xl border border-gray-200 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-400 transition-colors shrink-0"
-                  title={theme === 'light' ? 'Ubah ke Mode Gelap' : 'Ubah ke Mode Terang'}
+                  type="button"
+                  onClick={() => setPaletteOpen(true)}
+                  className="btn-outlined btn-sm gap-2 text-gray-600"
+                  aria-label="Buka pencarian cepat (Ctrl K)"
+                  aria-haspopup="dialog"
+                  data-command-trigger
                 >
-                  {theme === 'light' ? (
-                    <Moon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                  ) : (
-                    <Sun className="w-4 h-4 text-amber-500" />
-                  )}
+                  <Search className="h-4 w-4" aria-hidden="true" />
+                  <span className="hidden lg:inline">Cari</span>
+                  <kbd className="hidden rounded border border-gray-300 px-1.5 text-xs text-gray-600 lg:inline">Ctrl K</kbd>
                 </button>
 
-                {/* User Dropdown - Desktop */}
-                <div className="relative user-dropdown">
-                  <button
-                    onClick={toggleUserDropdown}
-                    className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-gray-200"
-                  >
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </div>
-                    <div className="hidden lg:block text-left">
-                      <div className="text-sm font-medium text-gray-900">Halo, {user.nama || user.nama_lengkap}</div>
-                      <div className="text-xs text-gray-500">{user.email || 'User'}</div>
-                    </div>
-                    <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isUserDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-
-                  {/* Dropdown Menu */}
-                  {isUserDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 z-50 animate-fade-in">
-                      <div className="py-2">
-                        <button
-                          onClick={handleLogout}
-                          className="flex items-center gap-3 w-full px-4 py-3 text-sm text-danger-600 hover:bg-red-50 hover:text-red-700 transition-colors rounded-lg mx-2"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                          </svg>
-                          Logout
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                {/* Menu pengguna: identitas + Pengaturan, tema, bantuan, Keluar */}
+                <UserMenu
+                  name={user.nama || user.nama_lengkap || user.username}
+                  roleLabel={roleLabel}
+                  branchName={storeInfo?.nama_cabang}
+                  theme={theme}
+                  onToggleTheme={toggleTheme}
+                  onOpenHelp={() => setHelpOpen(true)}
+                  onLogout={handleLogout}
+                />
               </div>
             )}
+
+            {/* Pencarian cepat (mobile) */}
+            <button
+              type="button"
+              onClick={() => setPaletteOpen(true)}
+              className="md:hidden btn-icon btn-text text-gray-600 ml-auto mr-1"
+              aria-label="Buka pencarian cepat"
+              aria-haspopup="dialog"
+            >
+              <Search className="h-5 w-5" aria-hidden="true" />
+            </button>
 
             {/* Mobile Menu Button */}
             <button
@@ -768,8 +757,8 @@ const Layout = () => {
                               </svg>
                             </div>
                             <div className="text-left">
-                              <div className="text-sm font-medium text-gray-900">Halo, {user.nama || user.nama_lengkap}</div>
-                              <div className="text-xs text-gray-500">{user.email || 'User'}</div>
+                              <div className="text-sm font-medium text-gray-900">{user.nama || user.nama_lengkap}</div>
+                              <div className="text-xs text-gray-500">{roleLabel}</div>
                             </div>
                           </div>
                           <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isUserDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -814,6 +803,8 @@ const Layout = () => {
         />
       )}
       <SyncStatusNotification syncStatus={syncStatus} isSyncing={isSyncing} queueSize={queueSize} />
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} items={paletteItems} />
+      {helpOpen && <ShortcutModal onClose={() => setHelpOpen(false)} />}
     </div>
   );
 };

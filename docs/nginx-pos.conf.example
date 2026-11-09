@@ -1,0 +1,26 @@
+# Contoh konfigurasi nginx untuk pos.nusasoft.my.id (SPA Vite). BELUM diterapkan; salin ke server {} lalu `nginx -t && systemctl reload nginx`.
+#
+# Masalah yang diselesaikan:
+#  1) try_files ... /index.html membuat berkas /assets/* yang sudah tidak ada dijawab 200 berisi HTML. Browser lalu gagal memuat
+#     modul ("Failed to fetch dynamically imported module"). Aset ber-hash harus 404 bila tidak ada.
+#  2) index.html tanpa Cache-Control boleh di-cache heuristik oleh browser, sehingga setelah penerapan versi baru tab/perangkat
+#     masih memakai index lama yang menunjuk chunk lama.
+
+  root /home/nusasoft-pos/htdocs/pos.nusasoft.my.id/dist;
+
+  # Aset ber-hash: tidak pernah berubah isinya -> cache selamanya; bila hilang, 404 (bukan HTML)
+  location /assets/ {
+    try_files $uri =404;
+    add_header Cache-Control "public, max-age=31536000, immutable";
+  }
+
+  # Titik masuk: selalu validasi ulang ke server (ETag membuatnya murah)
+  location = /index.html {
+    add_header Cache-Control "no-cache";
+  }
+
+  # Rute SPA (/pos, /penjualan, ...) -> index.html, juga tanpa cache
+  location / {
+    try_files $uri $uri/ /index.html;
+    add_header Cache-Control "no-cache";
+  }

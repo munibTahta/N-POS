@@ -125,7 +125,9 @@ test('Riwayat Penjualan: server diminta rentang hari ini (ISO lokal), banner bil
   });
   await page.goto('/penjualan');
   await expect(page.getByText('TRX-1', { exact: true })).toBeVisible({ timeout: 15000 });
-  const u = new URL(urls[0]);
+  // permintaan milik halaman ini (bukan tarikan sinkronisasi latar tanpa parameter)
+  await expect.poll(() => urls.some((x) => /limit=1000/.test(x))).toBe(true);
+  const u = new URL(urls.find((x) => /limit=1000/.test(x)));
   expect(u.searchParams.get('limit')).toBe('1000');
   const start = new Date(u.searchParams.get('start_date')), end = new Date(u.searchParams.get('end_date'));
   const now = new Date();
@@ -138,5 +140,5 @@ test('Riwayat Penjualan: server diminta rentang hari ini (ISO lokal), banner bil
   const before = urls.length;
   await page.getByRole('group', { name: 'Periode' }).getByRole('button', { name: 'Semua' }).click();
   await expect.poll(() => urls.length).toBeGreaterThan(before);
-  expect(new URL(urls[urls.length - 1]).searchParams.get('start_date')).toBeNull();
+  expect(new URL(urls.filter((x) => /limit=1000/.test(x)).pop()).searchParams.get('start_date')).toBeNull();
 });

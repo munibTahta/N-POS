@@ -195,7 +195,7 @@ const DiscountPage = () => {
                     name="nama_diskon"
                     value={formData.nama_diskon}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="field-control w-full"
                     placeholder="Contoh: Flash Sale, Member Baru"
                   />
                 </div>
@@ -207,7 +207,7 @@ const DiscountPage = () => {
                     name="tipe"
                     value={formData.tipe}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="field-select w-full"
                   >
                     <option value="persentase">Persentase (%)</option>
                     <option value="nominal">Nominal (Rp)</option>
@@ -223,7 +223,7 @@ const DiscountPage = () => {
                     name="nilai"
                     value={formData.nilai}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="field-control w-full"
                     placeholder="0"
                     min="0"
                     step="0.01"
@@ -238,7 +238,7 @@ const DiscountPage = () => {
                     name="berlaku_dari"
                     value={formData.berlaku_dari}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="field-control w-full"
                   />
                 </div>
                 <div>
@@ -250,7 +250,7 @@ const DiscountPage = () => {
                     name="berlaku_sampai"
                     value={formData.berlaku_sampai}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="field-control w-full"
                   />
                 </div>
                 <div className="flex items-center">

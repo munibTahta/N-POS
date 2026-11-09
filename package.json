@@ -8,10 +8,10 @@
   "author": "Nusasoft",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/prune-dist.mjs",
     "electron:start": "electron . --no-sandbox",
     "electron:dev": "cross-env NODE_ENV=development electron . --no-sandbox",
-    "electron:build": "cross-env NODE_ENV=production vite build && electron-builder",
+    "electron:build": "cross-env NODE_ENV=production vite build && node scripts/prune-dist.mjs --keep-days=0 && electron-builder",
     "generate-cert": "node generate-cert.cjs",
     "setup-code-signing": "node setup-code-signing.cjs",
     "generate-openssl": "node generate-openssl-cert.cjs",

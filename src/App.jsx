@@ -17,6 +17,7 @@ import { initializeBundleOptimization } from './utils/bundleOptimizer';
 import { setupMemoryManagement } from './utils/memoryManager';
 import { initializeErrorRecovery } from './utils/errorRecovery';
 import { preloadAllPages } from './utils/offlineModuleLoader';
+import { isChunkLoadError, reloadOnceForNewVersion } from './utils/chunkRecovery';
 
 // Create lazy loader with better error handling
 // In Electron dev, use direct lazy loading without the complex offline fallback
@@ -25,8 +26,13 @@ const createLazyPage = (importFn, pageName) => {
     importFn()
       .catch(error => {
         console.error(`Failed to load ${pageName}:`, error);
+        // Versi baru diterapkan saat tab lama masih terbuka: berkas lama sudah tidak ada. Muat ulang sekali agar
+        // mengambil versi terbaru; bila sudah dicoba baru-baru ini, tampilkan pesan dengan tombol "Muat ulang".
+        if (isChunkLoadError(error) && navigator.onLine && reloadOnceForNewVersion()) {
+          return { default: () => <LazyFallback updating /> };
+        }
         return {
-          default: () => <LazyFallback error={error} isOffline={!navigator.onLine} />
+          default: () => <LazyFallback error={error} isOffline={!navigator.onLine} stale={isChunkLoadError(error)} retry={() => window.location.reload()} />
         };
       })
   );

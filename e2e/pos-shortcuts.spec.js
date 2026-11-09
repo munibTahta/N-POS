@@ -57,10 +57,13 @@ test.describe('pintasan keyboard kasir (desktop)', () => {
     await expect(input).toHaveValue('a/b');
   });
 
-  test('Ctrl+K memfokuskan pencarian bahkan dari kolom lain', async ({ page }) => {
+  test('Ctrl+K membuka palet perintah global (bukan pencarian produk); Esc mengembalikan fokus', async ({ page }) => {
     const input = page.getByPlaceholder(/Cari produk atau scan/);
-    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    await input.focus();
     await page.keyboard.press('Control+k');
+    await expect(page.getByRole('dialog', { name: 'Pencarian cepat' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog', { name: 'Pencarian cepat' })).toHaveCount(0);
     await expect(input).toBeFocused();
   });
 

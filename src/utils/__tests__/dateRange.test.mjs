@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { addDaysISO, dueStatus, parseFlexibleDate, formatDateTimeID, ageInDays, toDateInputValue, toISODate, todayISO, parseISODate, getPresetRange, detectPreset, normalizeRange, isDateInRange, rangeDays, formatRelativeDate, formatShortDate, formatFullDate } from '../dateRange.js';
+import { describeRange, addDaysISO, dueStatus, parseFlexibleDate, formatDateTimeID, ageInDays, toDateInputValue, toISODate, todayISO, parseISODate, getPresetRange, detectPreset, normalizeRange, isDateInRange, rangeDays, formatRelativeDate, formatShortDate, formatFullDate } from '../dateRange.js';
 
 // Rabu, 14 Okt 2026 15:30 waktu lokal
 const NOW = new Date(2026, 9, 14, 15, 30);
@@ -124,4 +124,12 @@ test('parseFlexibleDate: tanggal murni = hari lokal di semua zona waktu', () => 
   const d = parseFlexibleDate('2026-10-14');
   assert.equal(toISODate(d), '2026-10-14');
   assert.equal(d.getHours(), 0);
+});
+
+test('describeRange: preset berikut rentangnya, kustom, dan semua waktu', () => {
+  assert.equal(describeRange('2026-10-14', '2026-10-14', NOW), 'Hari ini (14 Okt)');
+  assert.equal(describeRange('2026-10-08', '2026-10-14', NOW), '7 hari terakhir (8 Okt - 14 Okt)');
+  assert.equal(describeRange('2026-10-01', '2026-10-20', NOW), '1 Okt - 20 Okt');
+  assert.equal(describeRange('', '', NOW), 'Semua waktu');
+  assert.equal(describeRange('2025-12-01', '2025-12-31', NOW), '1 Des 2025 - 31 Des 2025');
 });

@@ -2,9 +2,10 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { getAuditTrail } from '../services/api';
 import { withErrorBoundary } from '../components/withErrorBoundary';
 import DataTable from '../components/DataTable';
-import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import { PageLayout, PageContainer, PageHeader, MetaLine } from '../components/layouts';
 import DateRangeFilter from '../components/common/DateRangeFilter';
 import { getPresetRange, isDateInRange, parseFlexibleDate, formatDateTimeID } from '../utils/dateRange';
+import { describeRange } from '../utils/dateRange';
 
 
 const AuditTrailPage = ({ pageTitle = 'Audit Trail' }) => {
@@ -97,7 +98,7 @@ const AuditTrailPage = ({ pageTitle = 'Audit Trail' }) => {
       <PageContainer>
         <PageHeader
           title={pageTitle}
-          description="Pantau semua aktivitas sistem dan perubahan data yang tercatat."
+          subtitle={<MetaLine parts={[describeRange(range.start, range.end), `${logsInRange.length.toLocaleString('id-ID')} log`]} />}
         />
 
         <div className="space-y-6">

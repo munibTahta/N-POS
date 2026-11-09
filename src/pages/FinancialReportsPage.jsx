@@ -17,11 +17,12 @@ import {
   getFinancialAccounts
 } from '../services/api';
 import { extractArray, extractData } from '../utils/apiResponseHelper';
-import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import { PageLayout, PageContainer, PageHeader, MetaLine } from '../components/layouts';
 import { exportToExcel } from '../utils/exportHelper';
 import { toast } from 'react-toastify';
 import DateRangeFilter from '../components/common/DateRangeFilter';
 import { getPresetRange, todayISO } from '../utils/dateRange';
+import { describeRange } from '../utils/dateRange';
 
 const FinancialReportsPage = () => {
   // Tab & Report State
@@ -928,7 +929,7 @@ const FinancialReportsPage = () => {
     <PageLayout>
       <PageContainer>
         {/* Header */}
-        <PageHeader title="Laporan Keuangan">
+        <PageHeader title="Laporan Keuangan" subtitle={<MetaLine parts={[describeRange(startDate, endDate), tabs.find((t) => t.id === activeTab)?.label]} />}>
           <div className="flex flex-wrap gap-2">
             {activeTab !== 'jurnal' && (
               <HeaderActionButton

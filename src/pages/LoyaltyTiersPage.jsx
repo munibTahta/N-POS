@@ -298,7 +298,7 @@ const LoyaltyTiersPage = () => {
                     name="nama_tier"
                     value={formData.nama_tier}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="field-control w-full"
                     placeholder="Contoh: Silver, Gold, Platinum"
                   />
                 </div>
@@ -311,7 +311,7 @@ const LoyaltyTiersPage = () => {
                     name="poin_min"
                     value={formData.poin_min}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="field-control w-full"
                     placeholder="0"
                     min="0"
                   />
@@ -325,7 +325,7 @@ const LoyaltyTiersPage = () => {
                     name="poin_max"
                     value={formData.poin_max}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="field-control w-full"
                     placeholder="0"
                     min="0"
                   />
@@ -339,7 +339,7 @@ const LoyaltyTiersPage = () => {
                     name="diskon_persen"
                     value={formData.diskon_persen}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="field-control w-full"
                     placeholder="0"
                     min="0"
                     max="100"
@@ -354,7 +354,7 @@ const LoyaltyTiersPage = () => {
                     name="bonus_poin_persen"
                     value={formData.bonus_poin_persen}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="field-control w-full"
                     placeholder="0"
                     min="0"
                   />
@@ -367,7 +367,7 @@ const LoyaltyTiersPage = () => {
                     name="benefit"
                     value={formData.benefit}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="field-control w-full"
                     placeholder='{"free_shipping": true, "priority_support": false}'
                     rows="3"
                   />

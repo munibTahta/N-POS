@@ -60,7 +60,7 @@ const StockAdjustmentModal = ({ item, onClose, onAdjust, isSubmitting, categoryM
               type="number"
               value={item.jumlah || 0}
               disabled
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-900"
+              className="field-control w-full"
             />
           </div>
 

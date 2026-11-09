@@ -8,7 +8,7 @@ import { UniversalPrintModal, PRINT_TYPES } from '../components/UniversalPrintMo
 import ResponsiveTable from '../components/common/ResponsiveTable';
 import { SearchFilterBar, FilterPanel } from '../components/SearchFilterBar';
 import useSearchAndFilter from '../hooks/useSearchAndFilter';
-import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import { PageLayout, PageContainer, PageHeader, MetaLine } from '../components/layouts';
 import ActionButton from '../components/ActionButton';
 import DropdownActionMenu from '../components/common/DropdownActionMenu';
 import HeaderActionButton from '../components/HeaderActionButton';
@@ -16,6 +16,7 @@ import { FileText, ArrowLeft, Eye, Printer, X, Download } from 'lucide-react';
 import DateRangeFilter from '../components/common/DateRangeFilter';
 import RelativeDate from '../components/common/RelativeDate';
 import { isDateInRange, formatShortDate, todayISO } from '../utils/dateRange';
+import { describeRange } from '../utils/dateRange';
 
 const PurchaseHistoryPage = () => {
   const { storeInfo } = useSettings();
@@ -251,7 +252,7 @@ const PurchaseHistoryPage = () => {
       <PageContainer>
         <PageHeader
           title="Riwayat Pembelian"
-          subtitle="Lihat, filter, dan cetak riwayat pembelian dengan cepat."
+          subtitle={<MetaLine parts={[describeRange(filterStart, filterEnd), `${filteredPurchases.length.toLocaleString('id-ID')} pembelian`]} />}
           actions={
             <div className="flex gap-2">
               <HeaderActionButton

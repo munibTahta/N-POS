@@ -136,7 +136,7 @@ const CategoryFormPage = () => {
                   onChange={handleChange}
                   placeholder="Contoh: Minuman, Makanan, Elektronik"
                   required
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-control w-full"
                 />
                 <p className="mt-1 text-xs text-slate-500">Berikan nama kategori yang deskriptif dan mudah diingat</p>
               </div>
@@ -152,7 +152,7 @@ const CategoryFormPage = () => {
                   onChange={handleChange}
                   placeholder="Deskripsi singkat kategori ini (misal: Minuman segar tanpa alkohol)"
                   rows="4"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-control w-full"
                 />
                 <p className="mt-1 text-xs text-slate-500">Jelaskan maksud kategori ini agar pengguna lebih paham</p>
               </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Edit, Trash2, Download, X } from 'lucide-react';
 import HeaderActionButton from '../components/HeaderActionButton';
 import DataTable from '../components/DataTable';
-import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import { PageLayout, PageContainer, PageHeader, MetaLine } from '../components/layouts';
 import {
   getJournalEntries,
   createJournalEntry,
@@ -19,6 +19,7 @@ import { todayISO } from '../utils/dateRange';
 import DateRangeFilter from '../components/common/DateRangeFilter';
 import RelativeDate from '../components/common/RelativeDate';
 import { getPresetRange, isDateInRange } from '../utils/dateRange';
+import { describeRange } from '../utils/dateRange';
 
 const INITIAL_LINE = { id_akun: '', debit: 0, kredit: 0, keterangan: '' };
 
@@ -307,7 +308,7 @@ const FinancialTransactionsPage = () => {
       <PageContainer>
         <PageHeader
           title="Transaksi Keuangan"
-          subtitle="Kelola jurnal dan transaksi keuangan yang terintegrasi dengan laporan keuangan"
+          subtitle={<MetaLine parts={[describeRange(range.start, range.end), `${transactions.length.toLocaleString('id-ID')} transaksi`]} />}
           actions={(
             <>
               <HeaderActionButton

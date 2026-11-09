@@ -728,7 +728,7 @@ const ProductsPage = () => {
             <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold">Katalog Global Aktif</p>
-              <p className="text-xs opacity-90 mt-0.5">Semua tindakan impor, penambahan, atau ekspor di tab ini dilakukan untuk **Katalog Global** (diakses oleh semua cabang global).</p>
+              <p className="text-xs opacity-90 mt-0.5">Semua tindakan impor, penambahan, atau ekspor di tab ini dilakukan untuk <strong>Katalog Global</strong> (diakses oleh semua cabang global).</p>
             </div>
           </div>
         ) : (
@@ -748,11 +748,16 @@ const ProductsPage = () => {
                       Pilih cabang di samping kanan untuk melakukan impor excel ke cabang tertentu. Jika membiarkan "Semua Cabang", fitur tambah/impor tidak tersedia.
                     </span>
                   )
-                  : `Tindakan tambah atau impor akan dimasukkan secara terisolasi ke katalog cabang **${
-                      isGlobalAccess
-                        ? branches.find(b => b.id_cabang === parseInt(selectedBranchId))?.nama_cabang || 'terpilih'
-                        : 'Anda'
-                    }**.`}
+                  : (
+                    <>
+                      Tindakan tambah atau impor akan dimasukkan secara terisolasi ke katalog cabang{' '}
+                      <strong>
+                        {isGlobalAccess
+                          ? branches.find(b => b.id_cabang === parseInt(selectedBranchId))?.nama_cabang || 'terpilih'
+                          : 'Anda'}
+                      </strong>.
+                    </>
+                  )}
               </p>
             </div>
           </div>

@@ -16,7 +16,7 @@ import useSearchAndFilter from '../hooks/useSearchAndFilter';
 import { usePagination } from '../hooks/usePagination';
 import { exportToExcel } from '../utils/exportHelper';
 import ResponsiveTable from '../components/common/ResponsiveTable';
-import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import { PageLayout, PageContainer, PageHeader, MetaLine } from '../components/layouts';
 import DropdownActionMenu from '../components/common/DropdownActionMenu';
 import HeaderActionButton from '../components/HeaderActionButton';
 import { Printer, CheckCircle, XCircle, RotateCcw, Download } from 'lucide-react';
@@ -24,6 +24,7 @@ import DateRangeFilter from '../components/common/DateRangeFilter';
 import RelativeDate from '../components/common/RelativeDate';
 import AgeBadge from '../components/common/AgeBadge';
 import { dueStatus, getPresetRange, isDateInRange, parseISODate, todayISO } from '../utils/dateRange';
+import { describeRange } from '../utils/dateRange';
 
 const SalesListPage = () => {
   const { user, canVoidSales } = usePermissions();
@@ -92,6 +93,7 @@ const SalesListPage = () => {
   const [salesLoading, setSalesLoading] = useState(true);
   const [salesMeta, setSalesMeta] = useState({ total: 0, loaded: 0 });
   const [salesError, setSalesError] = useState('');
+  const [salesUpdatedAt, setSalesUpdatedAt] = useState(null);
   const loadSales = useCallback(async () => {
     setSalesLoading(true);
     setSalesError('');
@@ -105,6 +107,7 @@ const SalesListPage = () => {
       const rows = extractArray(res);
       setSales(rows);
       setSalesMeta({ total: Number(res?.data?.pagination?.total ?? rows.length), loaded: rows.length });
+      setSalesUpdatedAt(new Date());
     } catch (err) {
       setSalesError('Gagal memuat riwayat penjualan.');
       handleError(err, 'SalesListPage:loadSales', 'Gagal memuat riwayat penjualan.');
@@ -426,7 +429,13 @@ const SalesListPage = () => {
       <PageContainer>
         <PageHeader
           title="Riwayat Penjualan"
-          description="Kelola dan pantau semua transaksi penjualan yang telah dilakukan."
+          subtitle={(
+            <MetaLine parts={[
+              describeRange(dateStart, dateEnd),
+              user?.role === 'kasir' ? storeInfo?.nama_cabang : (filterBranch === 'all' ? 'Semua cabang' : filterBranch),
+              salesUpdatedAt && `Diperbarui ${String(salesUpdatedAt.getHours()).padStart(2, '0')}.${String(salesUpdatedAt.getMinutes()).padStart(2, '0')}`,
+            ]} />
+          )}
           actions={
             <HeaderActionButton
               icon={Download}

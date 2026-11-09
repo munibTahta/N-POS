@@ -169,7 +169,7 @@ const UserFormPage = () => {
                       value={userData.password}
                       onChange={handleChange}
                       required
-                      className="w-full pr-12 rounded-lg border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                      className="field-control w-full"
                     />
                     <button
                       type="button"
@@ -200,7 +200,7 @@ const UserFormPage = () => {
                   value={userData.nama_lengkap}
                   onChange={handleChange}
                   required
-                  className="w-full rounded-lg border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  className="field-control w-full"
                 />
               </div>
 
@@ -254,7 +254,7 @@ const UserFormPage = () => {
                     name="printer_nama"
                     value={userData.printer_nama || ''}
                     onChange={handleChange}
-                    className="w-full rounded-lg border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    className="field-control w-full"
                     placeholder="Contoh: EPSON TM-T88V"
                   />
                 </div>
@@ -265,7 +265,7 @@ const UserFormPage = () => {
                     name="printer_tipe"
                     value={userData.printer_tipe || 'thermal'}
                     onChange={handleChange}
-                    className="w-full rounded-lg border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    className="field-select w-full"
                   >
                     <option value="thermal">Thermal</option>
                     <option value="dot_matrix">Dot Matrix</option>

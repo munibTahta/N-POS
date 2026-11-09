@@ -201,3 +201,12 @@ export function dueStatus(due, now = new Date(), soonDays = 3) {
   if (diff === 0) return { state: 'today', days: 0 };
   return { state: diff <= soonDays ? 'soon' : 'later', days: diff };
 }
+
+/** Uraian periode untuk subjudul: "Hari ini (9 Nov)", "7 hari terakhir (3 Nov - 9 Nov)", "3 Nov - 9 Nov 2026", "Semua waktu". */
+export function describeRange(start, end, now = new Date()) {
+  if (!start && !end) return 'Semua waktu';
+  const span = start === end || !end ? formatShortDate(start || end, now) : `${start ? formatShortDate(start, now) : 'Awal'} - ${end ? formatShortDate(end, now) : 'Akhir'}`;
+  const id = detectPreset(start, end, now);
+  const preset = DATE_PRESETS.find((p) => p.id === id);
+  return preset && id !== 'all' ? `${preset.label} (${span})` : span;
+}

@@ -487,6 +487,9 @@ export const getSales = (params = {}) => {
   return limitedGet('/penjualan', { params });
 };
 
+// Ringkasan agregat penjualan (jumlah, total, belum lunas) untuk rentang tanggal; cakupan cabang ditentukan server.
+export const getSalesSummary = (params = {}) => apiClient.get('/penjualan/ringkasan', { params });
+
 export const getSaleById = (id) => {
   return apiClient.get(`/penjualan/${id}`);
 };

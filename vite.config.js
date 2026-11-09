@@ -62,6 +62,9 @@ export default defineConfig(({ mode }) => ({
     drop: mode === 'production' ? ['debugger'] : [],
   },
   build: {
+    // Jangan menghapus berkas build sebelumnya: tab yang masih terbuka memakai chunk ber-hash lama. Dibersihkan oleh scripts/prune-dist.mjs.
+    emptyOutDir: false,
+    manifest: true,
     minify: 'esbuild',
     rollupOptions: {
       output: {

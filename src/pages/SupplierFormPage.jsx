@@ -114,7 +114,7 @@ const SupplierFormPage = () => {
                   value={supplier.nama_supplier}
                   onChange={handleChange}
                   required
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-control w-full"
                 />
               </div>
               <div>
@@ -124,7 +124,7 @@ const SupplierFormPage = () => {
                   name="kontak"
                   value={supplier.kontak}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-control w-full"
                 />
               </div>
             </div>
@@ -136,7 +136,7 @@ const SupplierFormPage = () => {
                 value={supplier.alamat}
                 onChange={handleChange}
                 rows="4"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="field-control w-full"
               />
             </div>
 
