@@ -11,6 +11,8 @@ import SyncModal from './SyncModal';
 import SyncStatusNotification from './SyncStatusNotification';
 import NavDropdown from './NavDropdown';
 import { renderLucideIcon } from '../utils/lucideIconHelper';
+import Drawer from './common/Drawer';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import syncEngine from '../services/syncEngine';
 import { Sun, Moon } from 'lucide-react';
 // Note: OfflineStatusIndicator removed - already rendered globally in App.jsx
@@ -25,6 +27,7 @@ const Layout = () => {
   const { isSyncing, syncStatus, queueSize } = useSyncQueue();
   const { syncAllProducts } = useProductOfflineDB();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const isMdUp = useMediaQuery('(min-width: 768px)');
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isQuickSyncing, setIsQuickSyncing] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -257,7 +260,7 @@ const Layout = () => {
       // Clear progress
       setTimeout(() => setSyncProgress(0), 1500);
     } catch (error) {
-      console.error('❌ Perbarui data gagal:', error);
+      console.error('Perbarui data gagal:', error);
       setSyncProgress(0);
     } finally {
       setIsRefreshing(false);
@@ -285,7 +288,7 @@ const Layout = () => {
       // Clear progress
       setTimeout(() => setSyncProgress(0), 1500);
     } catch (error) {
-      console.error('❌ Sinkronisasi gagal:', error);
+      console.error('Sinkronisasi gagal:', error);
       setSyncProgress(0);
     } finally {
       setIsSyncingLocal(false);
@@ -469,8 +472,18 @@ const Layout = () => {
 
                   {/* Pending count badge - Only in Electron */}
                   {isElectron && syncInfo.pendingCount > 0 && (
-                    <div className="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-semibold animate-bounce-subtle">
+                    <div className="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-semibold animate-bounce-subtle" title="Transaksi menunggu sinkronisasi">
                       {syncInfo.pendingCount}
+                    </div>
+                  )}
+
+                  {/* Failed count badge - Only in Electron. A sale can be stuck
+                      permanently "failed" (e.g. exhausted retries) while
+                      pendingCount reads 0 — surface it separately so that
+                      doesn't read as false "everything synced" confidence. */}
+                  {isElectron && syncInfo.failedCount > 0 && (
+                    <div className="bg-red-600 text-white text-xs px-2 py-1 rounded-full font-semibold animate-bounce-subtle" title="Transaksi gagal sinkronisasi - perlu perhatian">
+                      {syncInfo.failedCount} gagal
                     </div>
                   )}
                 </div>
@@ -531,18 +544,20 @@ const Layout = () => {
             {/* Mobile Menu Button */}
             <button
               onClick={toggleMenu}
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              aria-label="Toggle menu"
+              className="md:hidden btn-icon btn-text text-gray-600"
+              aria-label="Buka menu navigasi"
+              aria-haspopup="dialog"
+              aria-expanded={isMenuOpen}
             >
               <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
           </div>
 
-          {/* Mobile Menu */}
-          {isMenuOpen && (
-            <div className="md:hidden mt-4 pb-4 border-t border-gray-200 animate-fade-in">
+          {/* Navigasi mobile: drawer dari kiri (menggantikan panel 192px yang memaksa scroll di dalam scroll) */}
+          {!isMdUp && (
+            <Drawer open={isMenuOpen} onClose={closeMenu} side="left" title="Menu" widthClassName="w-[min(88vw,20rem)]">
               <div className="flex flex-col space-y-2 pt-4">
                 {/* Search input untuk mobile */}
                 {menus && menus.length > 0 && (
@@ -573,7 +588,7 @@ const Layout = () => {
                 )}
 
                 {/* Menu items dengan scrollable container */}
-                <div className={`space-y-2 ${visibleMenuItems.length > 5 ? 'max-h-48 overflow-y-auto px-4' : 'px-4'}`}>
+                <div className={`space-y-2 px-1`}>
                   {groupedMobileMenuItems.map(group => (
                     <div key={group.key} className="space-y-2">
                       <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -655,6 +670,11 @@ const Layout = () => {
                                 {syncInfo.pendingCount > 0 && (
                                   <div className="text-xs text-yellow-600">
                                     {syncInfo.pendingCount} data pending
+                                  </div>
+                                )}
+                                {syncInfo.failedCount > 0 && (
+                                  <div className="text-xs text-red-600 font-semibold">
+                                    {syncInfo.failedCount} gagal sync
                                   </div>
                                 )}
                               </div>
@@ -778,7 +798,7 @@ const Layout = () => {
                   </>
                 )}
               </div>
-            </div>
+            </Drawer>
           )}
         </div>
       </nav>

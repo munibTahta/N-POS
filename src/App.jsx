@@ -101,7 +101,7 @@ function App() {
     // eslint-disable-next-line no-undef
     if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
       preloadAllPages().catch(error => {
-        console.warn('⚠️ Module pre-loading had issues:', error);
+        console.warn('Module pre-loading had issues:', error);
         // Continue anyway - will fallback to on-demand loading
       });
     } else {
@@ -216,7 +216,7 @@ function App() {
                 </Route>
               </Routes>
               </Suspense>
-              <ToastContainer />
+              <ToastContainer limit={3} newestOnTop />
               <DetailedSyncStatus />
             </div>
           </AppInitializer>

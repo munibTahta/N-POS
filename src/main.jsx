@@ -1,5 +1,6 @@
 import React, { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import '@fontsource-variable/inter';
 import './styles/index.css'
 import App from './App.jsx'
 import pendingPayments from './utils/pendingPayments';
@@ -74,8 +75,8 @@ function startBackgroundPendingSync(intervalMs = 120000) {
 
     try {
       const results = await pendingPayments.syncPendingPayments();
-      if (results && results.length > 0) {
-        if (import.meta.env.DEV) void 0 && ('Pending payments synced:', results.length);
+      if (results && results.length > 0) { /* noop */ 
+        
       }
     } catch (e) {
       console.warn('Pending payments sync failed:', e.message);

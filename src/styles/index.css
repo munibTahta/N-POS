@@ -60,28 +60,73 @@
 
 /* Modern Component Styles */
 @layer components {
+  /* ===== Tombol (lihat docs/DESIGN_SYSTEM.md) =====
+     Ukuran: .btn-sm (32px) | default (40px) | .btn-lg (48px, target sentuh utama di kasir)
+     Varian: .btn-primary | .btn-tonal | .btn-outlined | .btn-text | .btn-secondary | .btn-success | .btn-danger
+     Tambahan: .btn-icon (tombol ikon bulat 40px) | .btn-block (lebar penuh) */
   .btn {
-    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 min-h-[40px] px-4 text-sm font-medium rounded-xl select-none whitespace-nowrap touch-manipulation transition duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
   }
 
   .btn-primary {
-    @apply btn bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg focus:ring-blue-500;
+    @apply btn bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md focus-visible:ring-blue-500;
+  }
+
+  .btn-tonal {
+    @apply btn bg-blue-100 hover:bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 dark:text-blue-100 focus-visible:ring-blue-500;
+  }
+
+  .btn-outlined {
+    @apply btn border border-gray-300 text-blue-700 hover:bg-blue-50 dark:border-zinc-600 dark:text-blue-300 dark:hover:bg-blue-900/20 focus-visible:ring-blue-500;
+  }
+
+  .btn-text {
+    @apply btn px-3 text-blue-700 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-900/20 focus-visible:ring-blue-500;
   }
 
   .btn-secondary {
-    @apply btn bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-100 dark:border-zinc-700 focus:ring-gray-500;
+    @apply btn bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-100 dark:border-zinc-700 focus-visible:ring-gray-500;
   }
 
   .btn-success {
-    @apply btn bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg focus:ring-green-500;
+    @apply btn bg-green-600 hover:bg-green-700 text-white shadow-sm hover:shadow-md focus-visible:ring-green-500;
   }
 
   .btn-danger {
-    @apply btn bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-lg focus:ring-red-500;
+    @apply btn bg-red-600 hover:bg-red-700 text-white shadow-sm hover:shadow-md focus-visible:ring-red-500;
   }
 
+  /* Modifier ukuran/bentuk SENGAJA di bawah varian: varian memakai @apply btn, sehingga modifier harus
+     muncul belakangan agar menang (spesifisitas sama). */
+  .btn-sm {
+    @apply min-h-[32px] px-3 text-xs rounded-lg;
+  }
+
+  .btn-lg {
+    @apply min-h-[48px] px-6 text-base;
+  }
+
+  .btn-block {
+    @apply w-full;
+  }
+
+  .btn-icon {
+    @apply btn !px-0 w-10 rounded-full;
+  }
+
+  /* ===== Kartu =====
+     .card = statis (tanpa efek hover). Tambahkan .card-interactive hanya jika kartu bisa diklik.
+     Elevasi: .card (1) | .card-elevated (2) */
   .card {
-    @apply bg-white dark:bg-zinc-900 rounded-2xl shadow-md border border-gray-200 dark:border-zinc-800 transition-all duration-200 hover:shadow-lg;
+    @apply bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-gray-200 dark:border-zinc-800;
+  }
+
+  .card-elevated {
+    @apply shadow-md border-transparent;
+  }
+
+  .card-interactive {
+    @apply cursor-pointer transition duration-150 hover:shadow-md hover:border-blue-300 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500;
   }
 
   .card-header {

@@ -1,44 +1,40 @@
-import * as LucideIcons from 'lucide-react';
+import React, { lazy, Suspense } from 'react';
+import { FileQuestion } from 'lucide-react';
+// Peta nama-ikon -> import() per ikon. Tiap ikon menjadi chunk kecil yang dimuat saat dibutuhkan,
+// bukan seluruh ~1900 ikon di bundel utama (nama ikon menu disimpan di database, jadi harus dinamis).
+import dynamicIconImports from 'lucide-react/dynamicIconImports.mjs';
+import { toLucideKebab } from './lucideIconName';
 
-const normalizeLucideIconName = (iconName) => {
-  if (!iconName) return '';
-
-  const cleaned = iconName.trim();
-  if (!cleaned) return '';
-
-  const spaced = cleaned
-    .replace(/[^a-zA-Z0-9]+/g, ' ')
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .trim();
-
-  const parts = spaced
-    .split(/\s+/)
-    .filter(Boolean);
-
-  if (parts.length === 0) return '';
-
-  return parts
-    .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join('');
+// Cache komponen lazy agar tidak dibuat ulang di setiap render (itu akan me-remount ikon terus-menerus).
+const lazyIcons = new Map();
+const getLazyIcon = (kebab) => {
+  let Icon = lazyIcons.get(kebab);
+  if (!Icon) {
+    Icon = lazy(dynamicIconImports[kebab]);
+    lazyIcons.set(kebab, Icon);
+  }
+  return Icon;
 };
 
 export const renderLucideIcon = (iconName, className = 'w-6 h-6', title = '') => {
   if (!iconName) {
-    return <span className={className}>📄</span>;
+    return <FileQuestion className={className} />;
   }
 
-  const trimmedName = String(iconName).trim();
-  const directIcon = LucideIcons[trimmedName];
-  const normalizedName = normalizeLucideIconName(trimmedName);
-  const IconComponent = directIcon || LucideIcons[normalizedName];
-
-  if (IconComponent) {
-    return <IconComponent className={className} title={title || normalizedName} />;
+  const kebab = toLucideKebab(iconName);
+  if (kebab && Object.prototype.hasOwnProperty.call(dynamicIconImports, kebab)) {
+    const Icon = getLazyIcon(kebab);
+    return (
+      // Placeholder seukuran ikon agar tata letak tidak bergeser saat ikon dimuat.
+      <Suspense fallback={<span className={className} aria-hidden="true" />}>
+        <Icon className={className} title={title || kebab} />
+      </Suspense>
+    );
   }
 
   if (typeof iconName === 'string' && iconName.trim()) {
     return <span className={className}>{iconName}</span>;
   }
 
-  return <span className={className}>📄</span>;
+  return <FileQuestion className={className} />;
 };

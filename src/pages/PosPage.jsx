@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { unstable_batchedUpdates } from 'react-dom';
+import { X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getProducts, getProductById, createSale, recordPayment, createPaymentPending, getStockReport, createLogAktivitas } from '../services/api';
+import { Check, Flame, History, ShoppingCart } from 'lucide-react';
+import Drawer from '../components/common/Drawer';
+import { useMediaQuery } from '../hooks/useMediaQuery';
+import { getProducts, getCategories, getBranchById, getProductById, createSale, recordPayment, createPaymentPending, getStockReport, createLogAktivitas } from '../services/api';
 import APIWithOfflineSupport from '../services/apiWithOfflineSupport';
 import { extractData } from '../utils/apiResponseHelper';
 import { formatCurrency } from '../utils/formatHelper';
@@ -143,6 +147,17 @@ const PosPage = () => {
   const [stockInfo, setStockInfo] = useState({});
   const [cart, setCart] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [activeCategory, setActiveCategory] = useState('all'); // 'all' | id_kategori (string)
+  const [browseLoading, setBrowseLoading] = useState(false);
+  const [browseError, setBrowseError] = useState(false);
+  const [browseRetry, setBrowseRetry] = useState(0);
+  // Di bawah breakpoint lg, keranjang + pembayaran tampil sebagai drawer dari kanan; di lg menjadi panel tetap.
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+  const [cartOpen, setCartOpen] = useState(false);
+  const [gridDensity, setGridDensity] = useState(() => {
+    try { return localStorage.getItem('pos_grid_density') || 'normal'; } catch (_e) { return 'normal'; }
+  });
   const [loading, setLoading] = useState(false); // Changed: false instead of true - tidak perlu load produk awal
   const [loadError, setLoadError] = useState(null);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -182,19 +197,84 @@ const PosPage = () => {
   const snapshotStackRef = useRef([]);
   const MAX_SNAPSHOTS = 5;
 
+  const readUsage = () => {
+    try { return JSON.parse(localStorage.getItem('pos_product_usage') || '{}'); } catch (_e) { return {}; }
+  };
+  const recordUsage = useCallback((product) => {
+    try {
+      const usage = readUsage();
+      const key = String(product.id_produk);
+      usage[key] = { count: (usage[key]?.count || 0) + 1, last: Date.now(), product };
+      const keys = Object.keys(usage);
+      if (keys.length > 60) {
+        keys.sort((a, b) => usage[a].last - usage[b].last).slice(0, keys.length - 60).forEach(k => delete usage[k]);
+      }
+      localStorage.setItem('pos_product_usage', JSON.stringify(usage));
+    } catch (_e) { /* storage tidak tersedia */ }
+  }, []);
+  const changeDensity = useCallback((d) => {
+    setGridDensity(d);
+    try { localStorage.setItem('pos_grid_density', d); } catch (_e) { /* abaikan */ }
+  }, []);
+
+  // Keranjang kosong (mis. setelah transaksi selesai) atau layar melebar ke desktop: tutup drawer.
+  useEffect(() => {
+    if (cart.length === 0 || isDesktop) setCartOpen(false);
+  }, [cart.length, isDesktop]);
+
+  const closeCart = useCallback(() => setCartOpen(false), []);
+
+  const cartQtyMap = useMemo(() => {
+    const m = {};
+    cart.forEach(i => { m[i.id_produk] = i.jumlah; });
+    return m;
+  }, [cart]);
+
+  const idCabangPengguna = user?.id_cabang;
+  const [tipeKatalog, setTipeKatalog] = useState('global');
+  const [tipeKatalogKnown, setTipeKatalogKnown] = useState(false);
+
+  // Penjaga katalog (defensif; server tetap penentu). Produk tanpa info pemilik dianggap sah.
+  const belongsToCatalog = useCallback((p) => {
+    // Selama tipe katalog cabang belum diketahui, jangan menyaring (hindari menyembunyikan produk sah).
+    if (!tipeKatalogKnown || !p || p.id_cabang_pemilik === undefined) return true;
+    const pemilik = p.id_cabang_pemilik === null || p.id_cabang_pemilik === '' ? null : Number(p.id_cabang_pemilik);
+    return tipeKatalog === 'terpisah' ? pemilik === Number(idCabangPengguna) : pemilik === null;
+  }, [tipeKatalog, tipeKatalogKnown, idCabangPengguna]);
+
   const filteredProducts = useMemo(() => {
     if (!Array.isArray(products)) return [];
     if (loading) return products;
 
     const term = String(searchTerm || '').trim().toLowerCase();
-    if (!term) return products;
+    const inCatalog = products.filter(belongsToCatalog);
+    const byCategory = (activeCategory === 'all' || activeCategory === 'recent' || activeCategory === 'fav')
+      ? inCatalog
+      : inCatalog.filter((p) => String(p?.id_kategori ?? '') === String(activeCategory));
+    if (!term) return byCategory;
 
-    return products.filter((product) => {
+    return byCategory.filter((product) => {
       const name = String(product?.nama_produk || '').toLowerCase();
       const kode = String(product?.kode_produk || '').toLowerCase();
       return name.includes(term) || (kode && kode.includes(term));
     });
-  }, [products, searchTerm, loading]);
+  }, [products, searchTerm, loading, activeCategory, belongsToCatalog]);
+
+  // Riwayat pencarian lama sudah dihapus dari UI: bersihkan data tersimpan sekali.
+  useEffect(() => {
+    try { localStorage.removeItem('pos_recent_searches'); localStorage.removeItem('pos_search_history'); } catch (_e) { /* abaikan */ }
+  }, []);
+
+  // Deteksi input scanner di kolom pencarian: rata-rata antar-karakter < 60 ms.
+  // Manusia tidak bisa mengetik >= 6 karakter secepat itu; scanner Bluetooth biasanya 10-50 ms.
+  const searchKeyTimesRef = useRef([]);
+  const isScannerLikeInput = useCallback((value) => {
+    const t = searchKeyTimesRef.current;
+    if (!value || value.length < 6 || t.length < value.length) return false;
+    const recent = t.slice(-value.length);
+    const avg = (recent[recent.length - 1] - recent[0]) / Math.max(1, recent.length - 1);
+    return avg < 60;
+  }, []);
 
   useEffect(() => {
     if (selectedProductIndex >= filteredProducts.length) {
@@ -388,6 +468,15 @@ const PosPage = () => {
   const [manualPricingOverrides, setManualPricingOverrides] = useState({}); // { productId: 'eceran' | 'grosir' | 'auto' }
   const barcodeInputRef = useRef(null);
   const pendingPaymentRef = useRef(false);
+  // Stable transaction code across retries of the same checkout attempt.
+  // kode_transaksi has a UNIQUE constraint in the backend DB — as long as
+  // this stays the same across a retry, a request that actually succeeded
+  // server-side but whose response was lost (network blip) makes the retry
+  // fail with a duplicate-key error instead of silently creating a second
+  // sale. Previously this was regenerated with Date.now() on every
+  // handleSubmit call, defeating that protection entirely. Cleared on
+  // successful submit and whenever the cart is rebuilt from empty.
+  const pendingTransactionCodeRef = useRef(null);
   const lastScanTimeRef = useRef(0);
   const timeoutManager = useRef(new TimeoutManager()); // Centralized timeout management
 
@@ -405,25 +494,42 @@ const PosPage = () => {
     };
   }, []);
 
-  const idCabangPengguna = user?.id_cabang;
-  const [tipeKatalog, setTipeKatalog] = useState('global');
 
   useEffect(() => {
+    const cacheKey = `branchTipeKatalog:${idCabangPengguna}`;
+    const apply = (tipe) => {
+      if (tipe !== 'global' && tipe !== 'terpisah') return false;
+      setTipeKatalog(tipe);
+      setTipeKatalogKnown(true);
+      try { localStorage.setItem(cacheKey, tipe); } catch (_e) { /* abaikan */ }
+      return true;
+    };
     const loadBranchTipeKatalog = async () => {
+      if (!idCabangPengguna) return;
+      // 1) Database lokal Electron
       try {
-        if (idCabangPengguna && window.electronAPI?.dbSelect) {
+        if (window.electronAPI?.dbSelect) {
           const res = await window.electronAPI.dbSelect({
             table: 'branches',
             whereClause: 'id_cabang = ?',
             whereValues: [idCabangPengguna]
           });
-          if (res && res.length > 0) {
-            setTipeKatalog(res[0].tipe_katalog || 'global');
-          }
+          if (res && res.length > 0 && apply(res[0].tipe_katalog || 'global')) return;
         }
       } catch (err) {
         console.warn('Failed to load branch tipe_katalog offline:', err);
       }
+      // 2) API (versi web, atau tabel lokal belum terisi)
+      try {
+        const res = await getBranchById(idCabangPengguna);
+        const row = res?.data?.data || res?.data;
+        if (apply(row?.tipe_katalog || 'global')) return;
+      } catch (_apiErr) { /* lanjut ke cadangan */ }
+      // 3) Cadangan terakhir yang tersimpan (offline di web)
+      try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) apply(cached);
+      } catch (_e) { /* abaikan */ }
     };
     loadBranchTipeKatalog();
   }, [idCabangPengguna]);
@@ -435,7 +541,7 @@ const PosPage = () => {
   const cacheStockReportData = useCallback(async (stockData) => {
     try {
       if (!Array.isArray(stockData) || stockData.length === 0) {
-        console.warn('⚠️ No stock data to cache');
+        console.warn('No stock data to cache');
         return;
       }
 
@@ -456,23 +562,23 @@ const PosPage = () => {
       });
 
       if (stocks.length === 0) {
-        console.warn('⚠️ No stocks extracted from stock report');
+        console.warn('No stocks extracted from stock report');
         return;
       }
 
       // Save ke offline database
       if (!window.electronAPI?.productDB_bulkUpsertStocks) {
-        console.warn('⚠️ No IPC for saving stocks');
+        console.warn('No IPC for saving stocks');
         return;
       }
 
       const result = await window.electronAPI.productDB_bulkUpsertStocks(stocks);
-      if (result.success) {
+      if (result.success) { /* intentionally empty */ 
       } else {
-        console.warn('⚠️ Failed to cache stocks:', result.error);
+        console.warn('Failed to cache stocks:', result.error);
       }
     } catch (err) {
-      console.error('❌ Error caching stock data:', err);
+      console.error('Error caching stock data:', err);
     }
   }, []);
 
@@ -483,20 +589,20 @@ const PosPage = () => {
   const loadStockFromCache = useCallback(async () => {
     try {
       if (!idCabangPengguna) {
-        console.warn('⚠️ No cabang info to load stocks');
+        console.warn('No cabang info to load stocks');
         return [];
       }
 
       // Load stock dari offline database
       if (!window.electronAPI?.productDB_getStocksByCabang) {
-        console.warn('⚠️ No IPC for offline stocks');
+        console.warn('No IPC for offline stocks');
         return [];
       }
 
       const stocks = await window.electronAPI.productDB_getStocksByCabang(idCabangPengguna);
 
       if (!Array.isArray(stocks) || stocks.length === 0) {
-        console.warn('⚠️ No stocks in offline database for cabang', idCabangPengguna);
+        console.warn('No stocks in offline database for cabang', idCabangPengguna);
         return [];
       }
       // Convert ke stockReport format untuk kompatibilitas
@@ -512,7 +618,7 @@ const PosPage = () => {
         updated_at: s.updated_at
       }));
     } catch (err) {
-      console.error('❌ Error loading stock from cache:', err);
+      console.error('Error loading stock from cache:', err);
       return [];
     }
   }, [idCabangPengguna]);
@@ -558,56 +664,56 @@ const PosPage = () => {
             const stockReportRes = await getStockReport();
             stockReportData = stockReportRes?.data?.data || [];
             if (stockReportData.length > 0) {
-              logger.info(`✅ Stock report loaded from API (${stockReportData.length} records)`);
+              logger.info(`Stock report loaded from API (${stockReportData.length} records)`);
               
               // Cache stock data for offline use
               try {
                 await cacheStockReportData(stockReportData);
               } catch (cacheErr) {
-                console.warn('⚠️ Failed to cache stock data:', cacheErr);
+                console.warn('Failed to cache stock data:', cacheErr);
                 // Non-critical, continue
               }
             } else {
-              logger.warn('⚠️ API returned empty stock data, trying offline cache...');
+              logger.warn('API returned empty stock data, trying offline cache...');
               // Empty API result - try cache as fallback
               try {
                 stockReportData = await loadStockFromCache() || [];
                 if (stockReportData.length > 0) {
-                  logger.info(`📦 Loaded ${stockReportData.length} stock records from offline cache`);
+                  logger.info(`Loaded ${stockReportData.length} stock records from offline cache`);
                 } else {
-                  logger.warn('⚠️ No stock data in offline cache either');
+                  logger.warn('No stock data in offline cache either');
                 }
               } catch (cacheErr) {
-                console.warn('⚠️ Failed to load from cache:', cacheErr);
+                console.warn('Failed to load from cache:', cacheErr);
               }
             }
           } catch (_apiError) {
-            logger.warn('⚠️ API fetch failed for stock report, trying offline cache...');
+            logger.warn('API fetch failed for stock report, trying offline cache...');
             // API error - try cache
             try {
               stockReportData = await loadStockFromCache() || [];
               if (stockReportData.length > 0) {
-                logger.info(`📦 Loaded ${stockReportData.length} stock records from offline cache`);
+                logger.info(`Loaded ${stockReportData.length} stock records from offline cache`);
               } else {
-                logger.warn('⚠️ No stock data in offline cache');
+                logger.warn('No stock data in offline cache');
               }
             } catch (cacheLoadErr) {
-              console.error('❌ Failed to load stock from cache:', cacheLoadErr);
+              console.error('Failed to load stock from cache:', cacheLoadErr);
             }
           }
         } else {
           // Offline mode - go directly to cache (no API attempt)
-          logger.info('🔌 Offline mode detected, loading stock from offline cache...');
+          logger.info('Offline mode detected, loading stock from offline cache...');
           try {
             stockReportData = await loadStockFromCache() || [];
             if (stockReportData.length > 0) {
-              logger.info(`✅ Loaded ${stockReportData.length} stock records from offline cache`);
+              logger.info(`Loaded ${stockReportData.length} stock records from offline cache`);
             } else {
-              logger.warn('⚠️ No stock data in offline cache');
+              logger.warn('No stock data in offline cache');
               stockReportData = [];
             }
           } catch (cacheLoadErr) {
-            console.error('❌ Error loading stock from offline cache:', cacheLoadErr);
+            console.error('Error loading stock from offline cache:', cacheLoadErr);
             stockReportData = [];
           }
         }
@@ -654,6 +760,19 @@ const PosPage = () => {
     };
   }, [idCabangPengguna, fetchPaymentMethods, cacheStockReportData, loadStockFromCache, getConnectionStatus]);
 
+  // Load kategori untuk chips filter
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getCategories();
+        const list = res?.data?.data || res?.data || [];
+        if (!cancelled && Array.isArray(list)) setCategories(list);
+      } catch (_e) { /* chips opsional */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   // Debounced search effect
   useEffect(() => {
     if (!idCabangPengguna) return;
@@ -667,8 +786,9 @@ const PosPage = () => {
         return;
       }
 
-      if (searchTerm.length >= 3) {
+      if (searchTerm.length >= 1) {
         const cleanQuery = searchTerm.trim().toLowerCase();
+        const suggestionLimit = cleanQuery.length >= 3 ? 50 : 8;
         
         try {
           // Quick cache check FIRST - check if we have cached results for this exact query
@@ -691,13 +811,15 @@ const PosPage = () => {
           // Try API only if online
           if (isOnline) {
             try {
-              const searchRes = await getProducts({ 
-                limit: 50,
+              const searchRes = await getProducts({
+                limit: suggestionLimit,
                 page: 1,
                 status: 'aktif',
                 search: cleanQuery,
                 sortBy: 'nama_produk',
-                sortOrder: 'asc'
+                sortOrder: 'asc',
+                katalog_filter: tipeKatalog,
+                id_cabang: tipeKatalog === 'terpisah' ? idCabangPengguna : undefined
               });
               
               if (currentSearchId !== searchIdRef.current || !isStillRelevant) return;
@@ -721,7 +843,7 @@ const PosPage = () => {
                     time: Date.now()
                   }));
                 } catch (storageErr) {
-                  console.warn('⚠️ Session storage error (API search cache):', storageErr.message);
+                  console.warn('Session storage error (API search cache):', storageErr.message);
                   logger.warn('Store session cache failed:', storageErr);
                   // Continue anyway - search still works without cache
                 }
@@ -729,7 +851,7 @@ const PosPage = () => {
                 setProducts(enhanced);
                 return;
               }
-            } catch (_apiErr) {
+            } catch (_apiErr) { /* intentionally empty */ 
             }
           }
           
@@ -742,12 +864,14 @@ const PosPage = () => {
           if (offlineResults.length === 0 && isOnline) {
             try {
               const retryRes = await getProducts({
-                limit: 50,
+                limit: suggestionLimit,
                 page: 1,
                 status: 'aktif',
                 search: cleanQuery,
                 sortBy: 'nama_produk',
-                sortOrder: 'asc'
+                sortOrder: 'asc',
+                katalog_filter: tipeKatalog,
+                id_cabang: tipeKatalog === 'terpisah' ? idCabangPengguna : undefined
               });
               const retryData = retryRes.data?.data || [];
               if (retryData.length > 0) {
@@ -766,7 +890,7 @@ const PosPage = () => {
                 setProducts(enhanced);
                 return;
               }
-            } catch (_retryErr) {
+            } catch (_retryErr) { /* intentionally empty */ 
             }
           }
           
@@ -794,7 +918,7 @@ const PosPage = () => {
               time: Date.now()
             }));
           } catch (storageErr) {
-            console.warn('⚠️ Session storage error (offline search cache):', storageErr.message);
+            console.warn('Session storage error (offline search cache):', storageErr.message);
             logger.warn('Store session cache failed:', storageErr);
             // Continue anyway - search still works without cache
           }
@@ -812,16 +936,68 @@ const PosPage = () => {
       } else if (searchTerm.length === 0) {
         // CRITICAL: Check race condition before clearing products
         if (currentSearchId !== searchIdRef.current || !isStillRelevant) return;
-        setProducts([]);
+        // Browse mode: tampilkan produk (per kategori) tanpa harus mengetik
+        if (activeCategory === 'recent' || activeCategory === 'fav') {
+          const usage = Object.values(readUsage());
+          usage.sort(activeCategory === 'recent' ? (a, b) => b.last - a.last : (a, b) => b.count - a.count);
+          setBrowseError(false);
+          setProducts(usage.slice(0, 30).map(u => u.product));
+          return;
+        }
+        const normalize = (p) => ({
+          ...p,
+          harga_jual: Number(p.harga_jual || p.harga_eceran || 0),
+          harga_beli: Number(p.harga_beli || 0),
+          harga_grosir: Number(p.harga_grosir || 0),
+          min_qty_grosir: Number(p.min_qty_grosir || 0),
+          barcode: p.barcode || p.kode_produk,
+        });
+        const loadOffline = async () => {
+          const rows = await searchOfflineProducts('', false, { id_cabang: idCabangPengguna, tipe_katalog: tipeKatalog });
+          return (rows || []).map(normalize);
+        };
+
+        setBrowseLoading(true);
+        setBrowseError(false);
+        let list = null;
+        let apiFailed = false;
+        if (isOnline) {
+          try {
+            const res = await getProducts({
+              limit: 60,
+              page: 1,
+              status: 'aktif',
+              kategori: activeCategory !== 'all' ? activeCategory : undefined,
+              sortBy: 'nama_produk',
+              sortOrder: 'asc',
+              katalog_filter: tipeKatalog,
+              id_cabang: tipeKatalog === 'terpisah' ? idCabangPengguna : undefined
+            });
+            list = (res.data?.data || []).map(normalize);
+          } catch (_apiErr) {
+            // Server error/timeout: jatuh ke data lokal di bawah
+            list = null;
+            apiFailed = true;
+          }
+        }
+        if (list === null) {
+          try { list = await loadOffline(); } catch (_offErr) { list = null; }
+        }
+        if (currentSearchId !== searchIdRef.current || !isStillRelevant) return;
+        setBrowseLoading(false);
+        // API gagal dan data lokal kosong/tak tersedia = error nyata (bukan "tidak ada produk")
+        if (list === null || (apiFailed && list.length === 0)) { setProducts([]); setBrowseError(true); }
+        else setProducts(list);
       }
-    }, 300); // Debounce 300ms to reduce heavy searches
+    }, searchTerm.length === 0 ? 50 : 300); // Debounce 300ms to reduce heavy searches
 
     return () => {
       isStillRelevant = false;
       clearTimeout(timeoutId);
+      setBrowseLoading(false); // jangan tinggalkan skeleton menggantung bila pemuatan dibatalkan
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, idCabangPengguna, tipeKatalog, isOnline, searchOfflineProducts, getConnectionStatus]);
+  }, [searchTerm, activeCategory, browseRetry, idCabangPengguna, tipeKatalog, isOnline, searchOfflineProducts, getConnectionStatus]);
 
   const getProductStock = useCallback((id_produk) => {
     return stockInfo[id_produk] || 0;
@@ -923,6 +1099,11 @@ const PosPage = () => {
         showErrorDebounced(`Stok produk ${product.nama_produk} habis.`);
         return;
       }
+      if (!belongsToCatalog(product)) {
+        showErrorDebounced(`Produk ${product.nama_produk} bukan bagian dari katalog cabang ini.`);
+        return;
+      }
+      recordUsage(product);
 
       let shouldShowWholesaleMessage = false;
       let wholesaleProductName = '';
@@ -990,7 +1171,8 @@ const PosPage = () => {
       // Auto-focus behavior depends on source:
       // - Barcode scan: Keep focus on barcode input for continuous scanning
       // - Manual add: Focus search input for convenience
-      if (!fromBarcodeScan && !skipSearchFocus) {
+      const isTouchPrimary = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches;
+      if (!fromBarcodeScan && !skipSearchFocus && !isTouchPrimary) {
         setTimeout(() => {
           const searchInput = searchInputRef.current;
           if (searchInput) {
@@ -1007,18 +1189,17 @@ const PosPage = () => {
       }
 
       // Show success feedback
-      showSuccess(`+ ${product.nama_produk}`);
+      // Umpan balik singkat: badge jumlah di kartu produk sudah menunjukkan hasilnya, jadi toast tidak perlu lama.
+      showSuccess(`+ ${product.nama_produk}`, { autoClose: 1000, hideProgressBar: true, toastId: `cart-add-${product.id_produk}` });
     } finally {
       // Release lock after a short delay to prevent too rapid clicks
       setTimeout(() => {
         cartLockRef.current = false;
       }, 100);
     }
-  }, [getProductStock, showErrorDebounced, showSuccess, debugGetProductPricing, saveCartSnapshot]);
+  }, [getProductStock, showErrorDebounced, showSuccess, debugGetProductPricing, saveCartSnapshot, recordUsage, belongsToCatalog]);
 
   // Track input timing to detect rapid scanner input vs manual typing
-  const lastInputTimeRef = useRef(0);
-
   const handleBarcodeScan = useCallback(async (barcode) => {
     if (!barcode || barcode.trim() === '') return;
 
@@ -1050,7 +1231,9 @@ const PosPage = () => {
             page: 1,
             status: 'aktif',
             sortBy: 'nama_produk',
-            sortOrder: 'asc'
+            sortOrder: 'asc',
+            katalog_filter: tipeKatalog,
+            id_cabang: tipeKatalog === 'terpisah' ? idCabangPengguna : undefined
           });
           const loadedProducts = allProductsRes.data?.data || [];
           const enhancedProducts = loadedProducts.map(p => ({
@@ -1062,7 +1245,7 @@ const PosPage = () => {
             barcode: p.barcode || p.kode_produk,
           }));
           setProducts(enhancedProducts);
-          logger.info(`✅ Auto-loaded ${enhancedProducts.length} products for barcode scan`);
+          logger.info(`Auto-loaded ${enhancedProducts.length} products for barcode scan`);
         } catch (err) {
           logger.error('Failed to auto-load products for barcode scan:', err);
           showErrorDebounced('Gagal memuat produk untuk scan');
@@ -1125,7 +1308,9 @@ const PosPage = () => {
             status: 'aktif',
             search: cleanedBarcode,
             sortBy: 'nama_produk',
-            sortOrder: 'asc'
+            sortOrder: 'asc',
+            katalog_filter: tipeKatalog,
+            id_cabang: tipeKatalog === 'terpisah' ? idCabangPengguna : undefined
           });
           searchResults = searchRes.data?.data || [];
         }
@@ -1184,7 +1369,7 @@ const PosPage = () => {
       logger.debug('Sample products:', products.slice(0, 3).map(p => ({ kode: p.kode_produk, barcode: p.barcode })));
       showErrorDebounced(`Produk dengan kode ${cleanedBarcode} tidak ditemukan. Pastikan produk sudah dimuat dan aktif.`);
     }, 100);
-  }, [products, loading, isOnline, searchOfflineProducts, handleAddToCart, showErrorDebounced, stockInfo]);
+  }, [products, loading, isOnline, idCabangPengguna, tipeKatalog, searchOfflineProducts, handleAddToCart, showErrorDebounced, stockInfo]);
 
   useEffect(() => {
     barcodeInputRef.current?.focus();
@@ -1644,7 +1829,7 @@ const PosPage = () => {
           return;
         }
         
-        logger.debug(`✅ Product validation completed successfully (${validationTime.toFixed(0)}ms)`);
+        logger.debug(`Product validation completed successfully (${validationTime.toFixed(0)}ms)`);
         progress.show('CREATING_SALE');
       } catch (error) {
         const mapped = mapErrorToUserMessage(error);
@@ -1668,8 +1853,12 @@ const PosPage = () => {
       }
     }
 
+    if (!pendingTransactionCodeRef.current) {
+      pendingTransactionCodeRef.current = `POS-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    }
+
     const saleData = {
-      kode_transaksi: `POS-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      kode_transaksi: pendingTransactionCodeRef.current,
       id_cabang: Number(user.id_cabang),
       id_user: Number(user.id_user),
       bayar: paymentAmount,
@@ -1870,6 +2059,7 @@ const PosPage = () => {
         setIsPendingPayment(false);
       });
       pendingPaymentRef.current = false;
+      pendingTransactionCodeRef.current = null;
 
       perfMonitor.mark('afterStateUpdates');
 
@@ -1915,7 +2105,7 @@ const PosPage = () => {
       
       // Show detailed error with recovery suggestion
       const recovery = getRecoverySuggestion(err);
-      showError(`❌ ${mapped.userMessage}\n\n💡 ${recovery}`);
+      showError(`${mapped.userMessage}\n\n${recovery}`);
       
       progress.error(mapped.userMessage);
     } finally {
@@ -1975,7 +2165,7 @@ const PosPage = () => {
       // Save to offline database
       if (window.electronAPI && window.electronAPI.dbSaveSale) {
         await window.electronAPI.dbSaveSale({ saleData: offlineSaleData, items, payments });
-        showSuccess(`✅ Transaksi disimpan offline! ID: ${tempSaleId}\n(akan disinkronkan saat online)`);
+        showSuccess(`Transaksi disimpan offline! ID: ${tempSaleId}\n(akan disinkronkan saat online)`);
       } else {
         throw new Error('Offline database tidak tersedia');
       }
@@ -2017,7 +2207,7 @@ const PosPage = () => {
       perfMonitor.log();
     } catch (err) {
       const mapped = mapErrorToUserMessage(err);
-      showError(`❌ Gagal menyimpan transaksi offline:\n${mapped.userMessage}`);
+      showError(`Gagal menyimpan transaksi offline:\n${mapped.userMessage}`);
       logger.error('Offline transaction error:', err);
     } finally {
       setIsSubmitting(false);
@@ -2093,7 +2283,7 @@ const PosPage = () => {
           searchInput.select();
           setFocusedSection('search');
           setSelectedProductIndex(-1);
-          setCurrentKeyboardHint('Ketik untuk cari produk • ↓ untuk navigasi • ↵ untuk pilih');
+          setCurrentKeyboardHint('Ketik untuk cari produk • Panah Bawah untuk navigasi • Enter untuk pilih');
         }
         return;
       }
@@ -2102,7 +2292,7 @@ const PosPage = () => {
       if (e.key === 'F3') {
         e.preventDefault();
         setShowCameraScanner(true);
-        setCurrentKeyboardHint('📷 Scanner barcode aktif • Esc untuk tutup');
+        setCurrentKeyboardHint('Scanner barcode aktif • Esc untuk tutup');
         return;
       }
 
@@ -2132,7 +2322,7 @@ const PosPage = () => {
                 customerSearchRef.current.select();
               }
             }, 100);
-            setCurrentKeyboardHint('Cari pelanggan • Ketik nama/nomor member • ↵ untuk pilih');
+            setCurrentKeyboardHint('Cari pelanggan • Ketik nama/nomor member • Enter untuk pilih');
           }
           return willOpen;
         });
@@ -2143,7 +2333,7 @@ const PosPage = () => {
       if (e.key === 'F6' && cart.length > 0 && !(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
         e.preventDefault();
         setShowDiscountDialog(true);
-        setCurrentKeyboardHint('Dialog Diskon • Masukkan nominal atau persentase • ↵ terapkan');
+        setCurrentKeyboardHint('Dialog Diskon • Masukkan nominal atau persentase • Enter terapkan');
         return;
       }
 
@@ -2154,7 +2344,7 @@ const PosPage = () => {
         const paymentMethodSelect = document.getElementById('payment-method-select');
         if (paymentMethodSelect) {
           paymentMethodSelect.focus();
-          setCurrentKeyboardHint('💳 Pilih metode pembayaran • ↑↓ untuk pilih • ↵ untuk confirm');
+          setCurrentKeyboardHint('Pilih metode pembayaran • Panah Atas/Bawah untuk pilih • Enter untuk confirm');
         }
         return;
       }
@@ -2193,7 +2383,7 @@ const PosPage = () => {
       if (e.key === 'b' && e.altKey) {
         e.preventDefault();
         setShowCameraScanner(true);
-        setCurrentKeyboardHint('📷 Barcode Scanner aktif • Arahkan ke barcode • Esc untuk tutup');
+        setCurrentKeyboardHint('Barcode Scanner aktif • Arahkan ke barcode • Esc untuk tutup');
         return;
       }
 
@@ -2317,7 +2507,7 @@ const PosPage = () => {
         if (cart.length > 0) {
           setFocusedSection('cart');
           setCartFocusedIndex(0);
-          setCurrentKeyboardHint('Navigasi ke Keranjang • ↑↓ untuk pilih item • +/- untuk qty');
+          setCurrentKeyboardHint('Navigasi ke Keranjang • Panah Atas/Bawah untuk pilih item • +/- untuk qty');
         } else {
           showError('Keranjang masih kosong');
         }
@@ -2815,7 +3005,7 @@ const PosPage = () => {
 
   return (
     <PosErrorBoundary>
-      <div className="min-h-screen bg-gray-100 p-2 sm:p-4">
+      <div className="min-h-screen bg-gray-100 p-2 sm:p-4 pb-24 lg:pb-4">
       {/* Status Bar */}
       <div className="mb-2 sm:mb-4 flex items-center justify-between bg-white rounded-lg shadow-sm p-2 sm:p-3">
         <div className="flex flex-wrap items-center gap-2 sm:gap-4">
@@ -2828,7 +3018,7 @@ const PosPage = () => {
               {getConnectionStatus().isOnline ? 'Online' : 'Offline'}
             </span>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm font-medium text-gray-500">
+          <div className="hidden lg:flex flex-wrap items-center gap-2 text-xs sm:text-sm font-medium text-gray-500">
             <span
               role="button"
               tabIndex={0}
@@ -2894,9 +3084,9 @@ const PosPage = () => {
 
       <div className="flex flex-col lg:flex-row gap-3 sm:gap-6">
       {/* Left Panel - Products */}
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <div 
-          className={`bg-white rounded-lg shadow-md p-3 sm:p-6 transition-all duration-300 cursor-pointer ${focusedSection === 'search' || focusedSection === 'products' ? 'ring-4 ring-blue-500 ring-opacity-75 border-2 border-blue-500 shadow-lg shadow-blue-500/25' : 'border border-gray-200 hover:border-gray-300 hover:shadow-md'}`}
+          className={`bg-white rounded-lg shadow-md p-3 sm:p-6 transition-all duration-300 cursor-pointer ${focusedSection === 'search' || focusedSection === 'products' ? 'ring-2 ring-blue-500/50 border border-blue-300' : 'border border-gray-200'}`}
           onClick={() => {
             setFocusedSection('search');
             if (searchInputRef.current) {
@@ -2918,7 +3108,7 @@ const PosPage = () => {
           }}
         >
           <div className="flex justify-between items-center mb-3 sm:mb-4">
-            <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 text-gray-900">
+            <h2 className="text-base sm:text-lg font-semibold tracking-tight flex items-center gap-2 text-gray-900">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m0 0l8 4m-8-4v10l8 4m0-10l8 4m-8-4v10M10 9l4 2m-4-2l4-2" />
               </svg>
@@ -2926,10 +3116,23 @@ const PosPage = () => {
             </h2>
             <div className="flex gap-1 sm:gap-2">
               <button
+                type="button"
+                onClick={() => setCartOpen(true)}
+                className="btn-icon btn-tonal relative lg:hidden"
+                aria-label={`Buka keranjang (${cart.length} item)`}
+              >
+                <ShoppingCart className="h-5 w-5" aria-hidden="true" />
+                {cart.length > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-blue-600 px-1 text-[11px] font-bold tabular-nums text-white">
+                    {cart.length}
+                  </span>
+                )}
+              </button>
+              <button
                 onClick={() => {
                   setShowCameraScanner(true);
                 }}
-                className="w-10 h-10 flex items-center justify-center bg-gray-700 text-white rounded hover:bg-gray-800 touch-manipulation"
+                className="btn-icon btn-tonal"
                 title="Scan (F3)"
                 aria-label="Scan barcode dengan kamera (F3)"
               >
@@ -2940,7 +3143,7 @@ const PosPage = () => {
               </button>
               <button
                 onClick={() => setShowShortcutsModal(true)}
-                className="w-10 h-10 flex items-center justify-center bg-gray-700 text-white rounded hover:bg-gray-800 transition-colors touch-manipulation"
+                className="btn-icon btn-tonal"
                 title="Bantuan & Shortcut Keyboard"
               >
                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2955,31 +3158,56 @@ const PosPage = () => {
             <div className="relative">
               <input
                 ref={searchInputRef}
-                type="text"
-                placeholder="Cari produk berdasarkan nama atau kode..."
+                placeholder="Cari produk atau scan barcode"
                 value={searchTerm}
+                type="search"
+                inputMode="search"
+                enterKeyHint="search"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
                 onChange={(e) => {
-                  setSearchTerm(e.target.value);
+                  const v = e.target.value;
+                  const now = Date.now();
+                  const times = searchKeyTimesRef.current;
+                  // Isi/hapus riwayat waktu sesuai panjang teks (paste atau hapus = reset)
+                  if (v.length <= 1 || v.length < times.length) searchKeyTimesRef.current = [now];
+                  else { times.push(now); if (times.length > 64) times.splice(0, times.length - 64); }
+                  setSearchTerm(v);
                   setSelectedProductIndex(-1);
                 }}
                 onKeyDown={(e) => {
-                  // Detect rapid input (likely scanner) and prevent it from being processed as search
-                  // Scanner typically enters data within 50-100ms, manual typing is slower
-                  const timeSinceLastInput = Date.now() - lastInputTimeRef.current;
-                  lastInputTimeRef.current = Date.now();
-                  
-                  // If this looks like rapid scanner input, redirect focus to barcode input
-                  // This prevents accidental filtering when scanner sends data to wrong field
-                  // Only redirect if it's extremely rapid (less than 50ms) and not Enter key
-                  if (e.key !== 'Enter' && timeSinceLastInput < 50 && timeSinceLastInput > 0) {
-                    logger.debug('Rapid input detected in search field - likely scanner input, redirecting to barcode input');
-                    if (barcodeInputRef.current) {
-                      // Clear the erroneous search input
-                      setSearchTerm('');
-                      // Focus barcode input so scanner data goes there next
-                      barcodeInputRef.current.focus();
-                      return;
-                    }
+                  if (e.key === 'Escape') {
+                    setSearchTerm('');
+                    searchKeyTimesRef.current = [];
+                    return;
+                  }
+                  if (e.key !== 'Enter') return;
+                  const value = e.currentTarget.value.trim();
+                  if (!value) return;
+                  e.preventDefault();
+
+                  // 1) Scanner fisik yang mengetik ke kolom ini: proses sebagai barcode
+                  if (isScannerLikeInput(value)) {
+                    searchKeyTimesRef.current = [];
+                    handleBarcodeScan(value);
+                    return;
+                  }
+
+                  // 2) Ketik manual: kode persis cocok atau hasil tunggal langsung masuk keranjang
+                  const lower = value.toLowerCase();
+                  const exact = filteredProducts.find(p =>
+                    String(p.kode_produk || '').toLowerCase() === lower ||
+                    String(p.barcode || '').toLowerCase() === lower);
+                  const target = exact || (filteredProducts.length === 1 ? filteredProducts[0] : null);
+                  if (target) {
+                    searchKeyTimesRef.current = [];
+                    handleAddToCart(target);
+                  } else if (/^\S{6,}$/.test(value) && filteredProducts.length === 0) {
+                    // Kode yang ditempel (paste) atau hasil belum termuat: cari persis ke sumber data
+                    searchKeyTimesRef.current = [];
+                    handleBarcodeScan(value);
                   }
                 }}
                 className="w-full px-4 py-3 sm:py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all touch-manipulation text-sm sm:text-base"
@@ -3005,7 +3233,41 @@ const PosPage = () => {
                 )}
               </div>
             </div>
+
           </div>
+
+          {/* Category chips - filter cepat */}
+          {(
+            <div
+              className="mb-3 sm:mb-4 flex gap-2 overflow-x-auto max-w-full pb-2 snap-x [scrollbar-width:thin] overscroll-x-contain"
+              role="tablist"
+              aria-label="Filter kategori produk"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {[{ id_kategori: 'all', nama_kategori: 'Semua' }, { id_kategori: 'fav', nama_kategori: 'Terlaris', Icon: Flame }, { id_kategori: 'recent', nama_kategori: 'Terakhir', Icon: History }, ...categories].map((cat) => {
+                const id = String(cat.id_kategori);
+                const active = String(activeCategory) === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => { setActiveCategory(id); setSelectedProductIndex(-1); }}
+                    className={`snap-start shrink-0 min-h-[40px] px-4 rounded-lg text-sm font-medium border transition-all duration-150 touch-manipulation whitespace-nowrap flex items-center gap-1.5 active:scale-95 ${
+                      active
+                        ? 'bg-blue-100 text-blue-900 border-blue-200 shadow-sm'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {active ? <Check className="w-4 h-4" aria-hidden="true" /> : (cat.Icon && <cat.Icon className="w-4 h-4" aria-hidden="true" />)}
+                    {cat.nama_kategori}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* Hidden barcode input - MUST ALWAYS BE FOCUSED for POS operation */}
           <input
@@ -3052,55 +3314,41 @@ const PosPage = () => {
             }}
           />
 
-          {/* Products Grid - Hidden on mobile, shown on desktop */}
-          <div className="hidden lg:block max-h-96 overflow-y-auto border-t pt-4 px-2">
+          {/* Products Grid - tampil di semua ukuran layar */}
+          <div className="border-t pt-3 sm:pt-4 max-h-[55vh] lg:max-h-[60vh] overflow-y-auto overflow-x-hidden min-w-0 px-1 sm:px-2" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between gap-2 mb-2 text-xs sm:text-sm text-gray-500">
+              <div className="flex rounded-lg border border-gray-300 overflow-hidden" role="group" aria-label="Ukuran kartu produk">
+                {[['compact','S'],['normal','M'],['large','L']].map(([d,l]) => (
+                  <button key={d} type="button" onClick={() => changeDensity(d)} aria-pressed={gridDensity === d}
+                    className={`w-9 min-h-[36px] text-xs font-semibold ${gridDensity === d ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>{l}</button>
+                ))}
+              </div>
+              <span className="flex-1 truncate">
+                {searchTerm ? `Hasil untuk "${searchTerm}"` : (activeCategory === 'all' ? 'Semua produk' : 'Kategori terpilih')}
+              </span>
+              <span>{filteredProducts.length} produk</span>
+            </div>
+            {browseError && !searchTerm && filteredProducts.length === 0 && !browseLoading && (
+              <div role="alert" className="flex flex-col items-center gap-3 py-8 text-center">
+                <p className="text-sm text-gray-600">Daftar produk gagal dimuat. Anda tetap bisa mencari atau scan barcode.</p>
+                <button
+                  type="button"
+                  onClick={() => setBrowseRetry(n => n + 1)}
+                  className="btn-primary"
+                >
+                  Coba lagi
+                </button>
+              </div>
+            )}
             <ProductGrid
               products={filteredProducts}
               stockInfo={stockInfo}
               onAddToCart={handleAddToCart}
-              loading={loading}
+              loading={loading || browseLoading}
+              density={gridDensity}
+              cartQty={cartQtyMap}
               selectedProductIndex={selectedProductIndex}
             />
-          </div>
-
-          {/* Mobile Product Access - Search results or scan buttons */}
-          <div className="lg:hidden border-t pt-4">
-            {searchTerm ? (
-              /* Show search results on mobile */
-              <div className="max-h-64 overflow-y-auto px-2">
-                <h3 className="text-lg font-medium mb-3 text-gray-900">Hasil Pencarian</h3>
-                <ProductGrid
-                  products={filteredProducts}
-                  stockInfo={stockInfo}
-                  onAddToCart={handleAddToCart}
-                  loading={loading}
-                  selectedProductIndex={selectedProductIndex}
-                />
-              </div>
-            ) : (
-              /* Show access instructions when no search */
-              <div className="text-center py-4 sm:py-6 bg-blue-50 rounded-lg">
-                <svg className="w-10 h-10 sm:w-12 sm:h-12 text-blue-500 mx-auto mb-2 sm:mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-                <h3 className="text-base sm:text-lg font-medium text-blue-900 mb-1 sm:mb-2">Akses Produk</h3>
-                <p className="text-sm text-blue-700 mb-3 sm:mb-4 px-2">
-                  Gunakan pencarian atau scan barcode untuk menambah produk ke keranjang
-                </p>
-                <div className="flex justify-center gap-2 sm:gap-3">
-                  <button
-                    onClick={() => setShowCameraScanner(true)}
-                    className="flex items-center gap-2 bg-blue-500 text-white px-3 sm:px-4 py-2 sm:py-2 rounded-lg hover:bg-blue-600 transition-colors touch-manipulation text-sm sm:text-base"
-                  >
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Scan Barcode
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -3121,11 +3369,18 @@ const PosPage = () => {
       )}
 
       {/* Right Panel - Cart & Payment (Split into 2 separate cards) */}
-      <div className="w-full lg:w-80 xl:w-96 flex flex-col gap-4">
+      <Drawer
+        open={cartOpen}
+        onClose={closeCart}
+        title="Keranjang"
+        docked={isDesktop}
+        dockedClassName="flex w-80 xl:w-96 shrink-0 min-w-0 flex-col gap-4"
+      >
         
         {/* CART CARD */}
         <div 
-          className={`bg-white rounded-lg shadow-md p-3 sm:p-6 transition-all duration-300 cursor-pointer ${focusedSection === 'cart' ? 'ring-4 ring-blue-500 ring-opacity-75 border-2 border-blue-500 shadow-lg shadow-blue-500/25' : 'border border-gray-200 hover:border-gray-300 hover:shadow-md'}`}
+          id="pos-cart-card"
+          className={`bg-white rounded-lg shadow-md p-3 sm:p-6 transition-all duration-300 cursor-pointer ${focusedSection === 'cart' ? 'ring-2 ring-blue-500/50 border border-blue-300' : 'border border-gray-200'}`}
           onClick={() => {
             setFocusedSection('cart');
             const firstCartItem = document.querySelector('[data-cart-item]');
@@ -3247,7 +3502,7 @@ const PosPage = () => {
 
         {!showPaymentModal && (
             <div 
-              className={`bg-white rounded-lg shadow-md p-3 sm:p-6 transition-all duration-300 cursor-pointer ${focusedSection.includes('payment') ? 'ring-4 ring-blue-500 ring-opacity-75 border-2 border-blue-500 shadow-lg shadow-blue-500/25' : 'border border-gray-200 hover:border-gray-300 hover:shadow-md'}`}
+              className={`bg-white rounded-lg shadow-md p-3 sm:p-6 transition-all duration-300 cursor-pointer ${focusedSection.includes('payment') ? 'ring-2 ring-blue-500/50 border border-blue-300' : 'border border-gray-200'}`}
               onClick={() => {
                 setFocusedSection('payment');
                 const paymentMethodSelect = document.getElementById('payment-method-select');
@@ -3286,7 +3541,7 @@ const PosPage = () => {
           {/* Customer Section */}
           {posSettings?.showCustomerSearch && (
             <div className="mb-3 pb-3 border-b">
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+              <div>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center space-x-2">
                     <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3315,7 +3570,7 @@ const PosPage = () => {
                       className="text-gray-600 hover:text-gray-800 p-1"
                       title="Hapus pelanggan"
                     >
-                      ✕
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
                 ) : (
@@ -3359,7 +3614,7 @@ const PosPage = () => {
           {/* Payment Amount Input */}
           {selectedPaymentMethod && (
             <div className="space-y-3">
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+              <div>
                 <div className="mb-2">
                   <div className="flex items-center space-x-2">
                     <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3546,7 +3801,7 @@ const PosPage = () => {
                 onClick={() => setShowCustomerPopup(false)}
                 className="text-gray-500 hover:text-gray-700 text-xl font-bold"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
             
@@ -3598,7 +3853,7 @@ const PosPage = () => {
             {/* Payment Amount Input */}
             {selectedPaymentMethod && (
               <div className="space-y-3">
-                <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <div>
                   <div className="mb-2">
                     <div className="flex items-center space-x-2">
                       <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3810,9 +4065,26 @@ const PosPage = () => {
         onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
         variant={confirmDialog.variant}
       />
+    </Drawer>
+  </div>
+  </div>
+  {/* Bilah bawah (< lg): akses cepat ke keranjang dengan total, dekat jempol */}
+  {cart.length > 0 && !isDesktop && (
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_12px_rgba(0,0,0,0.1)]">
+      <button
+        type="button"
+        onClick={() => setCartOpen(true)}
+        className="btn-primary btn-lg btn-block justify-between font-semibold"
+        aria-haspopup="dialog"
+      >
+        <span className="flex items-center gap-2">
+          <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-sm tabular-nums">{cart.length}</span>
+          Lihat Keranjang
+        </span>
+        <span className="text-lg tabular-nums">{formatCurrency(finalTotal)}</span>
+      </button>
     </div>
-  </div>
-  </div>
+  )}
   </PosErrorBoundary>
   );
 };
