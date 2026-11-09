@@ -108,3 +108,35 @@ test.describe('filter rentang tanggal cepat dan tanggal relatif', () => {
     await expect(page.getByText('HAPUS_LAMA')).toBeVisible();
   });
 });
+
+// Riwayat penjualan meminta RENTANG TANGGAL ke server (filter di database, bukan setelah batas 20 data) dan memberi tahu bila terpotong.
+test('Riwayat Penjualan: server diminta rentang hari ini (ISO lokal), banner bila hasil terpotong', async ({ page }) => {
+  const urls = [];
+  const sale = (id) => ({ id_penjualan: id, kode_transaksi: `TRX-${id}`, tanggal: new Date().toISOString(), total: 10000, status_pembayaran: 'lunas', id_cabang: 1, Cabang: { nama_cabang: 'Pusat' } });
+  await setupPos(page, [], {
+    onApi: (route, req) => {
+      if (/\/penjualan(\?|$)/.test(req.url()) && req.method() === 'GET') {
+        urls.push(req.url());
+        route.fulfill({ json: { success: true, data: [sale(1), sale(2), sale(3)], pagination: { total: 1500, page: 1, limit: 1000 } } });
+        return true;
+      }
+      return false;
+    },
+  });
+  await page.goto('/penjualan');
+  await expect(page.getByText('TRX-1', { exact: true })).toBeVisible({ timeout: 15000 });
+  const u = new URL(urls[0]);
+  expect(u.searchParams.get('limit')).toBe('1000');
+  const start = new Date(u.searchParams.get('start_date')), end = new Date(u.searchParams.get('end_date'));
+  const now = new Date();
+  expect(start.getHours()).toBe(0);                                  // awal hari LOKAL
+  expect(start.getDate()).toBe(now.getDate());
+  expect(end.getHours()).toBe(23); expect(end.getMinutes()).toBe(59); // akhir hari LOKAL
+  await expect(page.getByRole('status').filter({ hasText: 'Menampilkan 3 dari 1.500' })).toBeVisible();
+
+  // ganti periode -> permintaan baru dengan rentang berbeda
+  const before = urls.length;
+  await page.getByRole('group', { name: 'Periode' }).getByRole('button', { name: 'Semua' }).click();
+  await expect.poll(() => urls.length).toBeGreaterThan(before);
+  expect(new URL(urls[urls.length - 1]).searchParams.get('start_date')).toBeNull();
+});

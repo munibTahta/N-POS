@@ -171,6 +171,12 @@ export default React.memo(CartItem, (prevProps, nextProps) => {
     prevProps.item.subtotal === nextProps.item.subtotal &&
     prevProps.item.tipe_harga === nextProps.item.tipe_harga &&
     
+    // Callback: harus ikut dibandingkan. Pembanding lama melewatkannya sehingga baris memakai versi lama handler
+    // (yang menutup salinan keranjang lama untuk undo) sampai propsnya yang lain kebetulan berubah.
+    prevProps.onUpdateQuantity === nextProps.onUpdateQuantity &&
+    prevProps.onRemove === nextProps.onRemove &&
+    prevProps.onSetManualPricing === nextProps.onSetManualPricing &&
+
     // Stock comparison
     prevProps.stock === nextProps.stock &&
     

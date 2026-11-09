@@ -2,7 +2,7 @@ import React, { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import '@fontsource-variable/inter';
 import './styles/index.css'
-// import './styles/dark-compat.css' // jaring pengaman tema gelap (dibuat oleh scripts/dark-compat.mjs); harus SETELAH index.css
+import './styles/dark-compat.css' // jaring pengaman tema gelap (dibuat oleh scripts/dark-compat.mjs); harus SETELAH index.css
 import App from './App.jsx'
 import pendingPayments from './utils/pendingPayments';
 import { setupMemoryManagement } from './utils/memoryManager';

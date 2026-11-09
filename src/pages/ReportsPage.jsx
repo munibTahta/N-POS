@@ -56,6 +56,7 @@ const ReportsPage = () => {
   const [granularity, setGranularity] = useState('all'); // 'all' | 'daily' | 'monthly' | 'yearly'
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [salesTotalCount, setSalesTotalCount] = useState(null); // total penjualan di server (bisa lebih besar dari yang dimuat)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -73,6 +74,7 @@ const ReportsPage = () => {
             getSalesReturns()
           ]);
           salesData = extractArray(salesRes);
+          setSalesTotalCount(Number(salesRes?.data?.pagination?.total ?? salesData.length));
           stockData = extractArray(stockRes);
           productsData = []; // Skip loading huge catalog into memory
           returnsData = extractArray(returnsRes);
@@ -943,6 +945,12 @@ const ReportsPage = () => {
         </div>
       )}
 
+      {salesTotalCount != null && salesTotalCount > sales.length && (
+        <div role="status" className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          Laporan ini memuat {sales.length.toLocaleString('id-ID')} dari {salesTotalCount.toLocaleString('id-ID')} transaksi terbaru, jadi angka di bawah belum mencakup seluruh periode. Gunakan &quot;Export Server Report&quot; untuk angka lengkap.
+        </div>
+      )}
+
       {/* Kartu Ringkasan */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
         <div className="bg-white p-4 rounded-xl shadow-sm">
@@ -1022,17 +1030,17 @@ const ReportsPage = () => {
         <h3 className="text-base font-bold mb-3 flex items-center gap-2"><CreditCard className="w-4 h-4 text-slate-500" />Distribusi Metode Pembayaran</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {((serverPaymentStats && serverPaymentStats.length > 0) ? serverPaymentStats : paymentMethodRevenue || []).map((method, idx) => (
-            <div key={idx} className="border rounded-lg p-3 bg-gradient-to-br from-purple-50 to-purple-100">
-              <h4 className="font-semibold text-gray-700 text-sm truncate" title={method.nama_metode || method.nama_metode}>{method.nama_metode || method.nama_metode}</h4>
-              <p className="text-xs text-gray-600 mt-1">Transaksi: <span className="font-bold">{method.total_transaksi ?? method.transactionCount}</span></p>
-              <p className="text-xs text-gray-600">Pendapatan: <span className="font-bold">Rp {formatRupiah(method.total_nominal ?? method.totalRevenue)}</span></p>
-              <div className="mt-2 bg-gray-200 rounded-full h-1">
+            <div key={idx} className="rounded-xl p-3 bg-gray-50 dark:bg-zinc-800/60">
+              <h4 className="font-semibold text-gray-900 dark:text-zinc-100 text-sm truncate" title={method.nama_metode || method.nama_metode}>{method.nama_metode || method.nama_metode}</h4>
+              <p className="text-xs text-gray-600 dark:text-zinc-300 mt-1">Transaksi: <span className="font-bold">{method.total_transaksi ?? method.transactionCount}</span></p>
+              <p className="text-xs text-gray-600 dark:text-zinc-300">Pendapatan: <span className="font-bold">Rp {formatRupiah(method.total_nominal ?? method.totalRevenue)}</span></p>
+              <div className="mt-2 bg-gray-200 dark:bg-zinc-700 rounded-full h-1.5">
                 <div 
-                  className="bg-purple-500 h-1 rounded-full" 
+                  className="bg-purple-500 dark:bg-purple-400 h-1.5 rounded-full" 
                   style={{ width: `${((method.total_nominal ?? method.totalRevenue) / (serverReport?.total_penjualan || salesSummary.totalRevenue || 1)) * 100}%` }}
                 ></div>
               </div>
-              <p className="text-[11px] text-gray-500 mt-1">{(((method.total_nominal ?? method.totalRevenue) / (serverReport?.total_penjualan || salesSummary.totalRevenue || 1)) * 100).toFixed(1)}% dari total</p>
+              <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">{(((method.total_nominal ?? method.totalRevenue) / (serverReport?.total_penjualan || salesSummary.totalRevenue || 1)) * 100).toFixed(1)}% dari total</p>
             </div>
           ))}
         </div>

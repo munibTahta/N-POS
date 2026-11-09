@@ -32,7 +32,7 @@ const FloatingLabelShell = ({
     <div className={`md-field ${className}`}>
       <div className={`relative rounded-xl border bg-white dark:bg-zinc-900 transition-colors duration-150 ${borderColor} ${disabled ? 'opacity-50' : ''}`}>
         {Icon && (
-          <Icon className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isFloated ? 'text-blue-500' : 'text-gray-400 dark:text-zinc-500'}`} />
+          <Icon className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isFloated ? 'text-blue-500' : 'text-gray-400 dark:text-zinc-400'}`} />
         )}
 
         {children}
@@ -53,7 +53,7 @@ const FloatingLabelShell = ({
       </div>
 
       {(helper || error) && (
-        <p className={`text-xs mt-1 ${error ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-zinc-500'}`}>
+        <p className={`text-xs mt-1 ${error ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-zinc-400'}`}>
           {error || helper}
         </p>
       )}
@@ -210,7 +210,7 @@ export const FloatingLabelSelect = ({
       >
         {children}
       </select>
-      <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="6 9 12 15 18 9" />
       </svg>
     </FloatingLabelShell>

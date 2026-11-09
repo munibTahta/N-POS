@@ -31,6 +31,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Jaring pengaman tema gelap mutakhir
+        run: npm run theme:check
+
       - name: Unit test (tanggal, pemformat struk)
         run: npm run test:unit
 

@@ -95,24 +95,24 @@ const SearchableSelect = React.memo(({
         disabled={disabled}
         className={`w-full px-4 py-2.5 text-left text-sm border rounded-xl flex items-center justify-between gap-2 transition-all duration-200
           ${disabled 
-            ? 'bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500 cursor-not-allowed border-slate-250 dark:border-zinc-700' 
+            ? 'bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-400 cursor-not-allowed border-slate-250 dark:border-zinc-700' 
             : 'bg-white dark:bg-zinc-900 border-slate-300 dark:border-zinc-700 hover:border-slate-400 dark:hover:border-zinc-500 text-slate-800 dark:text-zinc-100'
           }
           focus:outline-none focus:ring-2 focus:ring-blue-500
         `}
       >
-        <span className={value ? 'text-slate-800 dark:text-zinc-100 font-medium' : 'text-slate-400 dark:text-zinc-500'}>
+        <span className={value ? 'text-slate-800 dark:text-zinc-100 font-medium' : 'text-slate-400 dark:text-zinc-400'}>
           {selectedLabel}
         </span>
         <div className="flex items-center gap-1">
           {value && !disabled && (
             <X
-              className="w-4 h-4 text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-350"
+              className="w-4 h-4 text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-zinc-350"
               onClick={handleClear}
             />
           )}
           <ChevronDown
-            className={`w-4 h-4 text-slate-400 dark:text-zinc-500 transition ${isOpen ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 text-slate-400 dark:text-zinc-400 transition ${isOpen ? 'rotate-180' : ''}`}
           />
         </div>
       </button>
@@ -151,7 +151,7 @@ const SearchableSelect = React.memo(({
                 </button>
               ))
             ) : (
-              <div className="px-3 py-4 text-sm text-slate-400 dark:text-zinc-500 text-center">
+              <div className="px-3 py-4 text-sm text-slate-400 dark:text-zinc-400 text-center">
                 Tidak ada data yang sesuai
               </div>
             )}

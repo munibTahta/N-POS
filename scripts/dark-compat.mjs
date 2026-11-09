@@ -110,6 +110,9 @@ export async function build() {
     else if (prop === 'via') add(sel, `--tw-gradient-to: rgb(0 0 0 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), ${color} var(--tw-gradient-via-position), var(--tw-gradient-to);`);
     else if (prop === 'to') add(sel, `--tw-gradient-to: ${color} var(--tw-gradient-to-position);`);
   }
+  // Kolom isian bawaan di mode gelap (tanpa !important, spesifisitas rendah: kelas komponen/varian dark: tetap menang)
+  rules.push(`:where(.dark) :is(input, select, textarea):not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']) { background-color: #18181b; color: #f4f4f5; border-color: #3f3f46; }`);
+  rules.push(`:where(.dark) :is(input, textarea)::placeholder { color: #a1a1aa; }`);
   const header = `/* GENERATED oleh scripts/dark-compat.mjs - JANGAN diedit tangan. Jalankan: npm run theme:gen\n * Jaring pengaman tema gelap untuk kelas warna Tailwind pada halaman yang belum punya varian dark:. Hanya aktif di bawah .dark.\n * ${rules.length} aturan. Penjelasan prinsip ada di kepala scripts/dark-compat.mjs. */\n`;
   return header + rules.join('\n') + '\n';
 }

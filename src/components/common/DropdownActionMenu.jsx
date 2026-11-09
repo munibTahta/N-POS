@@ -89,7 +89,7 @@ export const DropdownActionMenu = ({ actions = [], item, onActionClick }) => {
     <div className="relative inline-block text-left" ref={triggerRef} onClick={(e) => e.stopPropagation()}>
       <button
         onClick={handleToggle}
-        className="inline-flex items-center justify-center w-8 h-8 text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+        className="inline-flex items-center justify-center w-8 h-8 text-slate-400 dark:text-zinc-400 hover:text-slate-600 dark:hover:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
         title="Pilihan Aksi"
       >
         <MoreVertical className="w-5 h-5" />

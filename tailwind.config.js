@@ -8,6 +8,16 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Penyesuaian kontras mode terang (WCAG AA 4.5:1 untuk teks kecil di atas putih/abu muda). Hanya shade 500/600 yang
+        // dipakai sebagai warna teks status; latar solid (bg-*-600 + text-white) ikut lebih gelap dan tetap kontras.
+        gray: { 500: '#5b6471' },
+        slate: { 500: '#566274' },
+        green: { 600: '#146c34' },
+        emerald: { 600: '#047857' },
+        red: { 600: '#b91c1c' },
+        amber: { 600: '#b45309' },
+        yellow: { 600: '#a16207' },
+        orange: { 600: '#c2410c' },
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',

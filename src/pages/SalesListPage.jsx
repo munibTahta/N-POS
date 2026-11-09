@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getSales, getSaleById, getProducts, getPaymentHistory, getSalesReturns, recordPayment, getBranches, getMetodePembayaran, voidSale } from '../services/api';
+import { getSales, getSaleById, getPaymentHistory, getSalesReturns, recordPayment, getBranches, getMetodePembayaran, voidSale } from '../services/api';
 import { extractArray } from '../utils/apiResponseHelper';
 import { useSettings } from '../context/SettingsContext';
 import { usePermissions } from '../hooks/usePermissions';
@@ -23,13 +23,12 @@ import { Printer, CheckCircle, XCircle, RotateCcw, Download } from 'lucide-react
 import DateRangeFilter from '../components/common/DateRangeFilter';
 import RelativeDate from '../components/common/RelativeDate';
 import AgeBadge from '../components/common/AgeBadge';
-import { dueStatus, getPresetRange, isDateInRange, todayISO } from '../utils/dateRange';
+import { dueStatus, getPresetRange, isDateInRange, parseISODate, todayISO } from '../utils/dateRange';
 
 const SalesListPage = () => {
   const { user, canVoidSales } = usePermissions();
   const { success: showSuccess, error: showError, warning, info: _info } = useNotifications();
   const [sales, setSales] = useState([]);
-  const [products, setProducts] = useState([]);
   const [returns, setReturns] = useState([]);
   const [error, setError] = useState('');
   const { storeInfo } = useSettings();
@@ -65,8 +64,6 @@ const SalesListPage = () => {
     refetch: refetchAll
   } = useMultiDataLoader(
     {
-      sales: async () => extractArray(await getSales({ include: 'detail_pembayaran' })),
-      products: async () => extractArray(await getProducts({ limit: 1000 })),
       returns: async () => extractArray(await getSalesReturns()),
       branches: async () => extractArray(await getBranches()),
       paymentMethods: async () => extractArray(await getMetodePembayaran())
@@ -82,20 +79,41 @@ const SalesListPage = () => {
 
   // Update state when multi-data loads
   useEffect(() => {
-    if (multiData.products) setProducts(multiData.products);
     if (multiData.returns) setReturns(multiData.returns);
     if (multiData.branches) setBranches(multiData.branches);
     if (multiData.paymentMethods) setPaymentMethods(multiData.paymentMethods);
 
-    // Filter sales based on user role
-    if (multiData.sales) {
-      let filteredSales = multiData.sales;
-      if (user?.role === 'kasir' && user?.id_cabang) {
-        filteredSales = multiData.sales.filter(sale => sale.id_cabang === user.id_cabang);
-      }
-      setSales(filteredSales);
+  }, [multiData]);
+
+  // Penjualan dimuat dari server menurut RENTANG TANGGAL (filter di database) dan cakupan cabang yang ditentukan server.
+  // Dulu: 20 penjualan terbaru dari SEMUA cabang lalu disaring di klien, sehingga kasir cabang yang penjualannya lebih lama
+  // melihat daftar kosong, dan filter tanggal hanya berlaku pada 20 data itu.
+  const SALES_LIMIT = 1000;
+  const [salesLoading, setSalesLoading] = useState(true);
+  const [salesMeta, setSalesMeta] = useState({ total: 0, loaded: 0 });
+  const [salesError, setSalesError] = useState('');
+  const loadSales = useCallback(async () => {
+    setSalesLoading(true);
+    setSalesError('');
+    try {
+      const params = { include: 'detail_pembayaran', limit: SALES_LIMIT, page: 1 };
+      const a = dateStart ? parseISODate(dateStart) : null;
+      const b = dateEnd ? parseISODate(dateEnd) : null;
+      if (a) params.start_date = a.toISOString();                                   // awal hari LOKAL
+      if (b) params.end_date = new Date(b.getFullYear(), b.getMonth(), b.getDate(), 23, 59, 59, 999).toISOString(); // akhir hari LOKAL
+      const res = await getSales(params);
+      const rows = extractArray(res);
+      setSales(rows);
+      setSalesMeta({ total: Number(res?.data?.pagination?.total ?? rows.length), loaded: rows.length });
+    } catch (err) {
+      setSalesError('Gagal memuat riwayat penjualan.');
+      handleError(err, 'SalesListPage:loadSales', 'Gagal memuat riwayat penjualan.');
+    } finally {
+      setSalesLoading(false);
     }
-  }, [multiData, user?.role, user?.id_cabang]);
+  }, [dateStart, dateEnd]);
+
+  useEffect(() => { loadSales(); }, [loadSales]);
 
   const getRemainingPayment = useCallback((sale) => {
     const totalPaid = Array.isArray(sale.detail_pembayaran) 
@@ -165,12 +183,13 @@ const SalesListPage = () => {
     const handleSoftRefresh = (event) => {
       if (event.detail?.context === 'sales' || event.detail?.context === 'all') {
         refetchAll();
+        loadSales();
       }
     };
 
     window.addEventListener('softRefresh', handleSoftRefresh);
     return () => window.removeEventListener('softRefresh', handleSoftRefresh);
-  }, [refetchAll]);
+  }, [refetchAll, loadSales]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -261,10 +280,8 @@ const SalesListPage = () => {
         create_reversal: createReversal
       });
 
-      // Refresh sales data
-      const salesResponse = await getSales({ include: 'detail_pembayaran' });
-      const salesData = extractArray(salesResponse);
-      setSales(salesData);
+      // Refresh sales data (rentang & cakupan cabang yang sama)
+      await loadSales();
 
       // Close modal and reset state
       setIsVoidModalOpen(false);
@@ -338,14 +355,9 @@ const SalesListPage = () => {
             const saleResponse = await getSaleById(sale.id_penjualan);
             const enrichedSale = await enrichSaleWithPaymentDetails(saleResponse.data.data);
             
-            const productMap = products.reduce((map, prod) => {
-              map[prod.id_produk] = prod.nama_produk;
-              return map;
-            }, {});
-            
             const enrichedItems = (saleResponse.data.data?.items || []).map((item) => ({
               ...item,
-              nama_produk: item.nama_produk || productMap[item.id_produk] || `Produk (ID: ${item.id_produk})`,
+              nama_produk: item.nama_produk || `Produk (ID: ${item.id_produk})`,
             }));
             
             const detail_pembayaran = enrichedSale?.detail_pembayaran || null;
@@ -453,6 +465,18 @@ const SalesListPage = () => {
                 end={dateEnd}
                 onChange={({ start, end }) => { setDateStart(start); setDateEnd(end); }}
               />
+              {salesError && (
+                <div role="alert" className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                  <span>{salesError}</span>
+                  <button type="button" onClick={loadSales} className="btn-outlined btn-sm">Coba lagi</button>
+                </div>
+              )}
+              {!salesError && salesMeta.total > salesMeta.loaded && (
+                <div role="status" className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                  Menampilkan {salesMeta.loaded.toLocaleString('id-ID')} dari {salesMeta.total.toLocaleString('id-ID')} transaksi terbaru. Persempit periode untuk melihat semuanya.
+                </div>
+              )}
+              {salesLoading && <p role="status" aria-live="polite" className="mb-2 text-xs text-gray-500">Memuat penjualan...</p>}
               <SearchFilterBar
                 searchTerm={searchQuery}
                 onSearchChange={setSearchQuery}

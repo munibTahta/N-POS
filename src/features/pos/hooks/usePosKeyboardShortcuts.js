@@ -1,7 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { isTypingTarget } from '../shortcuts';
 
 export function usePosKeyboardShortcuts({ appliedVoucher, cart, cartFocusedIndex, customerSearchRef, getProductPricing, filteredProducts, finalTotal, focusedSection, getNextProductIndex, getProductStock, handleAddToCart, handleRemoveFromCart, handleSubmit, handleUndo, handleUpdateQuantity, lastTransaction, navigate, paymentAmount, paymentAmountInputRef, pendingCheckboxRef, posSettings, products, searchInputRef, searchTerm, selectedPaymentMethod, selectedProductIndex, setAppliedVoucher, setCart, setCartFocusedIndex, setConfirmDialog, setCurrentKeyboardHint, setFocusedSection, setIsOpeningCashDrawer, setManualPricingOverrides, setPaymentAmount, setSaleDataForPrint, setSearchTerm, setSelectedCustomer, setSelectedProductIndex, setShowCameraScanner, setShowCustomerPopup, setShowDiscountDialog, setShowPaymentModal, setShowPrintModal, setShowShortcutsModal, showCameraScanner, showCustomerPopup, showError, showPaymentModal, showPrintModal, showShortcutsModal, showSuccess, submitButtonRef, taxAmount }) {
+  const qtyBufferRef = useRef({ text: '', t: 0 }); // digit jumlah cepat yang sedang diketik
+
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -605,41 +607,47 @@ export function usePosKeyboardShortcuts({ appliedVoucher, cart, cartFocusedIndex
         }
       }
 
-      // Number keys: Quick quantity for last cart item
-      const isNumericKey = () => {
-        if (!e.ctrlKey && !e.altKey && !e.shiftKey) {
-          if (e.key >= '1' && e.key <= '9') return true;
-          if (/^Numpad[1-9]$/.test(e.code)) return true;
-        }
-        return false;
-      };
+      // Angka: jumlah cepat untuk item keranjang yang SEDANG DISOROT (dulu selalu item terakhir, sehingga mengetik angka
+      // setelah mengklik sebuah baris mengubah baris lain). Beberapa digit yang diketik beruntun (<= 900 ms) digabung: "1","2" = 12.
+      const digitChar = (() => {
+        if (e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) return null;
+        if (/^[0-9]$/.test(e.key)) return e.key;
+        const np = /^Numpad([0-9])$/.exec(e.code || '');
+        return np ? np[1] : null;
+      })();
 
-      // Only numeric quantity shortcuts should work when cart navigation is active
-      if (isNumericKey() && cart.length > 0 && focusedSection === 'cart' && !isSearchInput && !isPaymentAmountInput && !(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
-        let quantity = parseInt(e.key);
-        if (isNaN(quantity) && /^Numpad[1-9]$/.test(e.code)) {
-          quantity = parseInt(e.code.slice(6));
+      if (digitChar !== null && cart.length > 0 && focusedSection === 'cart' && !isSearchInput && !isPaymentAmountInput && !(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) {
+        const now = Date.now();
+        const buf = qtyBufferRef.current;
+        const text = now - buf.t < 900 ? buf.text + digitChar : digitChar;
+        if (/^0+$/.test(text)) { // jumlah tidak boleh diawali/berisi hanya 0
+          qtyBufferRef.current = { text: '', t: 0 };
+          return;
         }
+        qtyBufferRef.current = { text, t: now };
+        const quantity = parseInt(text.slice(0, 4), 10);
 
-        const lastItem = cart[cart.length - 1];
-        const currentStock = getProductStock(lastItem.id_produk);
+        const targetIndex = cartFocusedIndex >= 0 && cartFocusedIndex < cart.length ? cartFocusedIndex : cart.length - 1;
+        const target = cart[targetIndex];
+        const currentStock = getProductStock(target.id_produk);
 
         if (quantity > currentStock) {
-          showError(`Stok tidak cukup. Maksimal ${currentStock} item.`);
+          qtyBufferRef.current = { text: '', t: 0 };
+          showError(`Stok ${target.nama_produk} tidak cukup. Maksimal ${currentStock} item.`);
           return;
         }
 
         e.preventDefault();
         setCart(prevCart =>
-          prevCart.map((item, index) => {
-            if (index === prevCart.length - 1) {
+          prevCart.map((item) => {
+            if (item.id_produk === target.id_produk) {
               const pricing = getProductPricing(item, quantity);
-              return { 
-                ...item, 
-                jumlah: quantity, 
+              return {
+                ...item,
+                jumlah: quantity,
                 harga_satuan: pricing.price,
                 tipe_harga: pricing.priceType,
-                subtotal: quantity * pricing.price 
+                subtotal: quantity * pricing.price
               };
             }
             return item;

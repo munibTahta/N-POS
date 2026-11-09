@@ -31,6 +31,7 @@ export const SHORTCUT_GROUPS = [
     items: [
       { keys: [['Alt', 'C']], description: 'Fokus ke keranjang' },
       { keys: [['+'], ['-']], description: 'Tambah/kurangi jumlah item terpilih' },
+      { keys: [['1-9']], description: 'Ketik angka (beruntun: 1 lalu 2 = 12) untuk mengubah jumlah item yang disorot' },
       { keys: [['Backspace']], description: 'Hapus item terpilih di keranjang' },
       { keys: [['Delete']], description: 'Hapus item terakhir' },
       { keys: [['Ctrl', 'Delete']], description: 'Kosongkan seluruh keranjang' },

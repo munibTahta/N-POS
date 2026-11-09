@@ -95,3 +95,13 @@ Sumber desainnya satu: logo "NS" pada latar biru tua. Semua berkas di atas ditur
 Catatan: sumber asli hanya tersedia 256 px, sehingga `resources/icon.png` (512 px) hasil pembesaran dan agak lembut.
 Untuk hasil terbaik, ekspor ulang dari berkas desain asli (vektor atau minimal 1024 px) dan buat ulang semua ukuran.
 `npm run test:e2e` memeriksa bahwa semua tautan ikon di `<head>` dan manifest mengembalikan gambar.
+
+
+## 8. Tema terang dan gelap
+
+- Tema dipilih lewat kelas `dark` di `<html>` (tombol di header, disimpan di `localStorage.theme`).
+- Komponen baru: tulis varian `dark:` secara eksplisit (permukaan `zinc-900`, halaman `zinc-950`, teks `zinc-100/300/400`, batas `zinc-800/700`).
+- Halaman lama yang belum punya `dark:` terbaca lewat **jaring pengaman otomatis**: `src/styles/dark-compat.css`, dibuat oleh `scripts/dark-compat.mjs` dari kelas warna yang benar-benar dipakai di kode. Jalankan `npm run theme:gen` setelah menambah kelas warna baru; CI menjalankan `npm run theme:check` dan gagal bila berkas basi. Aturannya memakai `:where(.dark)` sehingga varian `dark:` pada komponen **selalu menang**; jangan menambahkan override `!important`.
+- Prinsip pemetaan: latar terang (50-300) menjadi permukaan gelap atau tint translusen dari warna 500; teks gelap (600-900) menjadi terang; isian solid (`bg-blue-600 text-white`) dan `text-white` tidak diubah.
+- Kontras: teks kecil minimal 4,5:1, teks besar 3:1, di kedua tema. Palet terang dikoreksi di `tailwind.config.js` (`green/red/emerald/amber/yellow/orange` 600, `gray/slate` 500). Audit otomatis: `CONTRAST_OUT=hasil.json npx playwright test e2e/contrast-audit.spec.js` (laporan per halaman dan tema, memakai data contoh `e2e/richData.js`).
+- Jangan memakai gradien pastel + kartu di dalam kartu untuk ringkasan angka; pakai blok tonal datar (`bg-gray-50 dark:bg-zinc-800/60 rounded-xl`).

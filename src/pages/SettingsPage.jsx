@@ -771,7 +771,7 @@ const SettingsPage = () => {
                       </span>
                     </div>
                     {qzCertificatePath && (
-                      <p className="text-xs text-gray-500 dark:text-zinc-500 mb-3">Lokasi file: {qzCertificatePath}</p>
+                      <p className="text-xs text-gray-500 dark:text-zinc-400 mb-3">Lokasi file: {qzCertificatePath}</p>
                     )}
 
                     <div className="space-y-3">
@@ -875,7 +875,7 @@ const SettingsPage = () => {
                     />
                     <div>
                       <span className="text-sm font-semibold text-gray-800 dark:text-zinc-200 block">{label}</span>
-                      <span className="text-xs text-gray-500 dark:text-zinc-500">{desc}</span>
+                      <span className="text-xs text-gray-500 dark:text-zinc-400">{desc}</span>
                     </div>
                   </label>
                 ))}
@@ -944,7 +944,7 @@ const SettingsPage = () => {
                     />
                     <div>
                       <span className="text-sm font-semibold text-gray-800 dark:text-zinc-200 block">Aktifkan Sistem Loyalitas</span>
-                      <span className="text-xs text-gray-500 dark:text-zinc-500">Aktifkan fitur point loyalitas untuk pelanggan</span>
+                      <span className="text-xs text-gray-500 dark:text-zinc-400">Aktifkan fitur point loyalitas untuk pelanggan</span>
                     </div>
                   </label>
                 </div>
