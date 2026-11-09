@@ -163,3 +163,9 @@ Urutan di bawah adalah urutan kerja yang disarankan; tiap fase bisa dikerjakan b
 - Letakkan `digital-certificate.txt` dan `digital-certificate-key.txt` di `%APPDATA%/.n-pos/certs/` (atau `userData/certs`) pada PC kasir yang memerlukan cetak tanpa dialog kepercayaan; jalur pencarian ada di `electron/thermalPrintService.cjs`.
 - Kunci lama pernah masuk riwayat git remote: wajib diganti (terbitkan sertifikat baru di portal QZ) dan cabut yang lama.
 - Jangka panjang: pindahkan penandatanganan ke backend (endpoint `/qz/sign`) agar kunci tidak ada di perangkat kasir.
+
+## Pengujian Electron
+
+- `npm run test:electron`: tes unit murni untuk `electron/receiptFormat.cjs` (berjalan di CI).
+- `npm run smoke:electron` (perlu xvfb): meluncurkan aplikasi Electron sungguhan dan menulis daftar channel IPC, API preload, dan berkas database. Bandingkan keluaran sebelum/sesudah memecah `electron/main.cjs` (baseline: 55 channel, 56 fungsi preload, `offline.db` + `product_offline.db`).
+- Pemecahan `main.cjs` dilakukan bertahap; sudah keluar: `receiptFormat.cjs`. Berikutnya: modul QZ Tray (duplikat dengan `thermalPrintService.cjs`), lalu grup handler `db-*`, `offline-transaction-*`, dan penyatuan dua database SQLite.
