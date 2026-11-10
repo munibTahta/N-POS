@@ -181,7 +181,6 @@ const LoyaltyTiersPage = () => {
               label="Tambah Tier"
               variant="blue"
               onClick={() => setShowModal(true)}
-              hideLabel={true}
             />
           }
         />

@@ -12,6 +12,7 @@ import Pagination from '../components/Pagination';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import HeaderActionButton from '../components/HeaderActionButton';
 import PageLoading from '../components/PageLoading';
+import PageError from '../components/PageError';
 import HeaderActionMenu from '../components/HeaderActionMenu';
 import DropdownActionMenu from '../components/common/DropdownActionMenu';
 import { Plus, Download, Upload, FileText, Pencil, Trash2 } from 'lucide-react';
@@ -325,7 +326,7 @@ const CategoriesPage = () => {
   };
 
   if (loading) return <PageLoading title="Manajemen Kategori Produk" />;
-  if (error) return <div className="text-center mt-10 text-red-500">{error}</div>;
+  if (error) return <PageError title="Manajemen Kategori Produk" message={String(error)} />;
 
   return (
     <PageLayout>

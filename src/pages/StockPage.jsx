@@ -7,6 +7,8 @@ import { handleError } from '../utils/errorHandler';
 import { withErrorBoundary } from '../components/withErrorBoundary';
 import { exportToExcel } from '../utils/exportHelper';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import PageLoading from '../components/PageLoading';
+import PageError from '../components/PageError';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import HeaderActionButton from '../components/HeaderActionButton';
@@ -249,8 +251,8 @@ const StockPage = () => {
     normal: warehouseStock.filter(item => item.jumlah > 20).length,
   };
 
-  if (loading) return <div className="text-center mt-10">Loading...</div>;
-  if (error) return <div className="text-center mt-10 text-red-500">{error}</div>;
+  if (loading) return <PageLoading title="Manajemen Stok" />;
+  if (error) return <PageError title="Manajemen Stok" message={String(error)} />;
 
   return (
     <PageLayout>

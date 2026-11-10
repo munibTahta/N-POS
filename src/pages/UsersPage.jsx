@@ -13,6 +13,7 @@ import useSearchAndFilter from '../hooks/useSearchAndFilter';
 import { usePagination } from '../hooks/usePagination';
 import Pagination from '../components/Pagination';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import PageLoading from '../components/PageLoading';
 import HeaderActionButton from '../components/HeaderActionButton';
 import ActionButton from '../components/ActionButton';
 import ConfirmDialog from '../components/common/ConfirmDialog';
@@ -173,7 +174,7 @@ const UsersPage = () => {
     setPage(1);
   }, [searchQuery, filterRole, filterBranch, setPage]);
 
-  if (loading) return <LoadingPage message="Memuat data pengguna..." />;
+  if (loading) return <PageLoading title="Manajemen Pengguna" />;
 
   return (
     <PageLayout>
@@ -189,7 +190,6 @@ const UsersPage = () => {
                 variant="blue"
                 to="/pengguna/tambah"
                 isLink
-                hideLabel={true}
               />
             )
           }

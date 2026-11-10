@@ -15,6 +15,8 @@ import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import DataTable from '../components/DataTable';
 import Pagination from '../components/Pagination';
 import HeaderActionButton from '../components/HeaderActionButton';
+import PageLoading from '../components/PageLoading';
+import PageError from '../components/PageError';
 import HeaderActionMenu from '../components/HeaderActionMenu';
 import { Edit, Trash2, Printer, Eye, Plus, Download, Upload, FileText, Info, Globe, Store, Power, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import useProductOfflineDB from '../hooks/useProductOfflineDB';
@@ -540,11 +542,11 @@ const ProductsPage = () => {
   };
 
   if (loading && !initialLoadDone) {
-    return <div className="text-center mt-10">Loading...</div>;
+    return <PageLoading title="Manajemen Produk" />;
   }
 
   if (error) {
-    return <div className="text-center mt-10 text-red-500">{error}</div>;
+    return <PageError title="Manajemen Produk" message={String(error)} />;
   }
 
   return (

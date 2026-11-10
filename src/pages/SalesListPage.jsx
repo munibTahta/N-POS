@@ -17,6 +17,8 @@ import { usePagination } from '../hooks/usePagination';
 import { exportToExcel } from '../utils/exportHelper';
 import ResponsiveTable from '../components/common/ResponsiveTable';
 import { PageLayout, PageContainer, PageHeader, MetaLine } from '../components/layouts';
+import PageLoading from '../components/PageLoading';
+import PageError from '../components/PageError';
 import DropdownActionMenu from '../components/common/DropdownActionMenu';
 import HeaderActionButton from '../components/HeaderActionButton';
 import { Printer, CheckCircle, XCircle, RotateCcw, Download } from 'lucide-react';
@@ -421,8 +423,8 @@ const SalesListPage = () => {
     return actions;
   };
 
-  if (loading) return <div className="text-center mt-10">Loading...</div>;
-  if (error) return <div className="text-center mt-10 text-red-500">{error}</div>;
+  if (loading) return <PageLoading title="Riwayat Penjualan" />;
+  if (error) return <PageError title="Riwayat Penjualan" message={String(error)} />;
 
   return (
     <PageLayout>

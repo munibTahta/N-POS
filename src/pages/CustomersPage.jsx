@@ -403,7 +403,6 @@ const CustomersPage = () => {
               label="Tambah"
               variant="slate"
               onClick={() => setShowForm(true)}
-              hideLabel={true}
             />
             <HeaderActionMenu key="more" items={[
                 { id: 'export', label: 'Export', icon: Download, onClick: () => handleExportExcel() },

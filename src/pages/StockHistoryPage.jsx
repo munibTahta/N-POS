@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getStockHistory } from '../services/api';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import PageLoading from '../components/PageLoading';
 import DataTable from '../components/DataTable';
 import { SearchFilterBar, FilterPanel, FilterPanelGrid, FilterField } from '../components/SearchFilterBar';
 import { ArrowLeft, TrendingUp, TrendingDown, Package } from 'lucide-react';
@@ -114,7 +115,7 @@ const StockHistoryPage = () => {
     return badge;
   };
 
-  if (loading) return <div className="text-center mt-10">Loading...</div>;
+  if (loading) return <PageLoading title="Riwayat Stok" />;
 
   return (
     <PageLayout>

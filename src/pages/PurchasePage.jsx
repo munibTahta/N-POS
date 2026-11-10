@@ -271,7 +271,6 @@ const PurchasePage = () => {
                 variant="blue"
                 to="/pembelian/tambah"
                 isLink
-                hideLabel={true}
               />
               <HeaderActionButton
                 icon={History}

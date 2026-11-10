@@ -129,7 +129,6 @@ const BranchesPage = () => {
               variant="blue"
               to="/cabang/tambah"
               isLink
-              hideLabel={true}
             />
           }
         />

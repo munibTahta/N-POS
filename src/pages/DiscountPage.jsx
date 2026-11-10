@@ -159,7 +159,6 @@ const DiscountPage = () => {
               label={showForm ? "Batal" : "Tambah Diskon Baru"}
               variant={showForm ? "slate" : "blue"}
               onClick={() => (showForm ? resetForm() : setShowForm(true))}
-              hideLabel={true}
             />
           }
         />

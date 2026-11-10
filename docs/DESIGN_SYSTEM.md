@@ -111,7 +111,7 @@ Untuk hasil terbaik, ekspor ulang dari berkas desain asli (vektor atau minimal 1
 
 Setiap halaman memakai kerangka yang sama, dari atas ke bawah:
 
-1. **`PageHeader`**: judul (kata benda singkat), satu baris `subtitle`/`description` (apa yang bisa dilakukan atau ringkasan status, bukan nama pengguna). Aksi di kanan: **satu** `btn-primary`, sisanya `btn-outlined`; aksi sekunder halaman daftar (Export, Import, Template, Info) selalu satu menu `HeaderActionMenu` "Lainnya", bukan deretan tombol ikon. Saat data dimuat pakai `PageLoading` (judul tetap tampil), jangan `if (loading) return <div>Loading...</div>`.
+1. **`PageHeader`**: judul (kata benda singkat), satu baris `subtitle`/`description` (apa yang bisa dilakukan atau ringkasan status, bukan nama pengguna). Aksi di kanan: **satu** `btn-primary`, sisanya `btn-outlined`; aksi sekunder halaman daftar (Export, Import, Template, Info) selalu satu menu `HeaderActionMenu` "Lainnya", bukan deretan tombol ikon. Saat data dimuat pakai `PageLoading` (judul tetap tampil), jangan `if (loading) return <div>Loading...</div>`. Galat muat: `PageError` (pesan + Coba lagi), bukan teks merah polos.
 2. **Peringatan/ringkasan** (opsional): banner `amber` untuk hal yang perlu tindakan, kartu angka tonal datar. Maksimal satu banner sekaligus.
 3. **`TabBar`** bila halaman punya lebih dari satu bagian yang sejajar (Pengaturan, Stok Cabang/Gudang). Aturan: 2-6 tab, label 1-3 kata, tab aktif tersimpan di URL (`?tab=`), panel disembunyikan dengan `hidden` agar isian form tidak hilang.
 4. **Bilah filter** (daftar): pencarian di kiri (`/` memfokuskannya), filter cepat berupa chip, rentang tanggal memakai `QuickDateRange`. Filter aktif harus terlihat dan bisa dihapus sekali klik.
@@ -122,4 +122,4 @@ Formulir: label selalu terhubung ke isiannya (`htmlFor`/`id`), satu kolom di lay
 
 Status dan warna: hijau = berhasil/normal, amber = perlu perhatian, merah = bahaya/merusak, biru = aksi/terpilih, abu = netral. Jangan memakai warna hanya sebagai dekorasi, dan jangan mengandalkan warna saja (sertakan teks/ikon).
 
-Komponen bersama: `PageHeader`, `HeaderActionMenu`, `PageLoading`, `MetaLine`, `TabBar`, `SettingToggle`, `BulkActionBar`, `ConfirmDialog`, `CalendarHeat`/`HeatmapGrid`, `DataTable`.
+Komponen bersama: `PageHeader`, `HeaderActionMenu`, `PageLoading`, `PageError`, `MetaLine`, `TabBar`, `SettingToggle`, `BulkActionBar`, `ConfirmDialog`, `CalendarHeat`/`HeatmapGrid`, `DataTable`.

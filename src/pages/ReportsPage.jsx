@@ -9,6 +9,8 @@ import { SearchFilterBar, FilterPanel } from '../components/SearchFilterBar';
 import useSearchAndFilter from '../hooks/useSearchAndFilter';
 import Pagination from '../components/Pagination';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import PageLoading from '../components/PageLoading';
+import PageError from '../components/PageError';
 import { AlertTriangle, CheckCircle, CreditCard, Trophy, Star, Package } from 'lucide-react';
 
 import { exportToExcel } from '../utils/exportHelper';
@@ -829,8 +831,8 @@ const ReportsPage = () => {
 
   const chartTitle = granularity === 'all' ? 'Pendapatan Bersih Keseluruhan' : granularity === 'monthly' ? 'Pendapatan Bersih per Bulan' : granularity === 'yearly' ? 'Pendapatan Bersih per Tahun' : 'Pendapatan Bersih per Hari';
 
-  if (loading) return <div className="text-center mt-10">Memuat data laporan...</div>;
-  if (error) return <div className="text-center mt-10 text-red-500">{error}</div>;
+  if (loading) return <PageLoading title="Laporan & Monitoring" />;
+  if (error) return <PageError title="Laporan & Monitoring" message={String(error)} />;
 
   return (
     <PageLayout>

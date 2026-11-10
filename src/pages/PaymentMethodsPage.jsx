@@ -6,6 +6,7 @@ import { usePaymentMethods } from '../hooks/usePaymentMethods';
 import HeaderActionButton from '../components/HeaderActionButton';
 import DataTable from '../components/DataTable';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts/index.jsx';
+import PageLoading from '../components/PageLoading';
 
 const PaymentMethodsPage = () => {
   const [paymentMethods, setPaymentMethods] = useState([]);
@@ -196,7 +197,7 @@ const PaymentMethodsPage = () => {
     setShowForm(false);
   };
 
-  if (loading) return <div className="text-center mt-10">Memuat data metode pembayaran...</div>;
+  if (loading) return <PageLoading title="Manajemen Metode Pembayaran" />;
 
   return (
     <PageLayout>

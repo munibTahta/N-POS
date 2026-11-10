@@ -97,7 +97,6 @@ const ReturnPage = () => {
               variant="emerald"
               to="/return/create"
               isLink
-              hideLabel={true}
             />
           }
         />

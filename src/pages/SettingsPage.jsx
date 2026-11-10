@@ -10,6 +10,7 @@ import usePrinter from '../hooks/usePrinter';
 import { professionalPrinterManager, RAWBT_PRINTER } from '../services/PrinterManager';
 import { Printer, Trash2, Database, RefreshCw, AlertTriangle, CheckCircle, HardDrive, Store, ShoppingCart, Percent, Settings2, Check } from 'lucide-react';
 import TabBar, { tabPanelProps } from '../components/common/TabBar';
+import PageLoading from '../components/PageLoading';
 import SettingToggle from '../components/common/SettingToggle';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import CacheManager from '../utils/CacheManager';
@@ -550,7 +551,7 @@ const SettingsPage = () => {
     }
   };
 
-  if (loadingSettings) return <div className="text-center mt-10">Memuat Pengaturan...</div>;
+  if (loadingSettings) return <PageLoading title="Pengaturan Aplikasi" rows={4} />;
 
   const canEditBranch = canManageBranches;
   const reqTab = searchParams.get('tab');
