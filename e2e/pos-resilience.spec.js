@@ -1,13 +1,14 @@
 import { test, expect } from '@playwright/test';
 import { setupPos } from './helpers.js';
 
+test.setTimeout(90000);
 test('server produk error: tampil pesan + Coba lagi, lalu pulih', async ({ page }) => {
   let failing = true;
   await setupPos(page, [], { failProducts: () => failing });
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto('/pos');
   const alert = page.getByRole('alert').filter({ hasText: 'gagal dimuat' });
-  await expect(alert).toBeVisible({ timeout: 10000 });
+  await expect(alert).toBeVisible({ timeout: 40000 });   // klien mencoba ulang dengan jeda sebelum menyerah
 
   failing = false;
   await alert.getByRole('button', { name: 'Coba lagi' }).click();

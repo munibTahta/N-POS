@@ -27,6 +27,7 @@ import OfflineWarningDialog from '../components/OfflineWarningDialog';
 import { logger } from '../utils/logger';
 import PosErrorBoundary from '../components/PosErrorBoundary';
 import LazyLoadErrorBoundary from '../components/LazyLoadErrorBoundary';
+import { groupIntoRows, nextProductIndex } from '../features/pos/gridNavigation';
 import LoadingPage from '../components/common/LoadingPage';
 import LoadingButton from '../components/common/LoadingButton';
 import ShortcutModal from '../components/ShortcutModal';
@@ -246,71 +247,17 @@ const PosPage = () => {
 
   const getProductGridRows = useCallback(() => {
     const cards = Array.from(document.querySelectorAll('[data-grid-index]'))
-      .filter(card => card.offsetParent !== null && card.getClientRects().length > 0);
-    if (cards.length === 0) return [];
-
-    const rows = [];
-    cards.forEach((card) => {
-      const rect = card.getBoundingClientRect();
-      const index = Number(card.dataset.gridIndex);
-      const top = Math.round(rect.top);
-      const left = rect.left;
-
-      let row = rows.find(r => Math.abs(r.top - top) <= 14);
-      if (!row) {
-        row = { top, items: [] };
-        rows.push(row);
-      }
-      row.items.push({ index, left, card });
-    });
-
-    rows.forEach(row => row.items.sort((a, b) => a.left - b.left));
-    rows.sort((a, b) => a.top - b.top);
-    return rows;
+      .filter(card => card.offsetParent !== null && card.getClientRects().length > 0)
+      .map((card) => {
+        const rect = card.getBoundingClientRect();
+        return { index: Number(card.dataset.gridIndex), left: rect.left, top: Math.round(rect.top), card };
+      });
+    return groupIntoRows(cards);
   }, []);
 
-  const getNextProductIndex = useCallback((direction, currentIndex) => {
-    if (filteredProducts.length === 0) return -1;
-
-    const rows = getProductGridRows();
-    if (rows.length === 0) return Math.max(0, currentIndex);
-
-    if (currentIndex < 0) {
-      if (direction === 'up') return -1;
-      return rows[0].items[0].index;
-    }
-
-    const current = currentIndex;
-    const currentRowIndex = rows.findIndex(row => row.items.some(item => item.index === current));
-    const rowIndex = currentRowIndex >= 0 ? currentRowIndex : 0;
-    const row = rows[rowIndex];
-    const itemIndex = row.items.findIndex(item => item.index === current);
-    const colIndex = itemIndex >= 0 ? itemIndex : 0;
-
-    if (direction === 'left') {
-      if (colIndex > 0) return row.items[colIndex - 1].index;
-      return row.items[0].index;
-    }
-
-    if (direction === 'right') {
-      if (colIndex < row.items.length - 1) return row.items[colIndex + 1].index;
-      return row.items[row.items.length - 1].index;
-    }
-
-    if (direction === 'up') {
-      if (rowIndex === 0) return -1;
-      const prevRow = rows[rowIndex - 1].items;
-      return prevRow[Math.min(colIndex, prevRow.length - 1)].index;
-    }
-
-    if (direction === 'down') {
-      if (rowIndex === rows.length - 1) return current;
-      const nextRow = rows[rowIndex + 1].items;
-      return nextRow[Math.min(colIndex, nextRow.length - 1)].index;
-    }
-
-    return current;
-  }, [filteredProducts.length, getProductGridRows]);
+  const getNextProductIndex = useCallback((direction, currentIndex) => (
+    nextProductIndex(getProductGridRows(), direction, currentIndex, filteredProducts.length)
+  ), [filteredProducts.length, getProductGridRows]);
 
   const focusProductsSection = () => {
     setFocusedSection('products');
