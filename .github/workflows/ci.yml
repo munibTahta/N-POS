@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Hanya untuk build/tes; tidak ada rahasia sungguhan.
+      VITE_API_BASE_URL: http://localhost:3000/api
+      VITE_API_KEY: ci-placeholder
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # --ignore-scripts: lewati postinstall electron-builder (modul native tidak dibutuhkan untuk lint/build web/e2e)
+      - run: npm ci --ignore-scripts
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Jaring pengaman tema gelap mutakhir
+        run: npm run theme:check
+
+      - name: Unit test (tanggal, pemformat struk)
+        run: npm run test:unit
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E
+        run: npm run test:e2e
+
+      - name: Upload e2e artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: |
+            test-results
+            e2e/shots
+          retention-days: 7

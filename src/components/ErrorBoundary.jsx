@@ -1,5 +1,6 @@
 import React from 'react';
 import { toast } from 'react-toastify';
+import { WifiOff, AlertTriangle } from 'lucide-react';
 import { logger } from '../utils/logger';
 
 class ErrorBoundary extends React.Component {
@@ -65,11 +66,11 @@ class ErrorBoundary extends React.Component {
     
     // Show appropriate toast based on error type
     if (this.state.isChunkError && this.state.isOffline) {
-      toast.warning('⚠️ Offline - tidak bisa load halaman. Menunggu koneksi internet...');
+      toast.warning('Offline - tidak bisa load halaman. Menunggu koneksi internet...');
     } else if (this.state.isChunkError) {
-      toast.error('⚠️ Gagal load halaman. Silakan refresh atau coba lagi.');
+      toast.error('Gagal load halaman. Silakan refresh atau coba lagi.');
     } else {
-      toast.error('❌ Terjadi kesalahan aplikasi. Silakan refresh halaman.');
+      toast.error('Terjadi kesalahan aplikasi. Silakan refresh halaman.');
     }
   }
 
@@ -130,7 +131,7 @@ class ErrorBoundary extends React.Component {
             {/* Offline Chunk Error */}
             {isChunkError && isOffline && (
               <>
-                <div className="text-6xl mb-4 text-center">🔴</div>
+                <div className="flex justify-center mb-4"><WifiOff className="w-16 h-16 text-yellow-600" /></div>
                 <h2 className="text-2xl font-bold text-yellow-600 mb-4">Offline Mode</h2>
                 <div className="text-gray-700 mb-4">
                   Koneksi internet terputus. Halaman ini belum bisa diakses offline.
@@ -163,7 +164,7 @@ class ErrorBoundary extends React.Component {
             {/* Other Chunk Load Errors */}
             {isChunkError && !isOffline && (
               <>
-                <div className="text-6xl mb-4 text-center">⚠️</div>
+                <div className="flex justify-center mb-4"><AlertTriangle className="w-16 h-16 text-orange-600" /></div>
                 <h2 className="text-2xl font-bold text-orange-600 mb-4">Gagal Load Halaman</h2>
                 <p className="text-gray-700 mb-4">
                   Terjadi kesalahan saat memuat halaman. Ini mungkin karena versi aplikasi baru atau masalah jaringan.

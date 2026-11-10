@@ -51,7 +51,7 @@ export const useOfflineInitialization = () => {
       attempts++;
     }
 
-    console.error('❌ Database failed to initialize after 10 seconds');
+    console.error('Database failed to initialize after 10 seconds');
     return false;
   }, []);
 

@@ -9,6 +9,7 @@ import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import ResponsiveTable from '../components/common/ResponsiveTable';
 import HeaderActionButton from '../components/HeaderActionButton';
 import { Eye, Printer, Plus, History } from 'lucide-react';
+import RelativeDate from '../components/common/RelativeDate';
 
 const PurchasePage = () => {
   const { storeInfo } = useSettings();
@@ -127,14 +128,14 @@ const PurchasePage = () => {
               }
 
               data = localPurchases;
-            } catch (_dbError) {
-              if (import.meta.env.DEV) void 0 && ('Failed to load purchases from local db');
+            } catch (_dbError) { /* noop */ 
+              
             }
           }
         }
 
-        if (import.meta.env.DEV) void 0 && ('Purchases API response:', data);
-        if (data.length > 0 && import.meta.env.DEV) void 0 && ('First purchase structure:', data[0]);
+        
+        
 
         const normalized = data.map(p => ({ ...p, tanggal: p.tanggal || p.created_at || p.createdAt }));
         setPurchases(normalized.reverse());
@@ -184,7 +185,7 @@ const PurchasePage = () => {
                 suppliersData = localSuppliers;
               }
             } catch (_localError) {
-              if (import.meta.env.DEV) {
+              if (import.meta.env.DEV) { /* intentionally empty */ 
               }
             }
           }
@@ -270,7 +271,6 @@ const PurchasePage = () => {
                 variant="blue"
                 to="/pembelian/tambah"
                 isLink
-                hideLabel={true}
               />
               <HeaderActionButton
                 icon={History}
@@ -330,7 +330,7 @@ const PurchasePage = () => {
             {
               key: 'tanggal',
               header: 'Tanggal',
-              render: (purchase) => new Date(purchase.tanggal || purchase.created_at || purchase.createdAt).toLocaleDateString('id-ID')
+              render: (purchase) => <RelativeDate value={purchase.tanggal || purchase.created_at || purchase.createdAt} />
             },
             {
               key: 'supplier',
@@ -458,9 +458,9 @@ const PurchasePage = () => {
                           <tr key={idx} className="border-b border-gray-200">
                             <td className="px-4 py-3 text-sm text-gray-900">{idx + 1}</td>
                             <td className="px-4 py-3 text-sm text-gray-900">{getProductName(it)}</td>
-                            <td className="px-4 py-3 text-sm text-right text-gray-900">{qty}</td>
-                            <td className="px-4 py-3 text-sm text-right text-gray-900">Rp {formatCurrency(price)}</td>
-                            <td className="px-4 py-3 text-sm text-right font-medium text-gray-900">Rp {formatCurrency(qty * price)}</td>
+                            <td className="px-4 py-3 text-sm text-right text-gray-900 tabular-nums">{qty}</td>
+                            <td className="px-4 py-3 text-sm text-right text-gray-900 tabular-nums">Rp {formatCurrency(price)}</td>
+                            <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 tabular-nums">Rp {formatCurrency(qty * price)}</td>
                           </tr>
                         );
                       })

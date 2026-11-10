@@ -1,4 +1,5 @@
 import React, { useState, useEffect, forwardRef } from 'react';
+import { X } from 'lucide-react';
 import { formatCurrency } from '../utils/formatHelper';
 
 const PaymentAmountInput = forwardRef(({
@@ -94,7 +95,7 @@ const PaymentAmountInput = forwardRef(({
           className="text-xs sm:text-sm p-3 sm:p-2 bg-gray-200 hover:bg-gray-300 active:bg-gray-400 rounded transition-colors font-medium touch-manipulation"
           title="Kosongkan"
         >
-          ✕
+          <X className="w-4 h-4" />
         </button>
       </div>
 

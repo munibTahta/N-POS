@@ -65,7 +65,7 @@ export const useStocks = () => {
     try {
       await dbBatchInsert('warehouse_stock', records);
     } catch (err) {
-      console.warn('⚠️ Failed to persist warehouse stock:', err);
+      console.warn('Failed to persist warehouse stock:', err);
     }
   }, []);
 
@@ -83,7 +83,7 @@ export const useStocks = () => {
       });
       return result || [];
     } catch (dbErr) {
-      console.warn('⚠️ Failed to load warehouse stock from offline DB:', dbErr);
+      console.warn('Failed to load warehouse stock from offline DB:', dbErr);
       return [];
     }
   }, []);

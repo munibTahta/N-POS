@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getSales, getSaleById, getProducts, getPaymentHistory, getSalesReturns, recordPayment, getBranches, getMetodePembayaran, voidSale } from '../services/api';
+import { getSales, getSaleById, getPaymentHistory, getSalesReturns, recordPayment, getBranches, getMetodePembayaran, voidSale } from '../services/api';
 import { extractArray } from '../utils/apiResponseHelper';
 import { useSettings } from '../context/SettingsContext';
 import { usePermissions } from '../hooks/usePermissions';
@@ -16,16 +16,22 @@ import useSearchAndFilter from '../hooks/useSearchAndFilter';
 import { usePagination } from '../hooks/usePagination';
 import { exportToExcel } from '../utils/exportHelper';
 import ResponsiveTable from '../components/common/ResponsiveTable';
-import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import { PageLayout, PageContainer, PageHeader, MetaLine } from '../components/layouts';
+import PageLoading from '../components/PageLoading';
+import PageError from '../components/PageError';
 import DropdownActionMenu from '../components/common/DropdownActionMenu';
 import HeaderActionButton from '../components/HeaderActionButton';
 import { Printer, CheckCircle, XCircle, RotateCcw, Download } from 'lucide-react';
+import DateRangeFilter from '../components/common/DateRangeFilter';
+import RelativeDate from '../components/common/RelativeDate';
+import AgeBadge from '../components/common/AgeBadge';
+import { dueStatus, getPresetRange, isDateInRange, parseISODate, todayISO } from '../utils/dateRange';
+import { describeRange } from '../utils/dateRange';
 
 const SalesListPage = () => {
   const { user, canVoidSales } = usePermissions();
   const { success: showSuccess, error: showError, warning, info: _info } = useNotifications();
   const [sales, setSales] = useState([]);
-  const [products, setProducts] = useState([]);
   const [returns, setReturns] = useState([]);
   const [error, setError] = useState('');
   const { storeInfo } = useSettings();
@@ -47,6 +53,9 @@ const SalesListPage = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterBranch, setFilterBranch] = useState('all');
   const [filterPaymentMethod, setFilterPaymentMethod] = useState('all');
+  // Kasir terutama melihat transaksi hari ini; "Semua" dan chip lain tinggal satu ketukan.
+  const [dateStart, setDateStart] = useState(() => getPresetRange('today').start);
+  const [dateEnd, setDateEnd] = useState(() => getPresetRange('today').end);
 
   const navigate = useNavigate();
 
@@ -58,8 +67,6 @@ const SalesListPage = () => {
     refetch: refetchAll
   } = useMultiDataLoader(
     {
-      sales: async () => extractArray(await getSales({ include: 'detail_pembayaran' })),
-      products: async () => extractArray(await getProducts({ limit: 1000 })),
       returns: async () => extractArray(await getSalesReturns()),
       branches: async () => extractArray(await getBranches()),
       paymentMethods: async () => extractArray(await getMetodePembayaran())
@@ -75,20 +82,43 @@ const SalesListPage = () => {
 
   // Update state when multi-data loads
   useEffect(() => {
-    if (multiData.products) setProducts(multiData.products);
     if (multiData.returns) setReturns(multiData.returns);
     if (multiData.branches) setBranches(multiData.branches);
     if (multiData.paymentMethods) setPaymentMethods(multiData.paymentMethods);
 
-    // Filter sales based on user role
-    if (multiData.sales) {
-      let filteredSales = multiData.sales;
-      if (user?.role === 'kasir' && user?.id_cabang) {
-        filteredSales = multiData.sales.filter(sale => sale.id_cabang === user.id_cabang);
-      }
-      setSales(filteredSales);
+  }, [multiData]);
+
+  // Penjualan dimuat dari server menurut RENTANG TANGGAL (filter di database) dan cakupan cabang yang ditentukan server.
+  // Dulu: 20 penjualan terbaru dari SEMUA cabang lalu disaring di klien, sehingga kasir cabang yang penjualannya lebih lama
+  // melihat daftar kosong, dan filter tanggal hanya berlaku pada 20 data itu.
+  const SALES_LIMIT = 1000;
+  const [salesLoading, setSalesLoading] = useState(true);
+  const [salesMeta, setSalesMeta] = useState({ total: 0, loaded: 0 });
+  const [salesError, setSalesError] = useState('');
+  const [salesUpdatedAt, setSalesUpdatedAt] = useState(null);
+  const loadSales = useCallback(async () => {
+    setSalesLoading(true);
+    setSalesError('');
+    try {
+      const params = { include: 'detail_pembayaran', limit: SALES_LIMIT, page: 1 };
+      const a = dateStart ? parseISODate(dateStart) : null;
+      const b = dateEnd ? parseISODate(dateEnd) : null;
+      if (a) params.start_date = a.toISOString();                                   // awal hari LOKAL
+      if (b) params.end_date = new Date(b.getFullYear(), b.getMonth(), b.getDate(), 23, 59, 59, 999).toISOString(); // akhir hari LOKAL
+      const res = await getSales(params);
+      const rows = extractArray(res);
+      setSales(rows);
+      setSalesMeta({ total: Number(res?.data?.pagination?.total ?? rows.length), loaded: rows.length });
+      setSalesUpdatedAt(new Date());
+    } catch (err) {
+      setSalesError('Gagal memuat riwayat penjualan.');
+      handleError(err, 'SalesListPage:loadSales', 'Gagal memuat riwayat penjualan.');
+    } finally {
+      setSalesLoading(false);
     }
-  }, [multiData, user?.role, user?.id_cabang]);
+  }, [dateStart, dateEnd]);
+
+  useEffect(() => { loadSales(); }, [loadSales]);
 
   const getRemainingPayment = useCallback((sale) => {
     const totalPaid = Array.isArray(sale.detail_pembayaran) 
@@ -119,8 +149,11 @@ const SalesListPage = () => {
       .join(', ');
   }, []);
 
+  // Rentang tanggal (hari lokal, inklusif) diterapkan lebih dulu; sisanya oleh useSearchAndFilter.
+  const salesInRange = useMemo(() => sales.filter((s) => isDateInRange(s.tanggal, dateStart, dateEnd)), [sales, dateStart, dateEnd]);
+
   // Apply search and filter logic
-  const { filteredItems: filteredSales } = useSearchAndFilter(sales, {
+  const { filteredItems: filteredSales } = useSearchAndFilter(salesInRange, {
     searchTerm: searchQuery,
     searchKeys: ['kode_transaksi', 'user.nama_lengkap', 'User.nama_lengkap', 'Cabang.nama_cabang', 'MetodePembayaran.nama_metode', 'metode_pembayaran'],
     filters: {
@@ -129,15 +162,19 @@ const SalesListPage = () => {
       paymentMethod: filterPaymentMethod === 'all' ? '' : filterPaymentMethod,
     },
     filterFns: {
-      status: (sale, key, value) => {
+      status: (sale, value) => {
         if (!value) return true;
+        if (value === 'overdue') {
+          // Piutang yang tanggal jatuh temponya sudah lewat (hari lokal)
+          return getPaymentStatus(sale) === 'pending' && dueStatus(sale.tanggal_jatuh_tempo)?.state === 'overdue';
+        }
         return getPaymentStatus(sale) === value;
       },
-      branch: (sale, key, value) => {
+      branch: (sale, value) => {
         if (!value) return true;
         return sale.Cabang?.nama_cabang === value;
       },
-      paymentMethod: (sale, key, value) => {
+      paymentMethod: (sale, value) => {
         if (!value) return true;
         return Array.isArray(sale.detail_pembayaran) &&
                sale.detail_pembayaran.some(p => p.metodePembayaran?.nama_metode === value);
@@ -151,12 +188,13 @@ const SalesListPage = () => {
     const handleSoftRefresh = (event) => {
       if (event.detail?.context === 'sales' || event.detail?.context === 'all') {
         refetchAll();
+        loadSales();
       }
     };
 
     window.addEventListener('softRefresh', handleSoftRefresh);
     return () => window.removeEventListener('softRefresh', handleSoftRefresh);
-  }, [refetchAll]);
+  }, [refetchAll, loadSales]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -228,7 +266,7 @@ const SalesListPage = () => {
           Kembali: Number(sale.kembali || sale.kembalian || 0),
         };
       });
-      exportToExcel(rows, `Riwayat_Penjualan_${new Date().toISOString().slice(0,10)}.xlsx`);
+      exportToExcel(rows, `Riwayat_Penjualan_${todayISO()}.xlsx`);
     } catch (_err) {
       showError('Gagal export daftar penjualan');
       showError('Gagal mengekspor riwayat penjualan. Cek console untuk detail.');
@@ -247,10 +285,8 @@ const SalesListPage = () => {
         create_reversal: createReversal
       });
 
-      // Refresh sales data
-      const salesResponse = await getSales({ include: 'detail_pembayaran' });
-      const salesData = extractArray(salesResponse);
-      setSales(salesData);
+      // Refresh sales data (rentang & cakupan cabang yang sama)
+      await loadSales();
 
       // Close modal and reset state
       setIsVoidModalOpen(false);
@@ -324,14 +360,9 @@ const SalesListPage = () => {
             const saleResponse = await getSaleById(sale.id_penjualan);
             const enrichedSale = await enrichSaleWithPaymentDetails(saleResponse.data.data);
             
-            const productMap = products.reduce((map, prod) => {
-              map[prod.id_produk] = prod.nama_produk;
-              return map;
-            }, {});
-            
             const enrichedItems = (saleResponse.data.data?.items || []).map((item) => ({
               ...item,
-              nama_produk: item.nama_produk || productMap[item.id_produk] || `Produk (ID: ${item.id_produk})`,
+              nama_produk: item.nama_produk || `Produk (ID: ${item.id_produk})`,
             }));
             
             const detail_pembayaran = enrichedSale?.detail_pembayaran || null;
@@ -392,15 +423,21 @@ const SalesListPage = () => {
     return actions;
   };
 
-  if (loading) return <div className="text-center mt-10">Loading...</div>;
-  if (error) return <div className="text-center mt-10 text-red-500">{error}</div>;
+  if (loading) return <PageLoading title="Riwayat Penjualan" />;
+  if (error) return <PageError title="Riwayat Penjualan" message={String(error)} />;
 
   return (
     <PageLayout>
       <PageContainer>
         <PageHeader
           title="Riwayat Penjualan"
-          description="Kelola dan pantau semua transaksi penjualan yang telah dilakukan."
+          subtitle={(
+            <MetaLine parts={[
+              describeRange(dateStart, dateEnd),
+              user?.role === 'kasir' ? storeInfo?.nama_cabang : (filterBranch === 'all' ? 'Semua cabang' : filterBranch),
+              salesUpdatedAt && `Diperbarui ${String(salesUpdatedAt.getHours()).padStart(2, '0')}.${String(salesUpdatedAt.getMinutes()).padStart(2, '0')}`,
+            ]} />
+          )}
           actions={
             <HeaderActionButton
               icon={Download}
@@ -432,17 +469,38 @@ const SalesListPage = () => {
           {/* Search & Filter Section */}
           <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
             <div className="p-6">
+              <DateRangeFilter
+                compact
+                className="mb-3"
+                start={dateStart}
+                end={dateEnd}
+                onChange={({ start, end }) => { setDateStart(start); setDateEnd(end); }}
+              />
+              {salesError && (
+                <div role="alert" className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                  <span>{salesError}</span>
+                  <button type="button" onClick={loadSales} className="btn-outlined btn-sm">Coba lagi</button>
+                </div>
+              )}
+              {!salesError && salesMeta.total > salesMeta.loaded && (
+                <div role="status" className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                  Menampilkan {salesMeta.loaded.toLocaleString('id-ID')} dari {salesMeta.total.toLocaleString('id-ID')} transaksi terbaru. Persempit periode untuk melihat semuanya.
+                </div>
+              )}
+              {salesLoading && <p role="status" aria-live="polite" className="mb-2 text-xs text-gray-500">Memuat penjualan...</p>}
               <SearchFilterBar
                 searchTerm={searchQuery}
                 onSearchChange={setSearchQuery}
                 onClearSearch={() => setSearchQuery('')}
                 onFilterToggle={() => setShowFilters(prev => !prev)}
                 isFilterActive={showFilters}
-                hasActiveFilters={filterStatus !== 'all' || filterBranch !== 'all' || filterPaymentMethod !== 'all'}
+                hasActiveFilters={filterStatus !== 'all' || filterBranch !== 'all' || filterPaymentMethod !== 'all' || Boolean(dateStart || dateEnd)}
                 onClearFilters={() => {
                   setFilterStatus('all');
                   setFilterBranch('all');
                   setFilterPaymentMethod('all');
+                  setDateStart('');
+                  setDateEnd('');
                   setSearchQuery('');
                 }}
                 searchPlaceholder="Cari kode transaksi..."
@@ -461,6 +519,7 @@ const SalesListPage = () => {
                       <option value="all">Semua Status</option>
                       <option value="lunas">Lunas</option>
                       <option value="pending">Pending</option>
+                      <option value="overdue">Lewat jatuh tempo</option>
                     </select>
                   </div>
                   <div>
@@ -516,10 +575,10 @@ const SalesListPage = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Metode Pembayaran
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">
                       Total
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">
                       Kurang
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -553,7 +612,7 @@ const SalesListPage = () => {
                           {sale.kode_transaksi}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(sale.tanggal).toLocaleDateString('id-ID')}
+                          <RelativeDate value={sale.tanggal} />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {sale.Cabang?.nama_cabang || '-'}
@@ -561,10 +620,10 @@ const SalesListPage = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                           {getPaymentMethodLabel(sale) || '-'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium text-right tabular-nums">
                           Rp {Number(sale.total || 0).toLocaleString('id-ID')}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium text-right tabular-nums">
                           Rp {Number(getRemainingPayment(sale) || 0).toLocaleString('id-ID')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -577,6 +636,7 @@ const SalesListPage = () => {
                               Lunas
                             </span>
                           )}
+                          {getPaymentStatus(sale) === 'pending' && <AgeBadge value={sale.tanggal} dueDate={sale.tanggal_jatuh_tempo} className="ml-2" />}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {hasReturns(sale.id_penjualan) ? (

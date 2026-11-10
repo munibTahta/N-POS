@@ -91,7 +91,7 @@ const AddMenuPage = () => {
                   value={formData.menu_key}
                   onChange={handleChange}
                   placeholder="contoh: produk, penjualan, laporan"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-control w-full"
                   required
                 />
               </div>
@@ -104,7 +104,7 @@ const AddMenuPage = () => {
                   value={formData.nama_menu}
                   onChange={handleChange}
                   placeholder="contoh: Manajemen Produk"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-control w-full"
                   required
                 />
               </div>
@@ -116,8 +116,8 @@ const AddMenuPage = () => {
                   name="icon"
                   value={formData.icon}
                   onChange={handleChange}
-                  placeholder="contoh: Home, ShoppingCart, Menu, atau emoji 🏠"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="contoh: Home, ShoppingCart, Menu"
+                  className="field-control w-full"
                 />
                 <p className="text-xs text-slate-500 mt-1">Isi nama ikon Lucide React atau gunakan emoji sederhana.</p>
                 {formData.icon && (
@@ -138,7 +138,7 @@ const AddMenuPage = () => {
                   value={formData.path}
                   onChange={handleChange}
                   placeholder="contoh: /produk, /laporan"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-control w-full"
                 />
               </div>
 
@@ -148,7 +148,7 @@ const AddMenuPage = () => {
                   name="parent_menu"
                   value={formData.parent_menu}
                   onChange={handleChange}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-select w-full"
                 >
                   <option value="">-- Pilih Parent Menu (opsional) --</option>
                   {menus.map(menu => (
@@ -165,7 +165,7 @@ const AddMenuPage = () => {
                   name="grup"
                   value={formData.grup}
                   onChange={handleChange}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-select w-full"
                 >
                   {grupOptions.map(option => (
                     <option key={option.value} value={option.value}>
@@ -182,7 +182,7 @@ const AddMenuPage = () => {
                   name="urutan"
                   value={formData.urutan}
                   onChange={handleChange}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-control w-full"
                   min="0"
                 />
               </div>

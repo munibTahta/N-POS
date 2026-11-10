@@ -2,6 +2,7 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getSupplierById, addSupplier, updateSupplier } from '../services/api';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts/index.jsx';
+import FormActionBar from '../components/common/FormActionBar';
 import { useNotifications } from '../hooks/useNotifications';
 import LoadingPage from '../components/common/LoadingPage';
 
@@ -114,7 +115,7 @@ const SupplierFormPage = () => {
                   value={supplier.nama_supplier}
                   onChange={handleChange}
                   required
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-control w-full"
                 />
               </div>
               <div>
@@ -124,7 +125,7 @@ const SupplierFormPage = () => {
                   name="kontak"
                   value={supplier.kontak}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-control w-full"
                 />
               </div>
             </div>
@@ -136,35 +137,11 @@ const SupplierFormPage = () => {
                 value={supplier.alamat}
                 onChange={handleChange}
                 rows="4"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="field-control w-full"
               />
             </div>
 
-            <div className="flex flex-wrap items-center justify-end gap-3 pt-4">
-              <Link
-                to="/supplier"
-                className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
-              >
-                Batal
-              </Link>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-              >
-                {submitting ? (
-                  <span className="inline-flex items-center gap-2">
-                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-white" />
-                    Menyimpan...
-                  </span>
-                ) : (
-                  <>
-                    <SaveIcon className="w-4 h-4" />
-                    {isEditMode ? 'Simpan Perubahan' : 'Simpan Supplier'}
-                  </>
-                )}
-              </button>
-            </div>
+            <FormActionBar cancelTo="/supplier" submitting={submitting} submitLabel={isEditMode ? 'Simpan Perubahan' : 'Simpan Supplier'} />
           </form>
         </div>
       </PageContainer>

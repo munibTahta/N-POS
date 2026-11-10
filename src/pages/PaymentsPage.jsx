@@ -7,6 +7,9 @@ import { PageLayout, PageContainer, PageHeader } from '../components/layouts/ind
 import { SearchFilterBar } from '../components/SearchFilterBar';
 import useSearchAndFilter from '../hooks/useSearchAndFilter';
 import { useNotifications } from '../hooks/useNotifications';
+import RelativeDate from '../components/common/RelativeDate';
+import AgeBadge from '../components/common/AgeBadge';
+import DueDateEditor from '../components/common/DueDateEditor';
 
 // SVG Icons
 const ViewIcon = ({ className = '' }) => (
@@ -193,13 +196,16 @@ const PaymentsPage = () => {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                               <div className="text-slate-600">
-                                <span className="font-medium">Tanggal:</span> {(() => {
-                                  const paymentDate = item.tanggal_pembayaran || item.created_at || item.tanggal || item.createdAt || item.updated_at;
-                                  const saleDate = item.penjualan?.tanggal;
-                                  const finalDate = paymentDate || saleDate;
-                                  return finalDate ? new Date(finalDate).toLocaleDateString('id-ID') : 'N/A';
-                                })()}
+                                <span className="font-medium">Tanggal:</span>{' '}
+                                <RelativeDate value={item.tanggal_pembayaran || item.created_at || item.tanggal || item.createdAt || item.updated_at || item.penjualan?.tanggal} />
+                                <AgeBadge value={item.penjualan?.tanggal || item.tanggal || item.created_at} dueDate={item.penjualan?.tanggal_jatuh_tempo || item.tanggal_jatuh_tempo} className="ml-2" />
                               </div>
+                              <DueDateEditor
+                                className="md:col-span-2"
+                                saleId={item.id_penjualan || item.penjualan?.id_penjualan}
+                                current={item.penjualan?.tanggal_jatuh_tempo || item.tanggal_jatuh_tempo || ''}
+                                onSaved={() => fetchPending()}
+                              />
                               <div className="text-slate-600">
                                 <span className="font-medium">Metode:</span> {item.metodePembayaran?.nama_metode || item.nama_metode || 'N/A'}
                               </div>
@@ -316,9 +322,9 @@ const PaymentsPage = () => {
                         <tr key={idx} className="hover:bg-slate-50">
                           <td className="px-4 py-2 text-sm text-slate-900">{idx + 1}</td>
                           <td className="px-4 py-2 text-sm text-slate-900">{item.nama_produk || item.Produk?.nama_produk || `Produk ${item.id_produk}`}</td>
-                          <td className="px-4 py-2 text-right text-sm text-slate-900">{item.jumlah}</td>
-                          <td className="px-4 py-2 text-right text-sm text-slate-900">{formatCurrency(item.harga_jual)}</td>
-                          <td className="px-4 py-2 text-right text-sm text-slate-900">{formatCurrency(item.jumlah * item.harga_jual)}</td>
+                          <td className="px-4 py-2 text-right text-sm text-slate-900 tabular-nums">{item.jumlah}</td>
+                          <td className="px-4 py-2 text-right text-sm text-slate-900 tabular-nums">{formatCurrency(item.harga_jual)}</td>
+                          <td className="px-4 py-2 text-right text-sm text-slate-900 tabular-nums">{formatCurrency(item.jumlah * item.harga_jual)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -354,7 +360,7 @@ const PaymentsPage = () => {
                           <tr key={idx} className={`hover:bg-slate-50 ${payment.id_detail === selectedPayment.id_detail ? 'bg-amber-50' : ''}`}>
                             <td className="px-4 py-2 text-sm text-slate-900">{formattedDate}</td>
                             <td className="px-4 py-2 text-sm text-slate-900">{payment.metodePembayaran?.nama_metode || payment.metode?.nama_metode || 'Unknown'}</td>
-                            <td className="px-4 py-2 text-right text-sm font-semibold text-slate-900">{formatCurrency(payment.jumlah_bayar)}</td>
+                            <td className="px-4 py-2 text-right text-sm font-semibold text-slate-900 tabular-nums">{formatCurrency(payment.jumlah_bayar)}</td>
                             <td className="px-4 py-2">
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                 statusText === 'approved' || statusText === 'selesai' ? 'bg-emerald-100 text-emerald-800' :

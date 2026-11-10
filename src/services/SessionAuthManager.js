@@ -5,6 +5,18 @@ import safeStorage from '../utils/safeStorage.js';
  * Handles login with session tracking, offline support, and automatic header injection
  */
 
+/**
+ * Galat HTTP dari fetch dengan bentuk seperti galat axios (`error.response.{status,data,headers}`) agar penanganan di
+ * AuthProvider/LoginPage seragam: status 401/409/429 dapat dibedakan dan header Retry-After terbaca.
+ */
+async function httpError(response, fallbackMessage) {
+  let data = null;
+  try { data = await response.json(); } catch (_e) { /* badan bukan JSON */ }
+  const err = new Error((data && data.message) || fallbackMessage);
+  err.response = { status: response.status, data, headers: { 'retry-after': response.headers.get('retry-after') } };
+  return err;
+}
+
 class SessionAuthManager {
   constructor(baseUrl) {
     this.baseUrl = baseUrl;
@@ -32,10 +44,11 @@ class SessionAuthManager {
 
       if (!response.ok) {
         if (response.status === 409) {
-          throw new Error('User sudah login di device lain. Gunakan allow_duplicate=true untuk force login');
+          const conflict = await httpError(response, 'User sudah login di device lain.');
+          conflict.message = 'User sudah login di device lain. Gunakan allow_duplicate=true untuk force login';
+          throw conflict;
         }
-        const error = await response.json();
-        throw new Error(error.message || 'Login gagal');
+        throw await httpError(response, 'Login gagal');
       }
 
       const data = await response.json();
@@ -78,8 +91,7 @@ class SessionAuthManager {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Login gagal');
+        throw await httpError(response, 'Login gagal');
       }
 
       const data = await response.json();

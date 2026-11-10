@@ -14,7 +14,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import usePrinter from '../hooks/usePrinter';
 import { useNotifications } from '../hooks/useNotifications';
 import { ReceiptFormatter } from '../services/ReceiptFormatter';
-import { detectPaperWidth } from '../utils/printerUtils';
+import { resolvePaperWidth } from '../utils/printerUtils';
 import { Printer } from 'lucide-react';
 
 const PRINT_TYPES = {
@@ -128,14 +128,14 @@ const UniversalPrintModal = ({
     switch (printType) {
       case PRINT_TYPES.RECEIPT:
         if (data?.items) {
-          const paperWidth = detectPaperWidth(selectedPrinter);
+          const paperWidth = resolvePaperWidth(selectedPrinter);
           const formatter = new ReceiptFormatter({ paperWidth });
           previewContent = formatter.generateReceipt(data, storeInfo);
         }
         break;
       case PRINT_TYPES.PURCHASE_RECEIPT:
         if (data?.items) {
-          const paperWidth = detectPaperWidth(selectedPrinter);
+          const paperWidth = resolvePaperWidth(selectedPrinter);
           const formatter = new ReceiptFormatter({ paperWidth });
           previewContent = formatter.generatePurchaseReceipt(data, storeInfo);
         }
@@ -147,9 +147,9 @@ TEST CETAK PRINTER
 Toko: ${storeInfo.nama_cabang || 'N-POS'}
 Tanggal: ${new Date().toLocaleDateString('id-ID')}
 ────────────────────────────
-✓ Jika teks terbaca dengan jelas
-✓ Perataan teks benar
-✓ Lebar kertas sesuai
+- Jika teks terbaca dengan jelas
+- Perataan teks benar
+- Lebar kertas sesuai
 ────────────────────────────
 Cetak Berhasil!
         `.trim();
@@ -246,8 +246,8 @@ Total: ${data.length} label
 
         {/* Queue Status */}
         {queueStatus && (queueStatus.pending > 0 || queueStatus.size > 0) && (
-          <div className="mx-4 mb-4 bg-yellow-50 border border-yellow-200 p-3 rounded text-yellow-700 text-sm">
-            🖨️ Antrian cetak: {queueStatus.pending} sedang diproses, {queueStatus.size} dalam antrian
+          <div className="mx-4 mb-4 bg-yellow-50 border border-yellow-200 p-3 rounded text-yellow-700 text-sm flex items-center gap-1.5">
+            <Printer className="w-4 h-4" /> Antrian cetak: {queueStatus.pending} sedang diproses, {queueStatus.size} dalam antrian
           </div>
         )}
 

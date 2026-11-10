@@ -17,7 +17,8 @@ export const SettingsProvider = ({ children }) => {
     showCustomerSearch: true,
     enablePPN: false,
     showVoucherInput: true,
-    allowOversellSync: false
+    allowOversellSync: false,
+    allowNegativeStock: false
   });
   const [loading, setLoading] = useState(true);
   const { user, token, logout } = useContext(AuthContext);
@@ -78,7 +79,7 @@ export const SettingsProvider = ({ children }) => {
   useEffect(() => {
     fetchSettings();
     
-    // ⚠️ REMOVED: Auto-refresh interval was causing Settings page to blink/flicker
+    // REMOVED: Auto-refresh interval was causing Settings page to blink/flicker
     // Refresh is now triggered only on demand via refreshSettings() or when user/token changes
     // This prevents excessive API calls and improves performance
     

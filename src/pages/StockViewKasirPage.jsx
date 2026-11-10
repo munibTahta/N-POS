@@ -9,6 +9,8 @@ import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import HeaderActionButton from '../components/HeaderActionButton';
 import { exportToExcel } from '../utils/exportHelper';
+import { todayISO } from '../utils/dateRange';
+import StockAnomalyBanner from '../components/stock/StockAnomalyBanner';
 
 const StockViewKasirPage = () => {
   const navigate = useNavigate();
@@ -69,7 +71,7 @@ const StockViewKasirPage = () => {
       });
 
       const branchName = branchStock[0]?.Cabang?.nama_cabang || user?.Cabang?.nama_cabang || 'N/A';
-      const filename = `Stok_Cabang_${branchName}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const filename = `Stok_Cabang_${branchName}_${todayISO()}.xlsx`;
       await exportToExcel(exportData, filename);
       showSuccess('Data berhasil diekspor ke Excel');
     } catch (err) {
@@ -124,6 +126,7 @@ const StockViewKasirPage = () => {
             />
           }
         />
+        <StockAnomalyBanner />
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">

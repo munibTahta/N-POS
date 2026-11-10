@@ -60,28 +60,108 @@
 
 /* Modern Component Styles */
 @layer components {
+  /* ===== Tombol (lihat docs/DESIGN_SYSTEM.md) =====
+     Ukuran: .btn-sm (32px) | default (40px) | .btn-lg (48px, target sentuh utama di kasir)
+     Varian: .btn-primary | .btn-tonal | .btn-outlined | .btn-text | .btn-secondary | .btn-success | .btn-danger
+     Tambahan: .btn-icon (tombol ikon bulat 40px) | .btn-block (lebar penuh) */
   .btn {
-    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 min-h-[40px] px-4 text-sm font-medium rounded-xl select-none whitespace-nowrap touch-manipulation transition duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
+  }
+
+  /* ---------------------------------------------------------------------------------------------
+     Kolom isian (Material "outlined"): satu gaya untuk input, select, dan textarea.
+       .field-control  input/textarea 40 px (padat, desktop)     + .field-lg  = 48 px (layar sentuh, kasir)
+       .field-select   dropdown bawaan browser dengan panah seragam (<= ~7 pilihan; lebih banyak -> SearchableSelect)
+       aria-invalid="true" otomatis memberi gaya galat.
+     --------------------------------------------------------------------------------------------- */
+  .field-control {
+    @apply block w-full min-w-0 min-h-[40px] rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900
+           placeholder:text-gray-500 transition duration-150
+           hover:border-gray-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/25
+           disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500
+           dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-400
+           dark:hover:border-zinc-600 dark:focus:border-blue-400 dark:focus:ring-blue-400/30
+           dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500;
+  }
+  .field-control[aria-invalid='true'] {
+    @apply border-red-600 focus:border-red-600 focus:ring-red-600/25 dark:border-red-400 dark:focus:border-red-400;
+  }
+  textarea.field-control { @apply min-h-[5rem]; }
+  .field-lg { @apply min-h-[48px] text-base; }
+  .field-select {
+    @apply field-control appearance-none bg-no-repeat pr-9;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+  }
+  :where(.dark) .field-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   }
 
   .btn-primary {
-    @apply btn bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg focus:ring-blue-500;
+    @apply btn bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md focus-visible:ring-blue-500;
+  }
+
+  .btn-tonal {
+    @apply btn bg-blue-100 hover:bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 dark:text-blue-100 focus-visible:ring-blue-500;
+  }
+
+  .btn-outlined {
+    @apply btn border border-gray-300 text-blue-700 hover:bg-blue-50 dark:border-zinc-600 dark:text-blue-300 dark:hover:bg-blue-900/20 focus-visible:ring-blue-500;
+  }
+
+  .btn-text {
+    @apply btn px-3 text-blue-700 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-900/20 focus-visible:ring-blue-500;
   }
 
   .btn-secondary {
-    @apply btn bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-100 dark:border-zinc-700 focus:ring-gray-500;
+    @apply btn bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-100 dark:border-zinc-700 focus-visible:ring-gray-500;
   }
 
   .btn-success {
-    @apply btn bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg focus:ring-green-500;
+    @apply btn bg-green-600 hover:bg-green-700 text-white shadow-sm hover:shadow-md focus-visible:ring-green-500;
   }
 
   .btn-danger {
-    @apply btn bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-lg focus:ring-red-500;
+    @apply btn bg-red-600 hover:bg-red-700 text-white shadow-sm hover:shadow-md focus-visible:ring-red-500;
   }
 
+  /* Modifier ukuran/bentuk SENGAJA di bawah varian: varian memakai @apply btn, sehingga modifier harus
+     muncul belakangan agar menang (spesifisitas sama). */
+  .btn-danger-outlined {
+    @apply btn border border-red-300 text-red-700 hover:bg-red-50 focus-visible:ring-red-500
+           dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10;
+  }
+
+  .btn-sm {
+    @apply min-h-[32px] px-3 text-xs rounded-lg;
+  }
+
+  .btn-lg {
+    @apply min-h-[48px] px-6 text-base;
+  }
+
+  .btn-block {
+    @apply w-full;
+  }
+
+  .btn-icon {
+    @apply btn !px-0 w-10 rounded-full;
+  }
+
+  /* ===== Kartu =====
+     .card = statis (tanpa efek hover). Tambahkan .card-interactive hanya jika kartu bisa diklik.
+     Elevasi: .card (1) | .card-elevated (2) */
   .card {
-    @apply bg-white dark:bg-zinc-900 rounded-2xl shadow-md border border-gray-200 dark:border-zinc-800 transition-all duration-200 hover:shadow-lg;
+    @apply bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-gray-200 dark:border-zinc-800;
+  }
+
+  .card-elevated {
+    @apply shadow-md border-transparent;
+  }
+
+  .card-interactive {
+    @apply cursor-pointer transition duration-150 hover:shadow-md hover:border-blue-300 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500;
   }
 
   .card-header {
@@ -160,263 +240,10 @@
   animation: bounceSubtle 2s infinite;
 }
 
-/* Global Dark Mode Overrides for Hardcoded Light Classes */
+/* Mode gelap: pewarnaan kelas warna Tailwind yang belum punya varian dark: dibuat otomatis (src/styles/dark-compat.css,
+   scripts/dark-compat.mjs). Dulu ada ±250 baris override !important di sini yang menimpa varian dark: milik komponen. */
 .dark {
   color-scheme: dark;
-}
-
-/* Backgrounds */
-.dark .bg-white {
-  background-color: #18181b !important; /* zinc-900 */
-}
-
-.dark .bg-gray-50,
-.dark .bg-slate-50,
-.dark .bg-slate-100\/50,
-.dark .bg-zinc-50 {
-  background-color: #09090b !important; /* zinc-950 */
-}
-
-.dark .bg-gray-100,
-.dark .bg-slate-100,
-.dark .bg-zinc-100,
-.dark .bg-blue-50,
-.dark .bg-indigo-50 {
-  background-color: #27272a !important; /* zinc-800 */
-}
-
-.dark .bg-gray-200,
-.dark .bg-slate-200,
-.dark .bg-zinc-200 {
-  background-color: #3f3f46 !important; /* zinc-700 */
-}
-
-.dark .bg-blue-100,
-.dark .bg-blue-200,
-.dark .bg-blue-50\/50,
-.dark .bg-primary-50 {
-  background-color: #1e3a8a !important; /* blue-950 */
-}
-
-.dark .bg-green-50,
-.dark .bg-green-100,
-.dark .bg-success-50 {
-  background-color: #064e3b !important; /* green-950 */
-}
-
-.dark .bg-red-50,
-.dark .bg-red-100,
-.dark .bg-danger-50 {
-  background-color: #7f1d1d !important; /* red-950 */
-}
-
-.dark .bg-yellow-50,
-.dark .bg-yellow-100,
-.dark .bg-amber-50,
-.dark .bg-amber-100,
-.dark .bg-warning-50 {
-  background-color: #78350f !important; /* amber-950 */
-}
-
-.dark .bg-purple-50,
-.dark .bg-purple-100,
-.dark .bg-accent-50 {
-  background-color: #581c87 !important; /* purple-950 */
-}
-
-/* Hover Backgrounds */
-.dark .hover\:bg-gray-50:hover,
-.dark .hover\:bg-slate-50:hover,
-.dark .hover\:bg-zinc-50:hover,
-.dark .hover\:bg-gray-100:hover,
-.dark .hover\:bg-slate-100:hover,
-.dark .hover\:bg-zinc-100:hover,
-.dark .group-hover\:bg-gray-50:hover,
-.dark .group-hover\:bg-slate-50:hover,
-.dark .hover\:bg-blue-50:hover,
-.dark .hover\:bg-primary-50:hover {
-  background-color: #27272a !important; /* zinc-800 */
-}
-
-.dark .hover\:bg-success-50:hover {
-  background-color: #064e3b !important;
-}
-
-/* Gradient Card Stops */
-.dark .from-blue-50 {
-  --tw-gradient-from: #1e3a8a !important; /* blue-950 */
-  --tw-gradient-to: #172554 !important;
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
-}
-.dark .to-indigo-50 {
-  --tw-gradient-to: #3b0764 !important; /* purple-950 */
-}
-
-/* Text Colors */
-.dark .text-gray-900,
-.dark .text-slate-900,
-.dark .text-gray-800,
-.dark .text-slate-800,
-.dark .text-gray-700,
-.dark .text-slate-700 {
-  color: #f4f4f5 !important; /* zinc-100 */
-}
-
-.dark .text-gray-600,
-.dark .text-slate-600,
-.dark .text-gray-500,
-.dark .text-slate-500 {
-  color: #a1a1aa !important; /* zinc-400 */
-}
-
-.dark .text-blue-600,
-.dark .text-blue-700,
-.dark .text-blue-800,
-.dark .text-primary-600,
-.dark .text-primary-700 {
-  color: #60a5fa !important; /* bright blue */
-}
-
-.dark .text-green-600,
-.dark .text-emerald-500,
-.dark .text-success-600 {
-  color: #4ade80 !important; /* green-400 */
-}
-
-.dark .text-red-600,
-.dark .text-danger-600 {
-  color: #f87171 !important; /* red-400 */
-}
-
-.dark .text-amber-800,
-.dark .text-warning-600,
-.dark .text-yellow-600,
-.dark .text-yellow-800 {
-  color: #fcd34d !important; /* amber-300 */
-}
-
-.dark .text-purple-600 {
-  color: #c084fc !important; /* purple-400 */
-}
-
-/* Hover Text Colors */
-.dark .hover\:text-blue-600:hover,
-.dark .group-hover\:text-blue-600:hover,
-.dark .hover\:text-primary-600:hover {
-  color: #60a5fa !important;
-}
-
-.dark .hover\:text-success-600:hover,
-.dark .group-hover\:text-success-600:hover {
-  color: #4ade80 !important;
-}
-
-/* Borders */
-.dark .border-gray-200,
-.dark .border-slate-200,
-.dark .border-gray-300,
-.dark .border-slate-300 {
-  border-color: #27272a !important; /* zinc-800 */
-}
-
-.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]),
-.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #27272a !important;
-}
-
-/* Inputs and Selects inside dark mode */
-.dark input,
-.dark select,
-.dark textarea {
-  background-color: #18181b !important;
-  color: #f4f4f5 !important;
-  border-color: #3f3f46 !important;
-}
-
-.dark input::placeholder,
-.dark textarea::placeholder {
-  color: #71717a !important; /* zinc-500 */
-}
-
-/* Fix: error/red boxes need READABLE contrast in dark mode */
-.dark .bg-red-50,
-.dark .bg-red-100 {
-  background-color: #2d1010 !important;
-}
-.dark .text-red-700,
-.dark .text-red-600,
-.dark .text-danger-600 {
-  color: #fca5a5 !important; /* red-300 — readable on dark bg */
-}
-.dark .border-red-200,
-.dark .border-red-300 {
-  border-color: #7f1d1d !important;
-}
-
-/* Fix: buttons with bg-gray-200 in dark mode */
-.dark .bg-gray-200.text-gray-800,
-.dark .bg-gray-200 {
-  background-color: #3f3f46 !important;
-}
-
-/* Fix: blue info/certificate boxes */
-.dark .bg-blue-50,
-.dark .bg-blue-100 {
-  background-color: #172554 !important;
-}
-.dark .border-blue-200,
-.dark .border-blue-300 {
-  border-color: #1e40af !important;
-}
-.dark .text-blue-900 {
-  color: #bfdbfe !important; /* blue-200 */
-}
-
-/* Fix: green boxes */
-.dark .bg-green-50,
-.dark .bg-green-100 {
-  background-color: #052e16 !important;
-}
-.dark .text-green-700,
-.dark .text-green-800 {
-  color: #86efac !important; /* green-300 */
-}
-.dark .border-green-200,
-.dark .border-green-300 {
-  border-color: #14532d !important;
-}
-
-/* Fix: amber/yellow boxes */
-.dark .bg-amber-50,
-.dark .bg-yellow-50,
-.dark .bg-amber-100,
-.dark .bg-yellow-100 {
-  background-color: #1c1200 !important;
-}
-.dark .text-amber-700,
-.dark .text-yellow-700,
-.dark .text-amber-800,
-.dark .text-yellow-800 {
-  color: #fcd34d !important;
-}
-
-/* Fix: slate containers */
-.dark .bg-slate-50,
-.dark .bg-slate-100 {
-  background-color: #18181b !important;
-}
-.dark .border-slate-200,
-.dark .border-slate-300 {
-  border-color: #3f3f46 !important;
-}
-
-/* Fix: Dividers in dark mode */
-.dark .border-gray-200,
-.dark .border-gray-300 {
-  border-color: #27272a !important;
-}
-.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #27272a !important;
 }
 
 /* ============================================================
@@ -426,13 +253,7 @@
 @layer components {
   /* MD Input - Material Design style */
   .md-input {
-    @apply w-full px-4 py-3 text-sm rounded-xl border border-gray-300 dark:border-zinc-600
-           bg-white dark:bg-zinc-900
-           text-gray-900 dark:text-zinc-100
-           placeholder-gray-400 dark:placeholder-zinc-500
-           focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500
-           dark:focus:border-blue-400 dark:focus:ring-blue-400/30
-           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply field-control field-lg px-4;
   }
 
   /* MD Select - consistent with input */
@@ -457,7 +278,7 @@
 
   /* MD Helper text */
   .md-helper {
-    @apply text-xs text-gray-500 dark:text-zinc-500 mt-1;
+    @apply text-xs text-gray-500 dark:text-zinc-400 mt-1;
   }
 
   /* MD Section card */
@@ -467,7 +288,7 @@
 
   /* MD Section header */
   .md-section-header {
-    @apply px-6 py-4 border-b border-gray-200 dark:border-zinc-700;
+    @apply px-5 py-3 border-b border-gray-200 dark:border-zinc-700;
   }
 
   /* MD Section title */
@@ -477,7 +298,7 @@
 
   /* MD Section body */
   .md-section-body {
-    @apply px-6 py-5 space-y-5;
+    @apply px-5 py-4 space-y-4;
   }
 
   /* MD Button variants (Material style - raised) */

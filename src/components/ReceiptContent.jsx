@@ -6,7 +6,7 @@ const ReceiptContent = React.forwardRef(({ saleData }, ref) => {
   React.useEffect(() => {
     // In development, log the ref for debugging
     if (import.meta.env.DEV) {
-      const cur = ref?.current;
+      const _cur = ref?.current;
     }
   }, [ref, saleData]);
 

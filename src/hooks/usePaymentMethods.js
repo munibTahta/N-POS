@@ -38,7 +38,7 @@ export const usePaymentMethods = () => {
             methods = response.data.data;
           } else {
             // Last resort: unknown format
-            console.warn('⚠️ Payment methods response format unexpected:', { 
+            console.warn('Payment methods response format unexpected:', { 
               success: response.data.success, 
               dataType: Array.isArray(response.data) ? 'array' : typeof response.data,
               hasDataProp: !!response.data.data
@@ -49,18 +49,14 @@ export const usePaymentMethods = () => {
         
         // Ensure methods is always an array
         if (!Array.isArray(methods)) {
-          console.warn('⚠️ Payment methods extraction failed, not an array:', { 
+          console.warn('Payment methods extraction failed, not an array:', { 
             type: typeof methods, 
             value: methods 
           });
           methods = [];
         }
 
-        void 0 && (`✓ Fetched ${methods.length} payment methods from API`, { 
-          success: response.data?.success, 
-          total: methods.length,
-          sample: methods.length > 0 ? methods[0] : null 
-        });
+        
         setPaymentMethods(methods);
         setIsFromCache(false);
 
@@ -69,7 +65,7 @@ export const usePaymentMethods = () => {
         try {
           if (window?.electronAPI?.dbSelect && window?.electronAPI?.dbInsert && window?.electronAPI?.dbUpdate) {
             const local = await window.electronAPI.dbSelect({ table: 'metode_pembayaran' }).catch(e => {
-              console.warn('⚠️ dbSelect failed during sync:', e?.message || e);
+              console.warn('dbSelect failed during sync:', e?.message || e);
               return [];
             });
             
@@ -81,14 +77,13 @@ export const usePaymentMethods = () => {
 
             // Batch database operations with small delays to avoid rate limiting
             const batchSize = 5;
-            let persistedCount = 0;
             
             for (let i = 0; i < methods.length; i += batchSize) {
               const batch = methods.slice(i, i + batchSize);
               
               // Validate batch is an array before mapping
               if (!Array.isArray(batch) || batch.length === 0) {
-                console.warn('⚠️ Invalid batch at index', i);
+                console.warn('Invalid batch at index', i);
                 continue;
               }
               
@@ -114,12 +109,10 @@ export const usePaymentMethods = () => {
                 const keyStr = id != null ? String(id) : null;
                 if (keyStr && localMap[keyStr]) {
                   return window.electronAPI.dbUpdate({ table: 'metode_pembayaran', data: row, whereClause: 'id_metode = ?', whereValues: [id] })
-                    .then(() => { persistedCount++; })
-                    .catch(e => console.warn('⚠️ Failed to update payment method', id, e?.message || e));
+                    .catch(e => console.warn('Failed to update payment method', id, e?.message || e));
                 } else {
                   return window.electronAPI.dbInsert({ table: 'metode_pembayaran', data: row })
-                    .then(() => { persistedCount++; })
-                    .catch(e => console.warn('⚠️ Failed to insert payment method', id, e?.message || e));
+                    .catch(e => console.warn('Failed to insert payment method', id, e?.message || e));
                 }
               });
 
@@ -133,7 +126,7 @@ export const usePaymentMethods = () => {
             }
           }
         } catch (persistErr) {
-          console.warn('⚠️ Could not persist payment methods to offline DB:', persistErr?.message || persistErr);
+          console.warn('Could not persist payment methods to offline DB:', persistErr?.message || persistErr);
         }
 
         return methods;
@@ -144,27 +137,25 @@ export const usePaymentMethods = () => {
         try {
           const localMethods = await window.electronAPI.dbSelect({ table: 'metode_pembayaran' });
           if (Array.isArray(localMethods) && localMethods.length > 0) {
-            void 0 && (`✓ Loaded ${localMethods.length} payment methods from offline DB`, {
-              sample: localMethods[0]
-            });
+            
             setPaymentMethods(localMethods);
             setIsFromCache(true);
             return localMethods;
           } else {
-            console.warn('⚠️ No payment methods in offline DB (empty or not array)', { 
+            console.warn('No payment methods in offline DB (empty or not array)', { 
               type: Array.isArray(localMethods) ? 'array' : typeof localMethods,
               length: localMethods?.length
             });
           }
         } catch (dbErr) {
-          console.warn('⚠️ dbSelect failed for metode_pembayaran:', {
+          console.warn('dbSelect failed for metode_pembayaran:', {
             message: dbErr?.message || dbErr,
             code: dbErr?.code,
             type: dbErr?.type
           });
         }
       } else {
-        console.warn('⚠️ electronAPI.dbSelect not available (not running in Electron)');
+        console.warn('electronAPI.dbSelect not available (not running in Electron)');
       }
 
       // Last-resort: return in-memory cached methods
@@ -175,13 +166,13 @@ export const usePaymentMethods = () => {
         return cached;
       }
 
-      console.warn('⚠️ No payment methods available (not online, no offline DB, no cache)');
+      console.warn('No payment methods available (not online, no offline DB, no cache)');
       setError({ message: 'Could not load payment methods', type: 'no_cache' });
       return [];
 
     } catch (err) {
       // Network/API error
-      console.error('✗ Error fetching payment methods from API:', {
+      console.error('Error fetching payment methods from API:', {
         message: err?.message || err,
         status: err?.response?.status,
         statusText: err?.response?.statusText,

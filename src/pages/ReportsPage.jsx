@@ -3,16 +3,21 @@ import { useLocation } from 'react-router-dom';
 import { Download, BarChart3 } from 'lucide-react';
 import HeaderActionButton from '../components/HeaderActionButton';
 import DataTable from '../components/DataTable';
-import { getSales, getStockReport, getStock, getBranches, getProducts, getSalesReport, getPaymentMethodStats, getPaymentHistory, getSalesReturns } from '../services/api';
+import { getSales, getStockReport, getStock, getBranches, getSalesReport, getPaymentMethodStats, getPaymentHistory, getSalesReturns } from '../services/api';
 import { extractArray, extractData } from '../utils/apiResponseHelper';
 import { SearchFilterBar, FilterPanel } from '../components/SearchFilterBar';
 import useSearchAndFilter from '../hooks/useSearchAndFilter';
 import Pagination from '../components/Pagination';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import PageLoading from '../components/PageLoading';
+import PageError from '../components/PageError';
 import { AlertTriangle, CheckCircle, CreditCard, Trophy, Star, Package } from 'lucide-react';
 
 import { exportToExcel } from '../utils/exportHelper';
 import { Bar, Pie } from 'react-chartjs-2';
+import DateRangeFilter from '../components/common/DateRangeFilter';
+import { toISODate, todayISO } from '../utils/dateRange';
+import SalesPatternPanel from '../components/reports/SalesPatternPanel';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -46,12 +51,15 @@ const ReportsPage = () => {
   const [error, setError] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
   const [branches, setBranches] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState('');
   const [priceTypeFilter, setPriceTypeFilter] = useState('all'); // 'all' | 'eceran' | 'grosir'
   const [granularity, setGranularity] = useState('all'); // 'all' | 'daily' | 'monthly' | 'yearly'
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [salesTotalCount, setSalesTotalCount] = useState(null); // total penjualan di server (bisa lebih besar dari yang dimuat)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,6 +77,7 @@ const ReportsPage = () => {
             getSalesReturns()
           ]);
           salesData = extractArray(salesRes);
+          setSalesTotalCount(Number(salesRes?.data?.pagination?.total ?? salesData.length));
           stockData = extractArray(stockRes);
           productsData = []; // Skip loading huge catalog into memory
           returnsData = extractArray(returnsRes);
@@ -92,7 +101,7 @@ const ReportsPage = () => {
                 }));
               }
             } catch (_localStockError) {
-              if (import.meta.env.DEV) {
+              if (import.meta.env.DEV) { /* intentionally empty */ 
 
               }
             }
@@ -251,8 +260,9 @@ const ReportsPage = () => {
     }
     
     if (start && end) {
-      setStartDate(start.toISOString().split('T')[0]);
-      setEndDate(end.toISOString().split('T')[0]);
+      // toISODate (lokal), bukan toISOString (UTC): di WIB, tengah malam lokal jatuh pada tanggal UTC kemarin.
+      setStartDate(toISODate(start));
+      setEndDate(toISODate(end));
     }
   }, [granularity]);
 
@@ -265,17 +275,34 @@ const ReportsPage = () => {
   }, [granularity]);
 
   const filteredSales = useMemo(() => {
-    // If granularity is 'all' and no manual date filters, return all sales
-    if (granularity === 'all' && !startDate && !endDate && !selectedBranch && priceTypeFilter === 'all') return sales;
-    
-    const start = startDate ? new Date(`${startDate}T00:00:00`) : null;
-    const end = endDate ? new Date(`${endDate}T23:59:59`) : null;
+    // If granularity is 'all' and no manual date/time filters, return all sales
+    if (granularity === 'all' && !startDate && !endDate && !startTime && !endTime && !selectedBranch && priceTypeFilter === 'all') return sales;
+
+    const start = startDate ? new Date(`${startDate}T${startTime || '00:00'}:00`) : null;
+    const end = endDate ? new Date(`${endDate}T${endTime || '23:59'}:59`) : null;
+    // Jam-only filter (tanpa tanggal): berlaku ke semua hari, berguna untuk
+    // memisahkan transaksi shift kasir dalam 1 akun yang sama (mis. shift 1
+    // sampai jam 16:00, shift 2 jam 16:00-20:00) tanpa perlu batasi tanggal.
+    const hasTimeOnlyFilter = (startTime || endTime) && !startDate && !endDate;
     const filtered = (sales || []).filter(s => {
       if (!s.tanggal) return false;
       const d = new Date(s.tanggal);
       if (isNaN(d)) return false;
-      if (start && d < start) return false;
-      if (end && d > end) return false;
+      if (hasTimeOnlyFilter) {
+        // Bandingkan jam:menit saja terhadap semua tanggal (mis. semua transaksi jam 16:00-20:00)
+        const minutesOfDay = d.getHours() * 60 + d.getMinutes();
+        if (startTime) {
+          const [sh, sm] = startTime.split(':').map(Number);
+          if (minutesOfDay < sh * 60 + sm) return false;
+        }
+        if (endTime) {
+          const [eh, em] = endTime.split(':').map(Number);
+          if (minutesOfDay > eh * 60 + em) return false;
+        }
+      } else {
+        if (start && d < start) return false;
+        if (end && d > end) return false;
+      }
       // Apply branch filter if selected
       if (selectedBranch) {
         const idCabang = s.cabang?.id_cabang || s.Cabang?.id_cabang || s.id_cabang || s.branch_id || '';
@@ -293,7 +320,7 @@ const ReportsPage = () => {
       return true;
     });
     return filtered;
-  }, [sales, startDate, endDate, selectedBranch, priceTypeFilter, granularity]);
+  }, [sales, startDate, endDate, startTime, endTime, selectedBranch, priceTypeFilter, granularity]);
 
   const { filteredItems: searchedSales } = useSearchAndFilter(filteredSales, {
     searchTerm: searchQuery,
@@ -744,7 +771,7 @@ const ReportsPage = () => {
           Kembali: Number(s.kembali || s.kembalian || 0),
         };
       });
-      exportToExcel(rows, `Laporan_Penjualan_${new Date().toISOString().slice(0,10)}.xlsx`);
+      exportToExcel(rows, `Laporan_Penjualan_${todayISO()}.xlsx`);
     } catch (err) {
       console.error('Export error:', err);
       alert('Gagal mengekspor data ke Excel. Cek console untuk detail.');
@@ -772,7 +799,7 @@ const ReportsPage = () => {
   const handleExportSummary = () => {
     try {
       const rows = getAggregatedRows();
-      exportToExcel(rows, `Laporan_Ringkasan_${granularity}_${new Date().toISOString().slice(0,10)}.xlsx`);
+      exportToExcel(rows, `Laporan_Ringkasan_${granularity}_${todayISO()}.xlsx`);
     } catch (err) {
       console.error('Export ringkasan error:', err);
       alert('Gagal mengekspor ringkasan. Lihat console untuk detail.');
@@ -790,12 +817,12 @@ const ReportsPage = () => {
       // If server provided a simple series [{label, value}] convert to rows
       if (serverReport?.series && Array.isArray(serverReport.series)) {
         const mapped = serverReport.series.map(s => ({ Periode: s.label ?? s.periode, Total: Number(s.value ?? s.total ?? 0) }));
-        exportToExcel(mapped, `Laporan_Server_${new Date().toISOString().slice(0,10)}.xlsx`);
+        exportToExcel(mapped, `Laporan_Server_${todayISO()}.xlsx`);
         return;
       }
 
       // Otherwise export the rows/data directly
-      exportToExcel(serverRows, `Laporan_Server_${new Date().toISOString().slice(0,10)}.xlsx`);
+      exportToExcel(serverRows, `Laporan_Server_${todayISO()}.xlsx`);
     } catch (err) {
       console.error('Export server report error:', err);
       alert('Gagal mengekspor laporan server. Lihat console untuk detail.');
@@ -804,8 +831,8 @@ const ReportsPage = () => {
 
   const chartTitle = granularity === 'all' ? 'Pendapatan Bersih Keseluruhan' : granularity === 'monthly' ? 'Pendapatan Bersih per Bulan' : granularity === 'yearly' ? 'Pendapatan Bersih per Tahun' : 'Pendapatan Bersih per Hari';
 
-  if (loading) return <div className="text-center mt-10">Memuat data laporan...</div>;
-  if (error) return <div className="text-center mt-10 text-red-500">{error}</div>;
+  if (loading) return <PageLoading title="Laporan & Monitoring" />;
+  if (error) return <PageError title="Laporan & Monitoring" message={String(error)} />;
 
   return (
     <PageLayout>
@@ -844,10 +871,12 @@ const ReportsPage = () => {
           onClearSearch={() => setSearchQuery('')}
           onFilterToggle={() => setShowFilterPanel(prev => !prev)}
           isFilterActive={showFilterPanel}
-          hasActiveFilters={Boolean(searchQuery) || selectedBranch || priceTypeFilter !== 'all' || startDate || endDate || granularity !== 'all'}
+          hasActiveFilters={Boolean(searchQuery) || selectedBranch || priceTypeFilter !== 'all' || startDate || endDate || startTime || endTime || granularity !== 'all'}
           onClearFilters={() => {
             setStartDate('');
             setEndDate('');
+            setStartTime('');
+            setEndTime('');
             setSelectedBranch('');
             setPriceTypeFilter('all');
             setGranularity('all');
@@ -858,13 +887,17 @@ const ReportsPage = () => {
         />
         <FilterPanel visible={showFilterPanel} className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <DateRangeFilter
+              className="md:col-span-2 lg:col-span-4"
+              start={startDate}
+              end={endDate}
+              onChange={({ start, end }) => { setStartDate(start); setEndDate(end); }}
+            />
             <div className="flex items-center gap-2">
-              <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Dari</label>
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="p-2 border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-xl flex-1 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Sampai</label>
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="p-2 border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-xl flex-1 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Jam</label>
+              <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} title="Jam mulai" className="p-2 border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-xl w-28 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              <span className="text-slate-500">-</span>
+              <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} title="Jam selesai" className="p-2 border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-xl w-28 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
             </div>
             <div className="flex items-center gap-2">
               <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Cabang</label>
@@ -893,6 +926,10 @@ const ReportsPage = () => {
               </select>
             </div>
           </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Isi jam untuk memisahkan transaksi per shift kasir (mis. shift 1 sampai jam 16:00, shift 2 jam 16:00-20:00) dari akun kasir yang sama.
+            Jika tanggal dikosongkan, filter jam berlaku ke semua tanggal.
+          </p>
         </FilterPanel>
         <div className="mt-6">
           <h4 className="text-sm font-semibold mb-2">Grafik Metode Pembayaran</h4>
@@ -908,6 +945,12 @@ const ReportsPage = () => {
           <pre style={{ maxHeight: 300, overflow: 'auto' }}>
             {JSON.stringify({ stockSummary: stockValueSummary, stockSample: stock.slice(0,10) }, null, 2)}
           </pre>
+        </div>
+      )}
+
+      {salesTotalCount != null && salesTotalCount > sales.length && (
+        <div role="status" className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          Laporan ini memuat {sales.length.toLocaleString('id-ID')} dari {salesTotalCount.toLocaleString('id-ID')} transaksi terbaru, jadi angka di bawah belum mencakup seluruh periode. Gunakan &quot;Export Server Report&quot; untuk angka lengkap.
         </div>
       )}
 
@@ -985,22 +1028,27 @@ const ReportsPage = () => {
         </div>
       </div>
 
+      {/* Pola penjualan: kalender harian dan heatmap jam sibuk */}
+      <div className="bg-white p-4 rounded-xl shadow-sm mb-7">
+        <SalesPatternPanel />
+      </div>
+
       {/* Payment Method Revenue Breakdown */}
       <div className="bg-white p-4 rounded-xl shadow-sm mb-7">
         <h3 className="text-base font-bold mb-3 flex items-center gap-2"><CreditCard className="w-4 h-4 text-slate-500" />Distribusi Metode Pembayaran</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {((serverPaymentStats && serverPaymentStats.length > 0) ? serverPaymentStats : paymentMethodRevenue || []).map((method, idx) => (
-            <div key={idx} className="border rounded-lg p-3 bg-gradient-to-br from-purple-50 to-purple-100">
-              <h4 className="font-semibold text-gray-700 text-sm truncate" title={method.nama_metode || method.nama_metode}>{method.nama_metode || method.nama_metode}</h4>
-              <p className="text-xs text-gray-600 mt-1">Transaksi: <span className="font-bold">{method.total_transaksi ?? method.transactionCount}</span></p>
-              <p className="text-xs text-gray-600">Pendapatan: <span className="font-bold">Rp {formatRupiah(method.total_nominal ?? method.totalRevenue)}</span></p>
-              <div className="mt-2 bg-gray-200 rounded-full h-1">
+            <div key={idx} className="rounded-xl p-3 bg-gray-50 dark:bg-zinc-800/60">
+              <h4 className="font-semibold text-gray-900 dark:text-zinc-100 text-sm truncate" title={method.nama_metode || method.nama_metode}>{method.nama_metode || method.nama_metode}</h4>
+              <p className="text-xs text-gray-600 dark:text-zinc-300 mt-1">Transaksi: <span className="font-bold">{method.total_transaksi ?? method.transactionCount}</span></p>
+              <p className="text-xs text-gray-600 dark:text-zinc-300">Pendapatan: <span className="font-bold">Rp {formatRupiah(method.total_nominal ?? method.totalRevenue)}</span></p>
+              <div className="mt-2 bg-gray-200 dark:bg-zinc-700 rounded-full h-1.5">
                 <div 
-                  className="bg-purple-500 h-1 rounded-full" 
+                  className="bg-purple-500 dark:bg-purple-400 h-1.5 rounded-full" 
                   style={{ width: `${((method.total_nominal ?? method.totalRevenue) / (serverReport?.total_penjualan || salesSummary.totalRevenue || 1)) * 100}%` }}
                 ></div>
               </div>
-              <p className="text-[11px] text-gray-500 mt-1">{(((method.total_nominal ?? method.totalRevenue) / (serverReport?.total_penjualan || salesSummary.totalRevenue || 1)) * 100).toFixed(1)}% dari total</p>
+              <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">{(((method.total_nominal ?? method.totalRevenue) / (serverReport?.total_penjualan || salesSummary.totalRevenue || 1)) * 100).toFixed(1)}% dari total</p>
             </div>
           ))}
         </div>

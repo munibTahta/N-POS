@@ -27,7 +27,7 @@ class APIWithOfflineSupport {
         source: 'api'
       };
     } catch (error) {
-      console.warn('❌ API failed for products, using offline fallback:', error.message);
+      console.warn('API failed for products, using offline fallback:', error.message);
       // Fallback ke offline
       return await offlineAPIFallback.getProducts(params);
     }
@@ -46,7 +46,7 @@ class APIWithOfflineSupport {
       const results = await api.searchProducts(query, limit);
       return Array.isArray(results) ? results : [];
     } catch (error) {
-      console.warn('❌ API search failed, using offline search:', error.message);
+      console.warn('API search failed, using offline search:', error.message);
       const products = await offlineAPIFallback.getProducts({ search: query, limit });
       return products.data || [];
     }
@@ -69,7 +69,7 @@ class APIWithOfflineSupport {
         source: 'api'
       };
     } catch (_error) {
-      console.warn('❌ API failed for categories, using offline fallback');
+      console.warn('API failed for categories, using offline fallback');
       return await offlineAPIFallback.getCategories();
     }
   }
@@ -91,7 +91,7 @@ class APIWithOfflineSupport {
         source: 'api'
       };
     } catch (_error) {
-      console.warn('❌ API failed for units, using offline fallback');
+      console.warn('API failed for units, using offline fallback');
       return await offlineAPIFallback.getUnits();
     }
   }
@@ -113,7 +113,7 @@ class APIWithOfflineSupport {
         source: 'api'
       };
     } catch (_error) {
-      console.warn('❌ API failed for payment methods, using offline fallback');
+      console.warn('API failed for payment methods, using offline fallback');
       return await offlineAPIFallback.getPaymentMethods();
     }
   }
@@ -135,7 +135,7 @@ class APIWithOfflineSupport {
         source: 'api'
       };
     } catch (_error) {
-      console.warn('❌ API failed for customers, using offline fallback');
+      console.warn('API failed for customers, using offline fallback');
       return await offlineAPIFallback.getCustomers();
     }
   }
@@ -158,7 +158,7 @@ class APIWithOfflineSupport {
         message: 'Transaksi disimpan ke server'
       };
     } catch (_error) {
-      console.warn('❌ API failed for transaction, saving offline:', _error.message);
+      console.warn('API failed for transaction, saving offline:', _error.message);
       // Fallback ke offline save
       return await offlineAPIFallback.saveTransaction(data);
     }
@@ -181,7 +181,7 @@ class APIWithOfflineSupport {
         source: 'api'
       };
     } catch (_error) {
-      console.warn('❌ API failed for transactions, using offline fallback');
+      console.warn('API failed for transactions, using offline fallback');
       return await offlineAPIFallback.getTransactions(filters);
     }
   }
@@ -203,7 +203,7 @@ class APIWithOfflineSupport {
         source: 'api'
       };
     } catch (_error) {
-      console.warn('❌ API failed for stock, using offline fallback');
+      console.warn('API failed for stock, using offline fallback');
       return await offlineAPIFallback.getStock(idCabang);
     }
   }

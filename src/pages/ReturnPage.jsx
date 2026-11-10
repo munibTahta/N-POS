@@ -9,6 +9,9 @@ import ResponsiveTable from '../components/common/ResponsiveTable';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import HeaderActionButton from '../components/HeaderActionButton';
 import { Plus } from 'lucide-react';
+import DateRangeFilter from '../components/common/DateRangeFilter';
+import RelativeDate from '../components/common/RelativeDate';
+import { isDateInRange } from '../utils/dateRange';
 
 const CreateIcon = ({ className = '' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -63,10 +66,10 @@ const ReturnPage = () => {
 
       const matchesMethod =
         filterMethod === 'all' || String(retur.metode_pengembalian || '').toLowerCase() === filterMethod.toLowerCase();
-      const matchesFrom = !filterDateFrom || !dateValue || dateValue >= new Date(filterDateFrom);
-      const matchesTo = !filterDateTo || !dateValue || dateValue <= new Date(filterDateTo);
+      // Hari lokal inklusif (dulu: new Date('YYYY-MM-DD') = tengah malam UTC, sehingga seluruh hari terakhir terpotong).
+      const matchesDate = !dateValue || isDateInRange(dateValue, filterDateFrom, filterDateTo);
 
-      return matchesSearch && matchesMethod && matchesFrom && matchesTo;
+      return matchesSearch && matchesMethod && matchesDate;
     });
   }, [returns, searchQuery, filterMethod, filterDateFrom, filterDateTo]);
 
@@ -94,7 +97,6 @@ const ReturnPage = () => {
               variant="emerald"
               to="/return/create"
               isLink
-              hideLabel={true}
             />
           }
         />
@@ -149,24 +151,12 @@ const ReturnPage = () => {
                       <option value="tukar">Tukar Barang</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Tanggal Mulai</label>
-                    <input
-                      type="date"
-                      value={filterDateFrom}
-                      onChange={(e) => setFilterDateFrom(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Tanggal Akhir</label>
-                    <input
-                      type="date"
-                      value={filterDateTo}
-                      onChange={(e) => setFilterDateTo(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
+                  <DateRangeFilter
+                    className="sm:col-span-2"
+                    start={filterDateFrom}
+                    end={filterDateTo}
+                    onChange={({ start, end }) => { setFilterDateFrom(start); setFilterDateTo(end); }}
+                  />
                 </FilterPanelGrid>
               </FilterPanel>
 
@@ -187,7 +177,7 @@ const ReturnPage = () => {
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">ID Retur</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Kode Transaksi</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Produk</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Jumlah</th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 text-right">Jumlah</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Alasan</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Tanggal</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">User</th>
@@ -199,9 +189,9 @@ const ReturnPage = () => {
                           <td className="whitespace-nowrap px-4 py-4 text-sm font-medium text-slate-900">#{retur.id_retur}</td>
                           <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-900">{retur.penjualan?.kode_transaksi || `TRX${retur.id_penjualan}`}</td>
                           <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-900">{retur.produk?.nama_produk || `Produk ${retur.id_produk}`}</td>
-                          <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-900">{retur.jumlah}</td>
+                          <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-900 text-right tabular-nums">{retur.jumlah}</td>
                           <td className="max-w-xs truncate px-4 py-4 text-sm text-slate-900">{retur.alasan}</td>
-                          <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-900">{retur.tanggal ? new Date(retur.tanggal).toLocaleDateString('id-ID') : '-'}</td>
+                          <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-900"><RelativeDate value={retur.tanggal} /></td>
                           <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-900">{retur.user?.nama_lengkap || retur.user?.username || `User ID: ${retur.id_user || 'N/A'}`}</td>
                         </tr>
                       ))}

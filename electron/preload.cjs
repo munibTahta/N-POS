@@ -56,11 +56,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return ipcRenderer.invoke('generate-qz-certificate');
   },
 
-  // TEST HANDLER - REMOVE AFTER DEBUGGING
-  testPrintThermal: () => {
-
-    return ipcRenderer.invoke('test-print-thermal');
-  },
 
   // receive debug messages from main process
   onPrintDebug: (callback) => ipcRenderer.on('print-debug', (event, msg) => {
@@ -105,8 +100,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   dbDelete: (params) => ipcRenderer.invoke('db-delete', params),
   dbSelect: (params) => ipcRenderer.invoke('db-select', params),
   dbTransaction: (operations) => ipcRenderer.invoke('db-transaction', operations),
+
+  /**
+   * Batch database operations (prevents N+1 query problems)
+   */
+  dbBatchInsert: (params) => ipcRenderer.invoke('db-batch-insert', params),
+  dbBatchUpdate: (params) => ipcRenderer.invoke('db-batch-update', params),
+  dbBatchDelete: (params) => ipcRenderer.invoke('db-batch-delete', params),
+
   dbGetSyncQueue: () => ipcRenderer.invoke('db-get-sync-queue'),
   dbUpdateSyncStatus: (params) => ipcRenderer.invoke('db-update-sync-status', params),
+  dbUpdateSyncQueueServerId: (params) => ipcRenderer.invoke('db-update-sync-queue-server-id', params),
   dbSetSyncMetadata: (params) => ipcRenderer.invoke('db-set-sync-metadata', params),
   dbGetSyncMetadata: (params) => ipcRenderer.invoke('db-get-sync-metadata', params),
   dbRepairCorruption: () => ipcRenderer.invoke('db-repair-corruption'),
@@ -221,26 +225,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
    */
   productDB_searchProducts: (query, options) => ipcRenderer.invoke('product-db-search', query, options),
 
-  /**
-   * Get single product by ID
-   * @param {number|string} id - Product ID
-   * @param {string} idType - 'id_produk' or 'kode_produk'
-   * @returns {Promise<Object>} Product object
-   */
-  productDB_getProduct: (id, idType = 'id_produk') => ipcRenderer.invoke('product-db-get', id, idType),
 
-  /**
-   * Get last sync timestamp for delta sync
-   * @returns {Promise<string|null>} ISO timestamp or null
-   */
-  productDB_getLastSyncTime: () => ipcRenderer.invoke('product-db-get-last-sync'),
 
-  /**
-   * Set last sync timestamp
-   * @param {string} timestamp - ISO timestamp
-   * @returns {Promise<boolean>}
-   */
-  productDB_setLastSyncTime: (timestamp) => ipcRenderer.invoke('product-db-set-last-sync', timestamp),
 
   /**
    * Get product count in database
@@ -255,11 +241,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
    */
   productDB_bulkUpsertStocks: (stocks) => ipcRenderer.invoke('product-db-bulk-upsert-stocks', stocks),
 
-  /**
-   * Clear all products (for full resync)
-   * @returns {Promise<boolean>}
-   */
-  productDB_clearAllProducts: () => ipcRenderer.invoke('product-db-clear-all'),
 
   /**
    * Get database statistics

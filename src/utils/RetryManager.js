@@ -29,6 +29,23 @@ class RetryManager {
   }
 
   /**
+   * Jeda sebelum percobaan ulang, atau null bila sebaiknya TIDAK diulang.
+   * 429 (pembatas laju server): hormati Retry-After; bila disuruh menunggu lama (> 5 dtk, mis. login diblokir 15 menit)
+   * mengulang otomatis hanya menunda pesan dan menambah beban, jadi jangan diulang.
+   */
+  getRetryDelay(error, attempt) {
+    const delay = this.getBackoffDelay(attempt);
+    if (error?.response?.status === 429) {
+      const retryAfterMs = Number(error.response.headers?.['retry-after']) * 1000;
+      if (Number.isFinite(retryAfterMs)) {
+        if (retryAfterMs > 5000) return null;
+        return Math.max(delay, retryAfterMs);
+      }
+    }
+    return delay;
+  }
+
+  /**
    * Retry a request with exponential backoff
    */
   async retryRequest(request, attempt = 1) {
@@ -48,7 +65,7 @@ class RetryManager {
       // 2. Offline (unless it's a temporary network blip)
       // 3. Error is not retryable (4xx errors except specific ones)
       if (attempt >= this.maxRetries) {
-        console.warn(`❌ Max retries reached for request`);
+        console.warn(`Max retries reached for request`);
         throw error;
       }
 
@@ -59,8 +76,8 @@ class RetryManager {
         }
       }
 
-      // Wait before retry
-      const delay = this.getBackoffDelay(attempt);
+      const delay = this.getRetryDelay(error, attempt);
+      if (delay === null) throw error;
       
       
       await this.delay(delay);
@@ -132,10 +149,12 @@ export const setupRetryInterceptor = (apiClient) => {
         return Promise.reject(error);
       }
 
-      config.__retryCount = (config.__retryCount || 0) + 1;
+      const nextAttempt = (config.__retryCount || 0) + 1;
+      const delay = retryManager.getRetryDelay(error, nextAttempt);
+      if (delay === null) return Promise.reject(error); // mis. 429 dengan Retry-After panjang: jangan diulang
+      config.__retryCount = nextAttempt;
 
       // Wait before retry
-      const delay = retryManager.getBackoffDelay(config.__retryCount);
       await retryManager.delay(delay);
 
       

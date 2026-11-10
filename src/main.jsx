@@ -1,6 +1,9 @@
 import React, { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import '@fontsource-variable/inter';
+import { reloadOnceForNewVersion } from './utils/chunkRecovery'
 import './styles/index.css'
+import './styles/dark-compat.css' // jaring pengaman tema gelap (dibuat oleh scripts/dark-compat.mjs); harus SETELAH index.css
 import App from './App.jsx'
 import pendingPayments from './utils/pendingPayments';
 import { setupMemoryManagement } from './utils/memoryManager';
@@ -74,8 +77,8 @@ function startBackgroundPendingSync(intervalMs = 120000) {
 
     try {
       const results = await pendingPayments.syncPendingPayments();
-      if (results && results.length > 0) {
-        if (import.meta.env.DEV) void 0 && ('Pending payments synced:', results.length);
+      if (results && results.length > 0) { /* noop */ 
+        
       }
     } catch (e) {
       console.warn('Pending payments sync failed:', e.message);
@@ -133,3 +136,8 @@ if (import.meta.env.DEV) {
     };
   };
 }
+
+// Vite memicu ini bila memuat dependensi chunk gagal (mis. berkas lama sudah diganti versi baru). Muat ulang sekali.
+window.addEventListener('vite:preloadError', (event) => {
+  if (navigator.onLine && reloadOnceForNewVersion()) event.preventDefault();
+});

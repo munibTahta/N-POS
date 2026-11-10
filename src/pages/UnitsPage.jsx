@@ -6,7 +6,9 @@ import { logger } from '../utils/logger';
 import ResponsiveTable from '../components/common/ResponsiveTable';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts/index.jsx';
 import { SearchFilterBar } from '../components/SearchFilterBar';
+import PageLoading from '../components/PageLoading';
 import HeaderActionButton from '../components/HeaderActionButton';
+import HeaderActionMenu from '../components/HeaderActionMenu';
 import DropdownActionMenu from '../components/common/DropdownActionMenu';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import useSearchAndFilter from '../hooks/useSearchAndFilter';
@@ -236,22 +238,7 @@ const UnitsPage = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <PageLayout>
-        <PageContainer>
-          <div className="flex items-center justify-center min-h-96">
-            <div className="text-center">
-              <div className="inline-block">
-                <LoadingSpinner />
-              </div>
-              <p className="mt-3 text-slate-600">Memuat data satuan...</p>
-            </div>
-          </div>
-        </PageContainer>
-      </PageLayout>
-    );
-  }
+  if (loading) return <PageLoading title="Manajemen Satuan" />;
 
   if (error) {
     return (
@@ -280,32 +267,12 @@ const UnitsPage = () => {
             variant="blue"
             to="/satuan/tambah"
             isLink
-            hideLabel={true}
           />,
-          <HeaderActionButton
-            key="export"
-            icon={Download}
-            label="Export Excel"
-            variant="emerald"
-            onClick={handleExportExcel}
-            hideLabel={true}
-          />,
-          <HeaderActionButton
-            key="import"
-            icon={Upload}
-            label="Import Excel"
-            variant="amber"
-            onClick={() => document.getElementById('import-excel-satuan').click()}
-            hideLabel={true}
-          />,
-          <HeaderActionButton
-            key="template"
-            icon={FileText}
-            label="Template"
-            variant="slate"
-            onClick={handleDownloadTemplate}
-            hideLabel={true}
-          />
+          <HeaderActionMenu key="more" items={[
+                { id: 'export', label: 'Export', icon: Download, onClick: () => handleExportExcel() },
+                { id: 'import', label: 'Import', icon: Upload, onClick: () => document.getElementById('import-excel-satuan').click() },
+                { id: 'template', label: 'Template', icon: FileText, onClick: () => handleDownloadTemplate() }
+              ]} />
         ]}
       />
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useId, useRef } from 'react';
 import { AlertTriangle, Info, Trash2, X } from 'lucide-react';
 
 const ConfirmDialog = ({
@@ -13,6 +13,7 @@ const ConfirmDialog = ({
   isLoading = false
 }) => {
   const confirmButtonRef = useRef(null);
+  const uid = useId();
 
   // Close on ESC and focus confirm on open
   useEffect(() => {
@@ -25,13 +26,17 @@ const ConfirmDialog = ({
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    
+    const previous = document.activeElement;
+
     // Auto-focus confirm button for rapid keyboard interaction
     if (confirmButtonRef.current) {
       confirmButtonRef.current.focus();
     }
 
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      if (previous && typeof previous.focus === 'function') previous.focus(); // fokus kembali ke pemicu
+    };
   }, [isOpen, onCancel]);
 
   if (!isOpen) return null;
@@ -57,6 +62,10 @@ const ConfirmDialog = ({
       onClick={onCancel}
     >
       <div 
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby={`${uid}-title`}
+        aria-describedby={`${uid}-desc`}
         className="relative w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden transform transition-all p-6 scale-100"
         onClick={(e) => e.stopPropagation()}
       >
@@ -77,8 +86,8 @@ const ConfirmDialog = ({
             {icon}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-slate-900 break-words">{title}</h3>
-            <p className="text-sm text-slate-500 mt-2 whitespace-normal leading-relaxed">{message}</p>
+            <h3 id={`${uid}-title`} className="text-lg font-bold text-slate-900 break-words">{title}</h3>
+            <p id={`${uid}-desc`} className="text-sm text-slate-500 mt-2 whitespace-normal leading-relaxed">{message}</p>
           </div>
         </div>
 

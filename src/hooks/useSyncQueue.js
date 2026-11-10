@@ -33,7 +33,7 @@ export const useSyncQueue = () => {
       if (result.synced > 0) {
         setSyncStatus({
           status: 'success',
-          message: `✅ Sinkronisasi berhasil: ${result.synced} data disimpan`,
+          message: `Sinkronisasi berhasil: ${result.synced} data disimpan`,
           synced: result.synced,
           failed: result.failed
         });
@@ -44,7 +44,7 @@ export const useSyncQueue = () => {
       } else if (result.failed > 0) {
         setSyncStatus({
           status: 'partial',
-          message: `⚠️ Sinkronisasi sebagian: ${result.failed} data gagal`,
+          message: `Sinkronisasi sebagian: ${result.failed} data gagal`,
           synced: result.synced,
           failed: result.failed
         });
@@ -58,7 +58,7 @@ export const useSyncQueue = () => {
       console.error('Sync error:', error);
       setSyncStatus({
         status: 'error',
-        message: '❌ Sinkronisasi gagal: ' + (error.message || 'Unknown error')
+        message: 'Sinkronisasi gagal: ' + (error.message || 'Unknown error')
       });
     } finally {
       setIsSyncing(false);

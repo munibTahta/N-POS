@@ -1,59 +1,19 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { getAuditTrail } from '../services/api';
 import { withErrorBoundary } from '../components/withErrorBoundary';
 import DataTable from '../components/DataTable';
-import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import { PageLayout, PageContainer, PageHeader, MetaLine } from '../components/layouts';
+import DateRangeFilter from '../components/common/DateRangeFilter';
+import { getPresetRange, isDateInRange, parseFlexibleDate, formatDateTimeID } from '../utils/dateRange';
+import { describeRange } from '../utils/dateRange';
 
-// Safe date formatter to handle invalid dates
-const formatAuditDate = (dateString) => {
-  if (!dateString) return 'Tanggal tidak tersedia';
-  
-  try {
-    // Handle various date formats
-    let date;
-    
-    // If it's a string that looks like a timestamp
-    if (typeof dateString === 'string') {
-      // Try parsing ISO format first
-      date = new Date(dateString);
-      
-      // If invalid, try other formats
-      if (isNaN(date.getTime())) {
-        // Try timestamp format (milliseconds or seconds)
-        const timestamp = parseInt(dateString, 10);
-        if (!isNaN(timestamp)) {
-          date = new Date(timestamp > 9999999999 ? timestamp : timestamp * 1000);
-        }
-      }
-    } else if (typeof dateString === 'number') {
-      date = new Date(dateString > 9999999999 ? dateString : dateString * 1000);
-    } else {
-      date = new Date(dateString);
-    }
-    
-    // Check if date is valid
-    if (isNaN(date.getTime())) {
-      return 'Tanggal tidak valid';
-    }
-    
-    return date.toLocaleString('id-ID', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  } catch (err) {
-    console.error('Date formatting error:', err, dateString);
-    return 'Tanggal tidak valid';
-  }
-};
 
 const AuditTrailPage = ({ pageTitle = 'Audit Trail' }) => {
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // Log bisa sangat banyak: bawaan 7 hari terakhir (pilih "Semua" untuk seluruhnya).
+  const [range, setRange] = useState(() => getPresetRange('last7'));
 
   // Fetch audit trail
   const fetchAuditTrail = useCallback(async () => {
@@ -124,16 +84,21 @@ const AuditTrailPage = ({ pageTitle = 'Audit Trail' }) => {
     {
       key: 'tanggal',
       header: 'Waktu',
-      render: (log) => `${formatAuditDate(log.tanggal)}`,
+      render: (log) => formatDateTimeID(log.tanggal),
     },
   ];
+
+  const logsInRange = useMemo(
+    () => auditLogs.filter((l) => isDateInRange(parseFlexibleDate(l.tanggal), range.start, range.end)),
+    [auditLogs, range]
+  );
 
   return (
     <PageLayout>
       <PageContainer>
         <PageHeader
           title={pageTitle}
-          description="Pantau semua aktivitas sistem dan perubahan data yang tercatat."
+          subtitle={<MetaLine parts={[describeRange(range.start, range.end), `${logsInRange.length.toLocaleString('id-ID')} log`]} />}
         />
 
         <div className="space-y-6">
@@ -141,7 +106,7 @@ const AuditTrailPage = ({ pageTitle = 'Audit Trail' }) => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white p-4 rounded-lg border border-gray-200">
               <p className="text-sm text-gray-600">Total Log</p>
-              <p className="text-2xl font-bold text-gray-900">{auditLogs.length.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">{logsInRange.length.toLocaleString()}</p>
             </div>
             <div className="bg-white p-4 rounded-lg border border-gray-200">
               <p className="text-sm text-gray-600">Tabel Terpengaruh</p>
@@ -156,9 +121,10 @@ const AuditTrailPage = ({ pageTitle = 'Audit Trail' }) => {
           {/* Search & Filter Section */}
           <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
             <div className="p-6">
+              <DateRangeFilter compact className="mb-4" start={range.start} end={range.end} onChange={setRange} />
               {/* DataTable with built-in search and filters */}
               <DataTable
-                data={auditLogs}
+                data={logsInRange}
                 columns={columns}
                 searchKeys={['aktivitas', 'resource', 'userName', 'id_audit']}
                 filters={[

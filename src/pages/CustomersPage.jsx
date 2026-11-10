@@ -8,13 +8,16 @@ import ExcelJS from 'exceljs';
 import { SearchFilterBar } from '../components/SearchFilterBar';
 import { FilterPanel, FilterPanelGrid, FilterField } from '../components/FilterPanel';
 import Pagination from '../components/Pagination';
-import useSearchAndFilter from '../hooks/useSearchAndFilter';
-import { usePagination } from '../hooks/usePagination';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import DataTable from '../components/DataTable';
 import HeaderActionButton from '../components/HeaderActionButton';
+import PageLoading from '../components/PageLoading';
+import HeaderActionMenu from '../components/HeaderActionMenu';
 import ConfirmDialog from '../components/common/ConfirmDialog';
+import { FloatingLabelInput, FloatingLabelSelect, FloatingLabelTextarea } from '../components/common/FloatingLabelField';
 import { Eye, Edit, Trash2, Plus, Download, Upload, FileText } from 'lucide-react';
+import BulkActionBar from '../components/common/BulkActionBar';
+import { pruneSelection } from '../utils/bulk';
 
 const CustomersPage = () => {
   const navigate = useNavigate();
@@ -42,7 +45,6 @@ const CustomersPage = () => {
   const [_successMsg, setSuccessMsg] = useState('');
 
   const [selectedIds, setSelectedIds] = useState([]);
-  const [isDeletingBulk, setIsDeletingBulk] = useState(false);
   const [importProgress, setImportProgress] = useState({ active: false, current: 0, total: 0, successCount: 0, failCount: 0 });
   const [importOptions, setImportOptions] = useState({ ignoreDuplicates: true, updateDuplicates: false });
   const [showImportOptionsModal, setShowImportOptionsModal] = useState(false);
@@ -55,9 +57,14 @@ const CustomersPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterValues, setFilterValues] = useState({ tipe_pelanggan: '' });
 
+  // Pilihan dibersihkan saat pindah halaman/ukuran halaman; saat DATA dimuat ulang hanya id yang sudah tidak ada yang dibuang
+  // (dulu semuanya dikosongkan sehingga item yang gagal dihapus ikut tidak terpilih lagi).
   useEffect(() => {
     setSelectedIds([]);
-  }, [page, limit, customers]);
+  }, [page, limit]);
+  useEffect(() => {
+    setSelectedIds((cur) => pruneSelection(cur, customers.map((c) => c.id_pelanggan)));
+  }, [customers]);
   
   const fetchCustomersData = useCallback(async () => {
     try {
@@ -89,9 +96,9 @@ const CustomersPage = () => {
       
       setCustomers(data);
       setTotalItems(total);
-    } catch (_err) {
+    } catch (err) {
       // Fallback to SQLite when offline and cache is empty
-      console.warn('Failed to fetch customers from API, trying SQLite cache:', _err.message);
+      console.warn('Failed to fetch customers from API, trying SQLite cache:', err.message);
       if (window.electronAPI?.dbSelect) {
         try {
           let whereClause = '1=1';
@@ -128,7 +135,7 @@ const CustomersPage = () => {
         }
       } else {
         setErrorMsg('Gagal memuat data pelanggan. Pastikan Anda terhubung ke internet.');
-        console.error('Error fetching customers:', _err);
+        console.error('Error fetching customers:', err);
       }
     } finally {
       setLoading(false);
@@ -359,7 +366,7 @@ const CustomersPage = () => {
         } else {
           failCount += chunk.length;
         }
-      } catch (err) {
+      } catch {
         failCount += chunk.length;
       }
       
@@ -382,38 +389,7 @@ const CustomersPage = () => {
     }, 5000);
   };
 
-  const handleBulkDelete = () => {
-    if (selectedIds.length === 0) return;
-    
-    setConfirmDialog({
-      isOpen: true,
-      title: 'Hapus Massal Pelanggan',
-      message: `Apakah Anda yakin ingin menghapus ${selectedIds.length} pelanggan terpilih?`,
-      confirmText: 'Ya, Hapus',
-      variant: 'danger',
-      onConfirm: async () => {
-        try {
-          setIsDeletingBulk(true);
-          const response = await bulkDeletePelanggan(selectedIds);
-          if (response.data?.success) {
-            showSuccess(`Berhasil menghapus ${selectedIds.length} pelanggan`);
-            setSelectedIds([]);
-            fetchCustomersData();
-          } else {
-            showError(`Gagal menghapus pelanggan: ${response.data?.message || 'Unknown error'}`);
-          }
-        } catch (err) {
-          handleError(err);
-          showError('Gagal melakukan hapus massal');
-        } finally {
-          setIsDeletingBulk(false);
-          setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-        }
-      }
-    });
-  };
-
-  if (loading) return <div className="text-center mt-10">Memuat data pelanggan...</div>;
+  if (loading) return <PageLoading title="Manajemen Pelanggan" subtitle="Kelola data pelanggan dan informasi kontak" />;
 
   return (
     <PageLayout>
@@ -422,45 +398,17 @@ const CustomersPage = () => {
         subtitle="Kelola data pelanggan dan informasi kontak"
         actions={
           <div className="flex gap-2">
-            {selectedIds.length > 0 && (
-              <button
-                type="button"
-                onClick={handleBulkDelete}
-                disabled={isDeletingBulk}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded shadow transition"
-              >
-                <Trash2 className="h-4 w-4" />
-                Hapus ({selectedIds.length})
-              </button>
-            )}
             <HeaderActionButton
               icon={Plus}
               label="Tambah"
               variant="slate"
               onClick={() => setShowForm(true)}
-              hideLabel={true}
             />
-            <HeaderActionButton
-              icon={Download}
-              label="Export"
-              variant="emerald"
-              onClick={handleExportExcel}
-              hideLabel={true}
-            />
-            <HeaderActionButton
-              icon={Upload}
-              label="Import"
-              variant="yellow"
-              onClick={() => document.getElementById('import-excel').click()}
-              hideLabel={true}
-            />
-            <HeaderActionButton
-              icon={FileText}
-              label="Template"
-              variant="gray"
-              onClick={handleDownloadTemplate}
-              hideLabel={true}
-            />
+            <HeaderActionMenu key="more" items={[
+                { id: 'export', label: 'Export', icon: Download, onClick: () => handleExportExcel() },
+                { id: 'import', label: 'Import', icon: Upload, onClick: () => document.getElementById('import-excel').click() },
+                { id: 'template', label: 'Template', icon: FileText, onClick: () => handleDownloadTemplate() }
+              ]} />
           </div>
         }
       />
@@ -472,58 +420,41 @@ const CustomersPage = () => {
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Nama Pelanggan *</label>
-                <input
-                  type="text"
-                  value={formData.nama_pelanggan}
-                  onChange={(e) => setFormData({...formData, nama_pelanggan: e.target.value})}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">No. Telepon</label>
-                <input
-                  type="text"
-                  value={formData.no_telp}
-                  onChange={(e) => setFormData({...formData, no_telp: e.target.value})}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Tipe Pelanggan</label>
-                <select
-                  value={formData.tipe_pelanggan}
-                  onChange={(e) => setFormData({...formData, tipe_pelanggan: e.target.value})}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="regular">Regular</option>
-                  <option value="member">Member</option>
-                  <option value="vip">VIP</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Alamat</label>
-              <textarea
-                value={formData.alamat}
-                onChange={(e) => setFormData({...formData, alamat: e.target.value})}
-                className="w-full px-3 py-2 text-sm border border-gray-300 bg-white rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows="3"
+              <FloatingLabelInput
+                label="Nama Pelanggan"
+                value={formData.nama_pelanggan}
+                onChange={(e) => setFormData({...formData, nama_pelanggan: e.target.value})}
+                required
+              />
+              <FloatingLabelInput
+                label="Email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
               />
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <FloatingLabelInput
+                label="No. Telepon"
+                value={formData.no_telp}
+                onChange={(e) => setFormData({...formData, no_telp: e.target.value})}
+              />
+              <FloatingLabelSelect
+                label="Tipe Pelanggan"
+                value={formData.tipe_pelanggan}
+                onChange={(e) => setFormData({...formData, tipe_pelanggan: e.target.value})}
+              >
+                <option value="regular">Regular</option>
+                <option value="member">Member</option>
+                <option value="vip">VIP</option>
+              </FloatingLabelSelect>
+            </div>
+            <FloatingLabelTextarea
+              label="Alamat"
+              value={formData.alamat}
+              onChange={(e) => setFormData({...formData, alamat: e.target.value})}
+              rows={3}
+            />
             <div className="flex gap-3 pt-2">
               <button
                 type="submit"
@@ -593,6 +524,18 @@ const CustomersPage = () => {
         )}
 
         {/* Data Table dengan Internal Search, Filter, dan Pagination */}
+        <BulkActionBar
+          noun="pelanggan"
+          items={selectedIds.map((id) => customers.find((c) => c.id_pelanggan === id) || { id_pelanggan: id })}
+          labelOf={(c) => c.nama_pelanggan || `ID ${c.id_pelanggan}`}
+          onClear={() => setSelectedIds([])}
+          onDone={({ failed }) => { setSelectedIds(failed.map((c) => c.id_pelanggan)); fetchCustomersData(); }}
+          actions={[
+            { id: 'hapus', label: 'Hapus', icon: Trash2, variant: 'danger', verb: 'dihapus',
+              confirm: { title: 'Hapus pelanggan terpilih', message: (n) => `Hapus ${n} pelanggan? Tindakan ini tidak dapat dibatalkan.`, confirmText: 'Ya, hapus' },
+              runAll: async (items) => { const res = await bulkDeletePelanggan(items.map((c) => c.id_pelanggan)); if (res.data?.success) return { ok: items.map((item) => ({ item })), failed: [] }; throw new Error(res.data?.message || 'Server menolak penghapusan'); } },
+          ]}
+        />
         <DataTable
           data={customers}
           loading={loading}

@@ -7,6 +7,11 @@
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
+// Header names that should render as real Excel numbers with thousands
+// separators (so SUM/AVERAGE formulas work on the exported file), instead
+// of plain text. Matched case-insensitively against object keys.
+const CURRENCY_HEADER_PATTERN = /rp|harga|total|bayar|kembali|debit|kredit|kekurangan|nominal|subtotal|diskon|pajak|saldo|omzet|pendapatan|hutang|piutang/i;
+
 export const exportToExcel = async (data = [], filename = 'export.xlsx') => {
   try {
     // Validate data
@@ -42,12 +47,17 @@ export const exportToExcel = async (data = [], filename = 'export.xlsx') => {
       } catch (e) {
         throw new Error('Error adding headers: ' + e.message);
       }
-      // Add data rows - ensure all values are strings
+      // Add data rows - keep numbers/dates as real Excel values so
+      // SUM/AVERAGE formulas work; only non-numeric values fall back to text.
       const rows = data.map((obj, index) => {
         if (index >= 1000) return null; // Safety limit
         return headers.map(key => {
           const value = obj && obj[key];
           if (value === null || value === undefined) return '';
+          if (typeof value === 'number') {
+            return Number.isFinite(value) ? value : '';
+          }
+          if (value instanceof Date) return value;
           try {
             return String(value);
           } catch (_e) {
@@ -55,7 +65,14 @@ export const exportToExcel = async (data = [], filename = 'export.xlsx') => {
           }
         });
       }).filter(row => row !== null); // Remove null rows
-      
+
+      // Format currency/number-like columns with thousands separators
+      headers.forEach((key, idx) => {
+        if (CURRENCY_HEADER_PATTERN.test(key)) {
+          worksheet.getColumn(idx + 1).numFmt = '#,##0';
+        }
+      });
+
       // Add rows in small chunks
       const chunkSize = 100;
       for (let i = 0; i < rows.length; i += chunkSize) {

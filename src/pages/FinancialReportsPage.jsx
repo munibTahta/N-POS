@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Download, BookOpen, TrendingUp, Wallet, FileText, Plus, X, Edit2, Trash2, AlertTriangle } from 'lucide-react';
+import { Download, BookOpen, TrendingUp, Wallet, FileText, Plus, X, Edit2, Trash2, AlertTriangle, Check } from 'lucide-react';
 import HeaderActionButton from '../components/HeaderActionButton';
 import DataTable from '../components/DataTable';
 import Pagination from '../components/Pagination';
@@ -17,9 +17,12 @@ import {
   getFinancialAccounts
 } from '../services/api';
 import { extractArray, extractData } from '../utils/apiResponseHelper';
-import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import { PageLayout, PageContainer, PageHeader, MetaLine } from '../components/layouts';
 import { exportToExcel } from '../utils/exportHelper';
 import { toast } from 'react-toastify';
+import DateRangeFilter from '../components/common/DateRangeFilter';
+import { getPresetRange, todayISO } from '../utils/dateRange';
+import { describeRange } from '../utils/dateRange';
 
 const FinancialReportsPage = () => {
   // Tab & Report State
@@ -30,8 +33,9 @@ const FinancialReportsPage = () => {
 
   // Search & Filter State
   const [selectedBranch, setSelectedBranch] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  // Bawaan: bulan berjalan (laporan keuangan tanpa periode tidak bermakna); pilih "Semua" untuk seluruh waktu.
+  const [startDate, setStartDate] = useState(() => getPresetRange('thisMonth').start);
+  const [endDate, setEndDate] = useState(() => getPresetRange('thisMonth').end);
   const [selectedAccount, setSelectedAccount] = useState('');
   const [selectedRekening, setSelectedRekening] = useState('');
 
@@ -54,7 +58,7 @@ const FinancialReportsPage = () => {
 
   function getInitialJournalForm() {
     return {
-      tanggal: new Date().toISOString().split('T')[0],
+      tanggal: todayISO(),
       keterangan: '',
       id_cabang: '',
       jenis_transaksi: 'lainnya',
@@ -117,7 +121,7 @@ const FinancialReportsPage = () => {
     }
   };
 
-  const reportFilters = useMemo(() => {
+  const _reportFilters = useMemo(() => {
     const filters = [
       {
         key: 'id_cabang',
@@ -208,7 +212,7 @@ const FinancialReportsPage = () => {
     return filters;
   }, [activeTab, branches, accounts, financialAccounts]);
 
-  const journalFilters = useMemo(() => [
+  const _journalFilters = useMemo(() => [
     {
       key: 'id_cabang',
       label: 'Cabang',
@@ -253,7 +257,7 @@ const FinancialReportsPage = () => {
     }
   ], [branches]);
 
-  const handleDataTableFilterChange = ({ filterValues }) => {
+  const _handleDataTableFilterChange = ({ filterValues }) => {
     setSelectedBranch(filterValues.id_cabang || '');
     setStartDate(filterValues.tanggal_dari || '');
     setEndDate(filterValues.tanggal_sampai || '');
@@ -332,7 +336,7 @@ const FinancialReportsPage = () => {
     if (journal) {
       setEditingJournal(journal);
       setJournalForm({
-        tanggal: journal.tanggal?.split('T')[0] || new Date().toISOString().split('T')[0],
+        tanggal: journal.tanggal?.split('T')[0] || todayISO(),
         keterangan: journal.keterangan || '',
         id_cabang: journal.id_cabang || '',
         jenis_transaksi: journal.jenis_transaksi || 'lainnya',
@@ -421,7 +425,7 @@ const FinancialReportsPage = () => {
 
     try {
       let exportData = [];
-      const fileName = `Laporan_${activeTab}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      const fileName = `Laporan_${activeTab}_${todayISO()}.xlsx`;
 
       switch (activeTab) {
         case 'buku-besar':
@@ -505,7 +509,8 @@ const FinancialReportsPage = () => {
   ];
 
   // Render functions
-  const renderSummaryCards = () => {
+  // Belum dipakai (kartu ringkasan dipindah ke komponen lain); dipertahankan sementara untuk referensi.
+  const _renderSummaryCards = () => {
     if (!data?.summary) return null;
 
     const cards = [];
@@ -721,8 +726,9 @@ const FinancialReportsPage = () => {
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
           <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex justify-between items-center">
-            <h3 className="text-2xl font-bold text-gray-900">
-              {editingJournal ? '✏️ Edit Jurnal' : '➕ Buat Jurnal Baru'}
+            <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              {editingJournal ? <Edit2 className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+              {editingJournal ? 'Edit Jurnal' : 'Buat Jurnal Baru'}
             </h3>
             <button
               onClick={handleCloseJournalForm}
@@ -828,7 +834,7 @@ const FinancialReportsPage = () => {
                             ))}
                           </select>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 text-right tabular-nums">
                           <input
                             type="number"
                             value={line.debit}
@@ -838,7 +844,7 @@ const FinancialReportsPage = () => {
                             step="1"
                           />
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 text-right tabular-nums">
                           <input
                             type="number"
                             value={line.kredit}
@@ -877,12 +883,12 @@ const FinancialReportsPage = () => {
                       <td className="px-4 py-3 text-right">{formatCurrency(totalKredit)}</td>
                       <td colSpan="2" className="px-4 py-3">
                         {isBalanced ? (
-                          <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                            ✓ Seimbang
+                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                            <Check className="w-3.5 h-3.5" /> Seimbang
                           </span>
                         ) : (
-                          <span className="inline-block px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium">
-                            ✗ Tidak Seimbang ({formatCurrency(Math.abs(totalDebit - totalKredit))})
+                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium">
+                            <X className="w-3.5 h-3.5" /> Tidak Seimbang ({formatCurrency(Math.abs(totalDebit - totalKredit))})
                           </span>
                         )}
                       </td>
@@ -923,7 +929,7 @@ const FinancialReportsPage = () => {
     <PageLayout>
       <PageContainer>
         {/* Header */}
-        <PageHeader title="Laporan Keuangan">
+        <PageHeader title="Laporan Keuangan" subtitle={<MetaLine parts={[describeRange(startDate, endDate), tabs.find((t) => t.id === activeTab)?.label]} />}>
           <div className="flex flex-wrap gap-2">
             {activeTab !== 'jurnal' && (
               <HeaderActionButton
@@ -967,6 +973,17 @@ const FinancialReportsPage = () => {
               );
             })}
           </nav>
+        </div>
+
+        {/* Periode laporan */}
+        <div className="mb-6">
+          <DateRangeFilter
+            label="Periode laporan"
+            presets={['today', 'yesterday', 'last7', 'last30', 'thisMonth', 'lastMonth', 'thisYear', 'all']}
+            start={startDate}
+            end={endDate}
+            onChange={({ start, end }) => { setStartDate(start); setEndDate(end); setCurrentPage(1); }}
+          />
         </div>
 
         {/* Loading State */}

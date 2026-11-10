@@ -14,7 +14,7 @@ const InitializationIndicator = () => {
   useEffect(() => {
     const handleSyncStart = () => {
       // Show loading toast
-      toastIdRef.current = toast.loading('🔄 Menyiapkan data offline...', {
+      toastIdRef.current = toast.loading('Menyiapkan data offline...', {
         position: 'bottom-left',
         autoClose: false,
         closeButton: false,
@@ -27,7 +27,7 @@ const InitializationIndicator = () => {
       // Update toast with progress
       if (toastIdRef.current !== null && percent) {
         toast.update(toastIdRef.current, {
-          render: `🔄 Menyiapkan data offline... ${percent}%`,
+          render: `Menyiapkan data offline... ${percent}%`,
           type: 'info',
           isLoading: true,
         });

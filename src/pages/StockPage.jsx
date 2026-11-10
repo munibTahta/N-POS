@@ -7,10 +7,15 @@ import { handleError } from '../utils/errorHandler';
 import { withErrorBoundary } from '../components/withErrorBoundary';
 import { exportToExcel } from '../utils/exportHelper';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import PageLoading from '../components/PageLoading';
+import PageError from '../components/PageError';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import HeaderActionButton from '../components/HeaderActionButton';
-import { MapPin, Warehouse, Pencil, Clock, AlertCircle, AlertTriangle, Info, Download, ArrowDownUp, Share2 } from 'lucide-react';
+import { MapPin, Warehouse, Pencil, Clock, AlertCircle, AlertTriangle, Info, Download, ArrowDownUp, Share2, ClipboardCheck, ShoppingCart } from 'lucide-react';
+import { todayISO } from '../utils/dateRange';
+import TabBar from '../components/common/TabBar';
+import StockAnomalyBanner from '../components/stock/StockAnomalyBanner';
 
 const StockAdjustmentModal = ({ item, onClose, onAdjust }) => {
   const { success: _showSuccess, error: _showError } = useNotifications();
@@ -201,7 +206,7 @@ const StockPage = () => {
         }
       });
 
-      const filename = `Laporan_Stok_${activeTab === 'cabang' ? 'Cabang' : 'Gudang'}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const filename = `Laporan_Stok_${activeTab === 'cabang' ? 'Cabang' : 'Gudang'}_${todayISO()}.xlsx`;
       await exportToExcel(exportData, filename);
       showSuccess('Data berhasil diekspor ke Excel');
     } catch (error) {
@@ -246,8 +251,8 @@ const StockPage = () => {
     normal: warehouseStock.filter(item => item.jumlah > 20).length,
   };
 
-  if (loading) return <div className="text-center mt-10">Loading...</div>;
-  if (error) return <div className="text-center mt-10 text-red-500">{error}</div>;
+  if (loading) return <PageLoading title="Manajemen Stok" />;
+  if (error) return <PageError title="Manajemen Stok" message={String(error)} />;
 
   return (
     <PageLayout>
@@ -264,6 +269,20 @@ const StockPage = () => {
               variant="emerald"
               onClick={handleExport}
               title="Download data stok ke Excel"
+            />
+            <HeaderActionButton
+              icon={ClipboardCheck}
+              label="Stok Opname"
+              to="/stok/opname"
+              isLink={true}
+              title="Hitung fisik dan sesuaikan stok"
+            />
+            <HeaderActionButton
+              icon={ShoppingCart}
+              label="Saran Restok"
+              to="/stok/restok"
+              isLink={true}
+              title="Barang yang perlu dibeli, dari kecepatan jual"
             />
             <HeaderActionButton
               icon={ArrowDownUp}
@@ -284,6 +303,7 @@ const StockPage = () => {
           </div>
         }
       />
+      <StockAnomalyBanner />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
@@ -312,23 +332,7 @@ const StockPage = () => {
       </div>
 
       <PageContainer>
-        {/* Tab Navigation */}
-        <div className="mb-6 border-b border-gray-200">
-          <nav className="-mb-px flex gap-6">
-            <button
-              onClick={() => setActiveTab('cabang')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${activeTab === 'cabang' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-          >
-            <MapPin className="w-4 h-4" />Stok Cabang
-          </button>
-          <button
-            onClick={() => setActiveTab('gudang')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${activeTab === 'gudang' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-          >
-            <Warehouse className="w-4 h-4" />Stok Gudang Pusat
-          </button>
-        </nav>
-      </div>
+        <TabBar prefix="stk" label="Lokasi stok" value={activeTab} onChange={setActiveTab} tabs={[{ id: 'cabang', label: 'Stok Cabang', icon: MapPin }, { id: 'gudang', label: 'Stok Gudang Pusat', icon: Warehouse }]} />
 
           {/* Stock Table - Branch dengan DataTable */}
           {activeTab === 'cabang' && (

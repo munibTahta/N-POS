@@ -17,6 +17,7 @@ import { initializeBundleOptimization } from './utils/bundleOptimizer';
 import { setupMemoryManagement } from './utils/memoryManager';
 import { initializeErrorRecovery } from './utils/errorRecovery';
 import { preloadAllPages } from './utils/offlineModuleLoader';
+import { isChunkLoadError, reloadOnceForNewVersion } from './utils/chunkRecovery';
 
 // Create lazy loader with better error handling
 // In Electron dev, use direct lazy loading without the complex offline fallback
@@ -25,8 +26,13 @@ const createLazyPage = (importFn, pageName) => {
     importFn()
       .catch(error => {
         console.error(`Failed to load ${pageName}:`, error);
+        // Versi baru diterapkan saat tab lama masih terbuka: berkas lama sudah tidak ada. Muat ulang sekali agar
+        // mengambil versi terbaru; bila sudah dicoba baru-baru ini, tampilkan pesan dengan tombol "Muat ulang".
+        if (isChunkLoadError(error) && navigator.onLine && reloadOnceForNewVersion()) {
+          return { default: () => <LazyFallback updating /> };
+        }
         return {
-          default: () => <LazyFallback error={error} isOffline={!navigator.onLine} />
+          default: () => <LazyFallback error={error} isOffline={!navigator.onLine} stale={isChunkLoadError(error)} retry={() => window.location.reload()} />
         };
       })
   );
@@ -47,6 +53,8 @@ const CategoryFormPage = createLazyPage(() => import('./pages/CategoryFormPage')
 const SupplierFormPage = createLazyPage(() => import('./pages/SupplierFormPage'), 'SupplierFormPage');
 const UserFormPage = createLazyPage(() => import('./pages/UserFormPage'), 'UserFormPage');
 const PosPage = createLazyPage(() => import('./pages/PosPage'), 'PosPage');
+const StockOpnamePage = createLazyPage(() => import('./pages/StockOpnamePage'), 'StockOpnamePage');
+const RestockSuggestionsPage = createLazyPage(() => import('./pages/RestockSuggestionsPage'), 'RestockSuggestionsPage');
 const StockPage = createLazyPage(() => import('./pages/StockPage'), 'StockPage');
 const StockViewKasirPage = createLazyPage(() => import('./pages/StockViewKasirPage'), 'StockViewKasirPage');
 const StockTransferPage = createLazyPage(() => import('./pages/StockTransferPage'), 'StockTransferPage');
@@ -101,7 +109,7 @@ function App() {
     // eslint-disable-next-line no-undef
     if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
       preloadAllPages().catch(error => {
-        console.warn('⚠️ Module pre-loading had issues:', error);
+        console.warn('Module pre-loading had issues:', error);
         // Continue anyway - will fallback to on-demand loading
       });
     } else {
@@ -167,6 +175,8 @@ function App() {
                   <Route path="pelanggan" element={<ProtectedRoute menuKey="pelanggan"><CustomersPage /></ProtectedRoute>} />
                   <Route path="pelanggan/:id" element={<ProtectedRoute menuKey="pelanggan"><CustomerDetailPage /></ProtectedRoute>} />
                   <Route path="stok" element={<ProtectedRoute menuKey="stok"><StockPage /></ProtectedRoute>} />
+                  <Route path="stok/opname" element={<ProtectedRoute menuKey="stok"><StockOpnamePage /></ProtectedRoute>} />
+                  <Route path="stok/restok" element={<ProtectedRoute menuKey="stok"><RestockSuggestionsPage /></ProtectedRoute>} />
                   <Route path="stok/kasir" element={<ProtectedRoute menuKey="stok"><StockViewKasirPage /></ProtectedRoute>} />
                   <Route path="stok/gudang" element={<ProtectedRoute menuKey="stok"><StockGudangPage /></ProtectedRoute>} />
                   <Route path="stok/transfer" element={<ProtectedRoute menuKey="stok"><StockTransferPage /></ProtectedRoute>} />
@@ -216,7 +226,7 @@ function App() {
                 </Route>
               </Routes>
               </Suspense>
-              <ToastContainer />
+              <ToastContainer limit={3} newestOnTop />
               <DetailedSyncStatus />
             </div>
           </AppInitializer>

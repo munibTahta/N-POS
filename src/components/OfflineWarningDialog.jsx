@@ -1,4 +1,5 @@
 import React from 'react';
+import { Satellite, AlertTriangle, Info, Check } from 'lucide-react';
 import { formatCurrency } from '../utils/formatHelper';
 
 /**
@@ -19,7 +20,7 @@ const OfflineWarningDialog = ({
         {/* Header */}
         <div className="bg-amber-50 px-6 py-4 rounded-t-lg border-b-2 border-amber-200">
           <div className="flex items-center gap-3">
-            <div className="text-3xl">📡</div>
+            <Satellite className="w-8 h-8 text-amber-600" />
             <div>
               <h2 className="text-lg font-bold text-gray-900">Mode Offline</h2>
               <p className="text-sm text-amber-700">Transaksi akan disimpan lokal</p>
@@ -32,7 +33,7 @@ const OfflineWarningDialog = ({
           {/* Warning Message */}
           <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded">
             <p className="text-sm text-amber-800">
-              <strong>⚠️ Perhatian:</strong> Koneksi internet terputus. Transaksi ini akan disimpan di database lokal dan otomatis disinkronkan ke server saat koneksi kembali.
+              <strong className="inline-flex items-center gap-1"><AlertTriangle className="w-4 h-4" /> Perhatian:</strong> Koneksi internet terputus. Transaksi ini akan disimpan di database lokal dan otomatis disinkronkan ke server saat koneksi kembali.
             </p>
           </div>
 
@@ -50,12 +51,12 @@ const OfflineWarningDialog = ({
 
           {/* Important Notes */}
           <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg space-y-2">
-            <p className="text-sm font-medium text-blue-900">ℹ️ Informasi Penting:</p>
+            <p className="text-sm font-medium text-blue-900 flex items-center gap-1.5"><Info className="w-4 h-4" /> Informasi Penting:</p>
             <ul className="text-xs text-blue-800 space-y-1 ml-4">
-              <li>✓ Transaksi akan tersimpan dengan aman di database lokal</li>
-              <li>✓ Struk akan dicetak seperti biasa</li>
-              <li>✓ Sinkronisasi akan terjadi otomatis saat online</li>
-              <li>✓ Jangan tutup aplikasi sampai transaksi selesai</li>
+              <li className="flex items-center gap-1"><Check className="w-3 h-3" /> Transaksi akan tersimpan dengan aman di database lokal</li>
+              <li className="flex items-center gap-1"><Check className="w-3 h-3" /> Struk akan dicetak seperti biasa</li>
+              <li className="flex items-center gap-1"><Check className="w-3 h-3" /> Sinkronisasi akan terjadi otomatis saat online</li>
+              <li className="flex items-center gap-1"><Check className="w-3 h-3" /> Jangan tutup aplikasi sampai transaksi selesai</li>
             </ul>
           </div>
 
@@ -77,7 +78,7 @@ const OfflineWarningDialog = ({
             onClick={onConfirm}
             className="flex-1 py-2 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
           >
-            <span>✓</span> Lanjutkan Offline
+<Check className="w-4 h-4" /> Lanjutkan Offline
           </button>
         </div>
       </div>

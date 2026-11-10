@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Edit, Trash2, Download } from 'lucide-react';
+import { Plus, Edit, Trash2, Download, X } from 'lucide-react';
 import HeaderActionButton from '../components/HeaderActionButton';
 import DataTable from '../components/DataTable';
-import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import { PageLayout, PageContainer, PageHeader, MetaLine } from '../components/layouts';
 import {
   getJournalEntries,
   createJournalEntry,
@@ -15,11 +15,16 @@ import {
 import { extractArray } from '../utils/apiResponseHelper';
 import { exportToExcel } from '../utils/exportHelper';
 import { toast } from 'react-toastify';
+import { todayISO } from '../utils/dateRange';
+import DateRangeFilter from '../components/common/DateRangeFilter';
+import RelativeDate from '../components/common/RelativeDate';
+import { getPresetRange, isDateInRange } from '../utils/dateRange';
+import { describeRange } from '../utils/dateRange';
 
 const INITIAL_LINE = { id_akun: '', debit: 0, kredit: 0, keterangan: '' };
 
 const getInitialTransactionForm = () => ({
-  tanggal: new Date().toISOString().split('T')[0],
+  tanggal: todayISO(),
   id_cabang: '',
   jenis_transaksi: 'lainnya',
   keterangan: '',
@@ -32,13 +37,19 @@ const getInitialTransactionForm = () => ({
 });
 
 const FinancialTransactionsPage = () => {
-  const [transactions, setTransactions] = useState([]);
+  const [allTransactions, setTransactions] = useState([]);
+  // Bawaan bulan berjalan; pilih "Semua" untuk seluruh waktu.
+  const [range, setRange] = useState(() => getPresetRange('thisMonth'));
+  const transactions = useMemo(
+    () => allTransactions.filter((row) => isDateInRange(row.tanggal, range.start, range.end)),
+    [allTransactions, range]
+  );
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [branches, setBranches] = useState([]);
   const [accounts, setAccounts] = useState([]);
-  const [financialAccounts, setFinancialAccounts] = useState([]);
+  const [_financialAccounts, setFinancialAccounts] = useState([]);
   const [formState, setFormState] = useState(getInitialTransactionForm());
 
   useEffect(() => {
@@ -105,7 +116,7 @@ const FinancialTransactionsPage = () => {
     if (transaction) {
       setEditingTransaction(transaction);
       setFormState({
-        tanggal: transaction.tanggal ? transaction.tanggal.split('T')[0] : new Date().toISOString().split('T')[0],
+        tanggal: transaction.tanggal ? transaction.tanggal.split('T')[0] : todayISO(),
         id_cabang: transaction.id_cabang || '',
         jenis_transaksi: transaction.jenis_transaksi || 'lainnya',
         keterangan: transaction.keterangan || '',
@@ -248,14 +259,14 @@ const FinancialTransactionsPage = () => {
       Cabang: row.cabang?.nama_cabang || '-',
       Jenis: row.jenis_transaksi || '-',
       Keterangan: row.keterangan || '-',
-      Debit: formatCurrency(row.total_debit),
-      Kredit: formatCurrency(row.total_kredit)
+      Debit: Number(row.total_debit || 0),
+      Kredit: Number(row.total_kredit || 0)
     }));
-    exportToExcel(rows, `Transaksi_Keuangan_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    exportToExcel(rows, `Transaksi_Keuangan_${todayISO()}.xlsx`);
   };
 
   const transactionColumns = [
-    { key: 'tanggal', header: 'Tanggal', render: (row) => new Date(row.tanggal).toLocaleDateString('id-ID'), width: '140px' },
+    { key: 'tanggal', header: 'Tanggal', render: (row) => <RelativeDate value={row.tanggal} withTime={false} />, width: '140px' },
     { key: 'cabang.nama_cabang', header: 'Cabang', render: (row) => row.cabang?.nama_cabang || '-' },
     { key: 'jenis_transaksi', header: 'Jenis Transaksi', render: (row) => row.jenis_transaksi || '-' },
     { key: 'keterangan', header: 'Keterangan', render: (row) => row.keterangan || '-' },
@@ -297,7 +308,7 @@ const FinancialTransactionsPage = () => {
       <PageContainer>
         <PageHeader
           title="Transaksi Keuangan"
-          subtitle="Kelola jurnal dan transaksi keuangan yang terintegrasi dengan laporan keuangan"
+          subtitle={<MetaLine parts={[describeRange(range.start, range.end), `${transactions.length.toLocaleString('id-ID')} transaksi`]} />}
           actions={(
             <>
               <HeaderActionButton
@@ -332,6 +343,7 @@ const FinancialTransactionsPage = () => {
         </div>
 
         <div className="bg-white p-4 rounded-xl shadow-sm">
+          <DateRangeFilter compact className="mb-4" start={range.start} end={range.end} onChange={setRange} />
           <DataTable
             data={transactions}
             columns={transactionColumns}
@@ -380,7 +392,7 @@ const FinancialTransactionsPage = () => {
                   onClick={handleCloseForm}
                   aria-label="Tutup"
                 >
-                  ✕
+                  <X className="w-5 h-5" />
                 </button>
               </div>
               <form onSubmit={handleSubmit} className="space-y-6 px-6 py-6">
@@ -480,8 +492,8 @@ const FinancialTransactionsPage = () => {
                       <thead className="bg-gray-50">
                         <tr>
                           <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600">Akun</th>
-                          <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600">Debit</th>
-                          <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600">Kredit</th>
+                          <th className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Debit</th>
+                          <th className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Kredit</th>
                           <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600">Keterangan</th>
                           <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600">Aksi</th>
                         </tr>
@@ -504,7 +516,7 @@ const FinancialTransactionsPage = () => {
                                 ))}
                               </select>
                             </td>
-                            <td className="px-3 py-2">
+                            <td className="px-3 py-2 text-right tabular-nums">
                               <input
                                 type="number"
                                 value={line.debit}
@@ -513,7 +525,7 @@ const FinancialTransactionsPage = () => {
                                 min="0"
                               />
                             </td>
-                            <td className="px-3 py-2">
+                            <td className="px-3 py-2 text-right tabular-nums">
                               <input
                                 type="number"
                                 value={line.kredit}

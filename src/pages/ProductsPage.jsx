@@ -15,12 +15,16 @@ import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import DataTable from '../components/DataTable';
 import Pagination from '../components/Pagination';
 import HeaderActionButton from '../components/HeaderActionButton';
-import { Edit, Trash2, Printer, Eye, Plus, Download, Upload, FileText, Info, Globe, Store, Power } from 'lucide-react';
+import PageLoading from '../components/PageLoading';
+import PageError from '../components/PageError';
+import HeaderActionMenu from '../components/HeaderActionMenu';
+import { Edit, Trash2, Printer, Eye, Plus, Download, Upload, FileText, Info, Globe, Store, Power, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import useProductOfflineDB from '../hooks/useProductOfflineDB';
-import { usePagination } from '../hooks/usePagination';
 import FileViewerModal from '../components/FileViewerModal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import { useAuth } from '../hooks/useAuth';
+import BulkActionBar from '../components/common/BulkActionBar';
+import { pruneSelection } from '../utils/bulk';
 
 const ProductsPage = () => {
   const navigate = useNavigate();
@@ -75,6 +79,7 @@ const ProductsPage = () => {
   const [modalAlt, setModalAlt] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [error, setError] = useState(null);
   const [removingImageIds, setRemovingImageIds] = useState([]);
 
@@ -91,9 +96,10 @@ const ProductsPage = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterValues, setFilterValues] = useState({ status: 'aktif', kategori: '' });
+  const [sortBy, setSortBy] = useState('nama_produk');
+  const [sortOrder, setSortOrder] = useState('asc');
 
   const [selectedIds, setSelectedIds] = useState([]);
-  const [isDeletingBulk, setIsDeletingBulk] = useState(false);
   const [importProgress, setImportProgress] = useState({ active: false, current: 0, total: 0, successCount: 0, failCount: 0 });
   const [importOptions, setImportOptions] = useState({ ignoreDuplicates: true, updateDuplicates: false });
   const [showImportOptionsModal, setShowImportOptionsModal] = useState(false);
@@ -113,7 +119,9 @@ const ProductsPage = () => {
         katalog_filter: activeCatalogTab,
         id_cabang: activeCatalogTab === 'terpisah' 
           ? (isGlobalAccess ? (selectedBranchId || undefined) : (user?.id_cabang || undefined)) 
-          : undefined
+          : undefined,
+        sortBy,
+        sortOrder
       };
       
       const response = await getProducts(params);
@@ -188,14 +196,15 @@ const ProductsPage = () => {
       }
     } finally {
       setLoading(false);
+      setInitialLoadDone(true);
     }
-  }, [page, limit, searchQuery, filterValues, activeCatalogTab, selectedBranchId, isGlobalAccess, user]);
+  }, [page, limit, searchQuery, filterValues, activeCatalogTab, selectedBranchId, isGlobalAccess, user, sortBy, sortOrder]);
 
   const fetchCategoriesAndUnits = useCallback(async () => {
     try {
       const categoriesRes = await getCategories();
       setCategories(categoriesRes.data?.data || categoriesRes.data || []);
-    } catch (_err) {
+    } catch {
       showError('Gagal mengambil kategori');
     }
   }, [showError]);
@@ -259,9 +268,14 @@ const ProductsPage = () => {
     return () => window.removeEventListener('resetProductsPageState', handleResetState);
   }, []);
 
+  // Pilihan dibersihkan saat pindah halaman/ukuran halaman; saat data dimuat ulang hanya id yang hilang yang dibuang
+  // (item yang gagal dihapus tetap terpilih agar bisa dicoba lagi).
   useEffect(() => {
     setSelectedIds([]);
-  }, [page, limit, allProducts]);
+  }, [page, limit]);
+  useEffect(() => {
+    setSelectedIds((cur) => pruneSelection(cur, allProducts.map((p) => p.id_produk)));
+  }, [allProducts]);
 
   const handleExportExcel = async () => {
     try {
@@ -472,7 +486,7 @@ const ProductsPage = () => {
         } else {
           failCount += chunk.length;
         }
-      } catch (err) {
+      } catch {
         failCount += chunk.length;
       }
       
@@ -495,43 +509,6 @@ const ProductsPage = () => {
     }, 5000);
   };
 
-  const handleBulkPrintBarcodes = () => {
-    const selectedProducts = allProducts.filter(p => selectedIds.includes(p.id_produk));
-    if (selectedProducts.length === 0) return;
-    setProductsToPrint(selectedProducts);
-    setIsBarcodePrintModalOpen(true);
-  };
-
-  const handleBulkDelete = () => {
-    if (selectedIds.length === 0) return;
-    
-    setConfirmDialog({
-      isOpen: true,
-      title: 'Hapus Massal Produk',
-      message: `Apakah Anda yakin ingin menghapus ${selectedIds.length} produk terpilih?`,
-      confirmText: 'Ya, Hapus',
-      variant: 'danger',
-      onConfirm: async () => {
-        try {
-          setIsDeletingBulk(true);
-          const response = await bulkDeleteProducts(selectedIds);
-          if (response.data?.success) {
-            showSuccess(`Berhasil menghapus ${selectedIds.length} produk`);
-            setSelectedIds([]);
-            fetchProducts();
-          } else {
-            showError(`Gagal menghapus produk: ${response.data?.message || 'Unknown error'}`);
-          }
-        } catch (err) {
-          handleError(err);
-          showError('Gagal melakukan hapus massal');
-        } finally {
-          setIsDeletingBulk(false);
-          setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-        }
-      }
-    });
-  };
 
   const handleDelete = (id) => {
     setConfirmDialog({
@@ -564,12 +541,12 @@ const ProductsPage = () => {
     });
   };
 
-  if (loading) {
-    return <div className="text-center mt-10">Loading...</div>;
+  if (loading && !initialLoadDone) {
+    return <PageLoading title="Manajemen Produk" />;
   }
 
   if (error) {
-    return <div className="text-center mt-10 text-red-500">{error}</div>;
+    return <PageError title="Manajemen Produk" message={String(error)} />;
   }
 
   return (
@@ -578,65 +555,33 @@ const ProductsPage = () => {
         title="Manajemen Produk"
         actions={
           <div className="flex gap-2">
-            {selectedIds.length > 0 && (
-              <button
-                type="button"
-                onClick={handleBulkPrintBarcodes}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-xl shadow transition"
-              >
-                <Printer className="h-4 w-4" />
-                Cetak Barcode ({selectedIds.length})
-              </button>
-            )}
-            {selectedIds.length > 0 && hasPermission('MANAGE_PRODUCTS') && (
-              <button
-                type="button"
-                onClick={handleBulkDelete}
-                disabled={isDeletingBulk}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-xl shadow transition"
-              >
-                <Trash2 className="h-4 w-4" />
-                Hapus ({selectedIds.length})
-              </button>
-            )}
             {hasPermission('MANAGE_PRODUCTS') && (
               <HeaderActionButton
                 icon={Plus}
                 label="Tambah"
                 variant="slate"
-                to={activeCatalogTab === 'terpisah' ? `/produk/tambah?id_cabang_pemilik=${isGlobalAccess ? (selectedBranchId || user?.id_cabang || 1) : (user?.id_cabang || 1)}` : '/produk/tambah'}
-                isLink
-                hideLabel={true}
+                to={
+                  activeCatalogTab === 'terpisah' && isGlobalAccess && !selectedBranchId
+                    ? undefined
+                    : activeCatalogTab === 'terpisah'
+                    ? `/produk/tambah?id_cabang_pemilik=${isGlobalAccess ? selectedBranchId : user?.id_cabang}`
+                    : '/produk/tambah'
+                }
+                isLink={!(activeCatalogTab === 'terpisah' && isGlobalAccess && !selectedBranchId)}
+                disabled={activeCatalogTab === 'terpisah' && isGlobalAccess && !selectedBranchId}
+                title={
+                  activeCatalogTab === 'terpisah' && isGlobalAccess && !selectedBranchId
+                    ? 'Pilih cabang terlebih dahulu untuk menambah produk'
+                    : 'Tambah produk'
+                }
               />
             )}
-            <HeaderActionButton
-              icon={Download}
-              label="Export"
-              variant="emerald"
-              onClick={handleExportExcel}
-              hideLabel={true}
-            />
-            <HeaderActionButton
-              icon={Upload}
-              label="Import"
-              variant="yellow"
-              onClick={() => document.getElementById('import-excel').click()}
-              hideLabel={true}
-            />
-            <HeaderActionButton
-              icon={FileText}
-              label="Template"
-              variant="gray"
-              onClick={handleDownloadTemplate}
-              hideLabel={true}
-            />
-            <HeaderActionButton
-              icon={Info}
-              label="Info"
-              variant="indigo"
-              onClick={() => setShowCategoryInfoModal(true)}
-              hideLabel={true}
-            />
+            <HeaderActionMenu key="more" items={[
+                { id: 'export', label: 'Export', icon: Download, onClick: () => handleExportExcel() },
+                { id: 'import', label: 'Import', icon: Upload, onClick: () => document.getElementById('import-excel').click() },
+                { id: 'template', label: 'Template', icon: FileText, onClick: () => handleDownloadTemplate() },
+                { id: 'info', label: 'Info', icon: Info, onClick: () => setShowCategoryInfoModal(true) }
+              ]} />
           </div>
         }
       />
@@ -660,7 +605,7 @@ const ProductsPage = () => {
               }}
               className={`rounded-full px-5 py-2 text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
                 activeCatalogTab === 'global'
-                  ? 'bg-white dark:bg-zinc-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                  ? 'bg-white dark:bg-zinc-700 text-primary-600 dark:text-primary-300 shadow-sm'
                   : 'text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200'
               }`}
             >
@@ -711,7 +656,7 @@ const ProductsPage = () => {
             <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold">Katalog Global Aktif</p>
-              <p className="text-xs opacity-90 mt-0.5">Semua tindakan impor, penambahan, atau ekspor di tab ini dilakukan untuk **Katalog Global** (diakses oleh semua cabang global).</p>
+              <p className="text-xs opacity-90 mt-0.5">Semua tindakan impor, penambahan, atau ekspor di tab ini dilakukan untuk <strong>Katalog Global</strong> (diakses oleh semua cabang global).</p>
             </div>
           </div>
         ) : (
@@ -725,12 +670,22 @@ const ProductsPage = () => {
               </p>
               <p className="text-xs opacity-90 mt-0.5">
                 {isGlobalAccess && !selectedBranchId
-                  ? '⚠️ Pilih cabang di samping kanan untuk melakukan impor excel ke cabang tertentu. Jika membiarkan "Semua Cabang", fitur tambah/impor tidak tersedia.'
-                  : `Tindakan tambah atau impor akan dimasukkan secara terisolasi ke katalog cabang **${
-                      isGlobalAccess
-                        ? branches.find(b => b.id_cabang === parseInt(selectedBranchId))?.nama_cabang || 'terpilih'
-                        : 'Anda'
-                    }**.`}
+                  ? (
+                    <span className="inline-flex items-center gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                      Pilih cabang di samping kanan untuk melakukan impor excel ke cabang tertentu. Jika membiarkan "Semua Cabang", fitur tambah/impor tidak tersedia.
+                    </span>
+                  )
+                  : (
+                    <>
+                      Tindakan tambah atau impor akan dimasukkan secara terisolasi ke katalog cabang{' '}
+                      <strong>
+                        {isGlobalAccess
+                          ? branches.find(b => b.id_cabang === parseInt(selectedBranchId))?.nama_cabang || 'terpilih'
+                          : 'Anda'}
+                      </strong>.
+                    </>
+                  )}
               </p>
             </div>
           </div>
@@ -771,10 +726,24 @@ const ProductsPage = () => {
         )}
         {!isSyncing && syncedProducts > 0 && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-            <p className="text-sm text-green-800">✅ {syncedProducts.toLocaleString()} products ready for offline use</p>
+            <p className="text-sm text-green-800 flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 shrink-0" /> {syncedProducts.toLocaleString()} products ready for offline use</p>
           </div>
         )}
 
+        <BulkActionBar
+          noun="produk"
+          items={selectedIds.map((id) => allProducts.find((p) => p.id_produk === id) || { id_produk: id })}
+          labelOf={(p) => p.nama_produk || p.kode_produk || `ID ${p.id_produk}`}
+          onClear={() => setSelectedIds([])}
+          onDone={({ failed, action }) => { if (action.id === 'hapus') { setSelectedIds(failed.map((p) => p.id_produk)); fetchProducts(); } }}
+          actions={[
+            { id: 'cetak', label: 'Cetak barcode', icon: Printer, silentSuccess: true,
+              runAll: async (items) => { const known = items.filter((p) => p.nama_produk); if (known.length === 0) return { ok: [], failed: items.map((item) => ({ item, error: new Error('Produk ada di halaman lain; buka halamannya untuk mencetak') })) }; setProductsToPrint(known); setIsBarcodePrintModalOpen(true); return { ok: known.map((item) => ({ item })), failed: [] }; } },
+            ...(hasPermission('MANAGE_PRODUCTS') ? [{ id: 'hapus', label: 'Hapus', icon: Trash2, variant: 'danger', verb: 'dihapus',
+              confirm: { title: 'Hapus produk terpilih', message: (n) => `Hapus ${n} produk? Tindakan ini tidak dapat dibatalkan.`, confirmText: 'Ya, hapus' },
+              runAll: async (items) => { const res = await bulkDeleteProducts(items.map((p) => p.id_produk)); if (res.data?.success) return { ok: items.map((item) => ({ item })), failed: [] }; throw new Error(res.data?.message || 'Server menolak penghapusan'); } }] : []),
+          ]}
+        />
         <DataTable
           data={allProducts}
           loading={loading}
@@ -790,6 +759,14 @@ const ProductsPage = () => {
           onItemsPerPageChange={setLimit}
           onSearchChange={setSearchQuery}
           onFilterValueChange={(values) => { setFilterValues(values); setPage(1); }}
+          initialSort={{ key: sortBy, direction: sortOrder }}
+          onSortChange={(sortCfg) => {
+            if (sortCfg?.key) {
+              setSortBy(sortCfg.key);
+              setSortOrder(sortCfg.direction || 'asc');
+              setPage(1);
+            }
+          }}
           columns={[
             {
               key: 'gambar',
@@ -847,11 +824,13 @@ const ProductsPage = () => {
             {
               key: 'kode_produk',
               header: 'Kode Produk',
+              sortable: true,
               render: (product) => product.kode_produk
             },
             {
               key: 'nama_produk',
               header: 'Nama Produk',
+              sortable: true,
               render: (product) => product.nama_produk
             },
             {
@@ -917,7 +896,24 @@ const ProductsPage = () => {
             {
               key: 'harga_jual',
               header: 'Harga Jual',
+              sortable: true,
               render: (product) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(product.harga_jual)
+            },
+            {
+              key: 'status',
+              header: 'Status',
+              render: (product) => {
+                const isActive = product.status === 'aktif';
+                return (
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full border ${
+                    isActive
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800'
+                      : 'bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700 line-through'
+                  }`}>
+                    {isActive ? '●' : '○'} {isActive ? 'Aktif' : 'Nonaktif'}
+                  </span>
+                );
+              }
             }
           ]}
           actions={[

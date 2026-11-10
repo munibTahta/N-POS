@@ -5,6 +5,7 @@ import { UniversalPrintModal, PRINT_TYPES } from '../components/UniversalPrintMo
 import { formatCurrency } from '../utils/formatHelper';
 import { useSettings } from '../context/SettingsContext';
 import { Trash2, X, Info, Lightbulb, Plus, Loader } from 'lucide-react';
+import { todayISO } from '../utils/dateRange';
 
 const PurchaseFormPage = () => {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ const PurchaseFormPage = () => {
   const [header, setHeader] = useState(() => ({
     kode_pembelian: `PO-${Date.now()}`,
     id_supplier: '',
-    tanggal: new Date().toISOString().slice(0, 10),
+    tanggal: todayISO(),
     destination: 'gudang',
     id_cabang: null,
   }));
@@ -71,7 +72,7 @@ const PurchaseFormPage = () => {
                 branchesData = localBranches;
               }
             } catch (_dbError) {
-              if (import.meta.env.DEV) {
+              if (import.meta.env.DEV) { /* intentionally empty */ 
               }
             }
           }
@@ -424,18 +425,18 @@ const PurchaseFormPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Kode Pembelian</label>
-              <input type="text" name="kode_pembelian" value={header.kode_pembelian} onChange={handleHeaderChange} required className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white" />
+              <input type="text" name="kode_pembelian" value={header.kode_pembelian} onChange={handleHeaderChange} required className="field-control w-full" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Supplier</label>
-              <select name="id_supplier" value={header.id_supplier} onChange={handleHeaderChange} required className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+              <select name="id_supplier" value={header.id_supplier} onChange={handleHeaderChange} required className="field-select w-full">
                 <option value="" disabled>Pilih Supplier</option>
                 {suppliers.map(s => <option key={s.id_supplier} value={s.id_supplier}>{s.nama_supplier}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Tanggal</label>
-              <input type="date" name="tanggal" value={header.tanggal} onChange={handleHeaderChange} required className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white" />
+              <input type="date" name="tanggal" value={header.tanggal} onChange={handleHeaderChange} required className="field-control w-full" />
             </div>
           </div>
 
@@ -458,7 +459,7 @@ const PurchaseFormPage = () => {
           {header.destination === 'cabang' && (
             <div>
               <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Pilih Cabang</label>
-              <select name="id_cabang" value={header.id_cabang || ''} onChange={handleHeaderChange} required={header.destination === 'cabang'} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+              <select name="id_cabang" value={header.id_cabang || ''} onChange={handleHeaderChange} required={header.destination === 'cabang'} className="field-select w-full">
                 <option value="" disabled>Pilih Cabang</option>
                 {branches.map(b => <option key={b.id_cabang} value={b.id_cabang}>{b.nama_cabang}</option>)}
               </select>
@@ -487,7 +488,7 @@ const PurchaseFormPage = () => {
               <thead>
                 <tr className="bg-gray-100 border-b border-gray-200">
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Produk</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">Jumlah</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide text-right">Jumlah</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">Harga Beli</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">Subtotal</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide w-20">Aksi</th>
@@ -533,7 +534,20 @@ const PurchaseFormPage = () => {
                                   clearTimeout(window[`searchTimeout_${index}`]);
                                   window[`searchTimeout_${index}`] = setTimeout(async () => {
                                     try {
-                                      const response = await getProducts({ search: value, limit: 20, status: 'aktif' });
+                                      // Scope search to the destination branch's catalog: a 'terpisah'
+                                      // branch owns its own products, otherwise fall back to the shared
+                                      // global catalog (also used when destination is the central gudang).
+                                      const destinationBranch = header.destination === 'cabang' && header.id_cabang
+                                        ? branches.find(b => String(b.id_cabang) === String(header.id_cabang))
+                                        : null;
+                                      const katalogFilter = destinationBranch?.tipe_katalog || 'global';
+                                      const response = await getProducts({
+                                        search: value,
+                                        limit: 20,
+                                        status: 'aktif',
+                                        katalog_filter: katalogFilter,
+                                        id_cabang: katalogFilter === 'terpisah' ? destinationBranch.id_cabang : undefined
+                                      });
                                       setProductSearchStates(prev => ({
                                         ...prev,
                                         [index]: {
@@ -689,7 +703,7 @@ const PurchaseFormPage = () => {
                           )}
                         </td>
 
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-4 py-3 text-right tabular-nums">
                           <input
                             type="number"
                             min="1"
@@ -701,11 +715,11 @@ const PurchaseFormPage = () => {
                           />
                         </td>
 
-                        <td className="px-4 py-3 text-right font-medium text-gray-900">
+                        <td className="px-4 py-3 text-right font-medium text-gray-900 tabular-nums">
                           Rp {formatCurrency(item.harga_beli)}
                         </td>
 
-                        <td className="px-4 py-3 text-right font-semibold text-gray-900">
+                        <td className="px-4 py-3 text-right font-semibold text-gray-900 tabular-nums">
                           Rp {formatCurrency(subtotal)}
                         </td>
 

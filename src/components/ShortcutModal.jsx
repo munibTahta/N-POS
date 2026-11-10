@@ -1,217 +1,143 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { X, Search, Settings, ShoppingCart, Users, CreditCard, Printer, Keyboard, Lightbulb, Compass } from 'lucide-react';
+import { SHORTCUT_GROUPS, SHORTCUT_TIPS } from '../features/pos/shortcuts';
 
-// SVG Icons
-const IconGeneral = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-  </svg>
-);
+const ICONS = { Settings, Search, ShoppingCart, Users, CreditCard, Printer, Compass };
+const IS_MAC = typeof navigator !== 'undefined' && /mac|iphone|ipad/i.test(navigator.platform || navigator.userAgent || '');
+const keyLabel = (k) => (k === 'Mod' ? (IS_MAC ? '⌘' : 'Ctrl') : k);
 
-const IconSearch = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-  </svg>
-);
+function Keys({ combos }) {
+  return (
+    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      {combos.map((combo, i) => (
+        <React.Fragment key={combo.join('+')}>
+          {i > 0 && <span className="text-xs text-gray-400">atau</span>}
+          <span className="inline-flex items-center gap-1">
+            {combo.map((k, j) => (
+              <React.Fragment key={`${k}-${j}`}>
+                {j > 0 && <span className="text-gray-400 text-xs">+</span>}
+                <kbd className="min-w-[1.75rem] rounded-md border border-gray-300 border-b-2 bg-white px-1.5 py-0.5 text-center text-xs font-semibold text-gray-800 shadow-sm">{keyLabel(k)}</kbd>
+              </React.Fragment>
+            ))}
+          </span>
+        </React.Fragment>
+      ))}
+    </span>
+  );
+}
 
-const IconCart = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.57 6.75A1 1 0 005.41 21h13.18a1 1 0 00.98-1.25L17 13M9 5h6m-6 0a1 1 0 110 2 1 1 0 010-2zm6 0a1 1 0 110 2 1 1 0 010-2z" />
-  </svg>
-);
+const flat = (combos) => combos.map((c) => c.map(keyLabel).join('+')).join(' ');
 
-const IconUsers = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 8.048M12 4.354L8.646 7.708m6.708 0L12 4.354m0 8.048l3.354 3.354m-6.708 0L12 12.402m6.708 3.354L12 12.402M4 20h16a2 2 0 002-2v-1a6 6 0 00-6-6H8a6 6 0 00-6 6v1a2 2 0 002 2z" />
-  </svg>
-);
-
-const IconPayment = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h10m4 0a1 1 0 11-2 0 1 1 0 012 0zM6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-  </svg>
-);
-
-const IconHardware = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-  </svg>
-);
-
-const IconNavigation = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-  </svg>
-);
-
-const SHORTCUTS_GROUPED = [
-  {
-    group: 'Umum',
-    icon: IconGeneral,
-    items: [
-      { keys: 'F1', description: 'Buka/Tutup daftar shortcut' },
-      { keys: 'Esc', description: 'Tutup modal atau batal' },
-      { keys: 'Ctrl+Z', description: 'Batalkan aksi terakhir' },
-    ]
-  },
-  {
-    group: 'Pencarian & Scanning',
-    icon: IconSearch,
-    items: [
-      { keys: 'F2', description: 'Cari produk' },
-      { keys: 'F3', description: 'Scan barcode' },
-      { keys: 'Alt+B', description: 'Buka scanner kamera' },
-    ]
-  },
-  {
-    group: 'Keranjang & Item',
-    icon: IconCart,
-    items: [
-      { keys: 'F4', description: 'Fokus input nominal pembayaran (di POS)' },
-      { keys: 'Backspace', description: 'Hapus item terpilih di keranjang' },
-      { keys: 'Delete', description: 'Hapus item terakhir di keranjang' },
-      { keys: 'Ctrl+Del / Ctrl+Backspace', description: 'Kosongkan seluruh keranjang' },
-    ]
-  },
-  {
-    group: 'Pelanggan & Diskon',
-    icon: IconUsers,
-    items: [
-      { keys: 'F5', description: 'Cari/Pilih pelanggan' },
-      { keys: 'F6', description: 'Terapkan diskon' },
-    ]
-  },
-  {
-    group: 'Pembayaran',
-    icon: IconPayment,
-    items: [
-      { keys: 'F7', description: 'Pilih metode pembayaran' },
-      { keys: 'Ctrl+1', description: 'Isi nominal Rp 10.000' },
-      { keys: 'Ctrl+2', description: 'Isi nominal Rp 20.000' },
-      { keys: 'Ctrl+3', description: 'Isi nominal Rp 50.000' },
-      { keys: 'Ctrl+4', description: 'Isi nominal Rp 100.000' },
-      { keys: 'Ctrl+0', description: 'Isi nominal = Total Tagihan' },
-      { keys: 'F12 / End', description: 'Lanjut ke Pembayaran/Checkout' },
-      { keys: 'Ctrl+Enter', description: 'Selesaikan transaksi' },
-    ]
-  },
-  {
-    group: 'Hardware & Navigasi',
-    icon: IconHardware,
-    items: [
-      { keys: 'F8', description: 'Buka cash drawer' },
-      { keys: 'Alt+P', description: 'Fokus ke Pencarian Produk' },
-      { keys: 'Alt+C', description: 'Fokus ke Keranjang' },
-      { keys: 'Alt+M', description: 'Fokus ke Pembayaran' },
-    ]
-  },
-  {
-    group: 'Navigasi Halaman',
-    icon: IconNavigation,
-    items: [
-      { keys: 'F9', description: 'Ke halaman POS (di Menu/Riwayat)' },
-      { keys: 'F10', description: 'Ke halaman Manajemen Pembelian' },
-      { keys: 'F11', description: 'Ke halaman Riwayat Penjualan' },
-      { keys: 'Ctrl+P', description: 'Print ulang transaksi terakhir' },
-    ]
-  },
-];
-
+/** Bantuan pintasan keyboard: dapat dicari, dialog aksesibel (Esc, jebakan fokus, fokus kembali). */
 export default function ShortcutModal({ onClose }) {
   const [query, setQuery] = useState('');
+  const dialogRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
-  const filteredGroups = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    if (!normalized) return SHORTCUTS_GROUPED;
-    
-    return SHORTCUTS_GROUPED
-      .map(group => ({
-        ...group,
-        items: group.items.filter(item =>
-          item.keys.toLowerCase().includes(normalized) ||
-          item.description.toLowerCase().includes(normalized)
-        )
-      }))
-      .filter(group => group.items.length > 0);
+  useEffect(() => {
+    const previous = document.activeElement;
+    const onKey = (e) => {
+      if (e.key === 'Escape') { e.stopPropagation(); onCloseRef.current?.(); return; }
+      if (e.key !== 'Tab' || !dialogRef.current) return;
+      const f = dialogRef.current.querySelectorAll('button, input, [href], [tabindex]:not([tabindex="-1"])');
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', onKey, true);
+    return () => {
+      document.removeEventListener('keydown', onKey, true);
+      if (previous && typeof previous.focus === 'function') previous.focus();
+    };
+  }, []);
+
+  const groups = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return SHORTCUT_GROUPS;
+    return SHORTCUT_GROUPS
+      .map((g) => ({ ...g, items: g.items.filter((it) => it.description.toLowerCase().includes(q) || flat(it.keys).toLowerCase().includes(q)) }))
+      .filter((g) => g.items.length > 0);
   }, [query]);
 
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in"
-      onClick={onClose}
-    >
-      <div 
-        className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100 dark:border-zinc-800"
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4" onClick={onClose}>
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="shortcut-title"
+        className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-zinc-800">
-          <div>
-            <h3 className="text-xl font-semibold text-gray-900">Shortcut Keyboard POS</h3>
-            <p className="text-sm text-gray-500 mt-1">Cari shortcut dan lihat semua pintasan keyboard.</p>
+        <div className="flex items-start justify-between gap-3 border-b border-gray-200 px-5 py-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600"><Keyboard className="h-5 w-5" aria-hidden="true" /></span>
+            <div>
+              <h2 id="shortcut-title" className="text-lg font-semibold text-gray-900">Pintasan keyboard</h2>
+              <p className="text-sm text-gray-500">Tekan <kbd className="rounded border border-gray-300 bg-gray-50 px-1 text-xs">?</kbd> kapan saja untuk membuka bantuan ini.</p>
+            </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 p-1"
-            aria-label="Tutup modal shortcut"
-          >
-            ✕
+          <button type="button" onClick={onClose} className="btn-icon btn-text text-gray-500" aria-label="Tutup bantuan pintasan">
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="px-6 py-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="shortcut-search">
-            Cari shortcut
-          </label>
-          <input
-            id="shortcut-search"
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Cari dengan kata kunci atau tombol..."
-            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
-            autoFocus
-          />
+        <div className="px-5 pt-4">
+          <label htmlFor="shortcut-search" className="sr-only">Cari pintasan</label>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+            <input
+              id="shortcut-search"
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Cari pintasan, mis. bayar, diskon, F2"
+              className="w-full rounded-xl border border-gray-300 py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              autoFocus
+            />
+          </div>
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto px-6 pb-6">
-          <div className="space-y-6">
-            {filteredGroups.length > 0 ? (
-              filteredGroups.map((group) => {
-                const IconComponent = group.icon;
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {groups.length > 0 ? (
+            <div className="grid gap-5 sm:grid-cols-2">
+              {groups.map((g) => {
+                const Icon = ICONS[g.icon] || Keyboard;
                 return (
-                  <div key={group.group} className="space-y-2">
-                    <div className="flex items-center gap-2 px-1">
-                      <div className="text-blue-600">
-                        <IconComponent />
-                      </div>
-                      <h4 className="text-sm font-bold text-gray-900">{group.group}</h4>
-                    </div>
-                    <div className="space-y-2">
-                      {group.items.map((item) => (
-                        <div key={item.keys} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-lg bg-gray-50 border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors">
-                          <span className="font-semibold text-blue-700 text-sm">{item.keys}</span>
-                          <span className="text-gray-700 text-sm">{item.description}</span>
-                        </div>
+                  <section key={g.group} aria-label={g.group}>
+                    <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900">
+                      <Icon className="h-4 w-4 text-blue-600" aria-hidden="true" />{g.group}
+                    </h3>
+                    <ul className="divide-y divide-gray-100 rounded-xl border border-gray-200">
+                      {g.items.map((it) => (
+                        <li key={flat(it.keys)} className="flex flex-col gap-1 px-3 py-2">
+                          <Keys combos={it.keys} />
+                          <span className="text-sm text-gray-600">{it.description}</span>
+                        </li>
                       ))}
-                    </div>
-                  </div>
+                    </ul>
+                  </section>
                 );
-              })
-            ) : (
-              <div className="rounded-2xl bg-yellow-50 border border-yellow-200 p-4 text-sm text-yellow-900">
-                Tidak ditemukan shortcut dengan kata kunci "{query}".
-              </div>
-            )}
-          </div>
+              })}
+            </div>
+          ) : (
+            <p className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">Tidak ada pintasan yang cocok dengan &quot;{query}&quot;.</p>
+          )}
+
+          {!query && (
+            <section className="mt-5 rounded-xl bg-amber-50 p-4" aria-label="Tips">
+              <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-amber-900"><Lightbulb className="h-4 w-4" aria-hidden="true" />Tips</h3>
+              <ul className="list-disc space-y-1 pl-5 text-sm text-amber-900">
+                {SHORTCUT_TIPS.map((t) => <li key={t}>{t}</li>)}
+              </ul>
+            </section>
+          )}
         </div>
 
-        <div className="px-6 pb-6">
-          <button
-            onClick={onClose}
-            className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
-          >
-            Mengerti
-          </button>
+        <div className="border-t border-gray-200 px-5 py-3">
+          <button type="button" onClick={onClose} className="btn-primary btn-block">Mengerti</button>
         </div>
       </div>
     </div>

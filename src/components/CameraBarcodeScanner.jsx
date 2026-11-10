@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
+import { X, Settings, CheckCircle2, Camera, RefreshCw } from 'lucide-react';
 import SearchableSelect from './SearchableSelect';
 
 /**
@@ -7,6 +8,7 @@ import SearchableSelect from './SearchableSelect';
  * Enhanced for reliability and better error handling
  */
 const CameraBarcodeScanner = ({ onScan, onClose }) => {
+  const handledRef = useRef(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState('');
   const [scanned, setScanned] = useState(false);
@@ -125,6 +127,9 @@ const CameraBarcodeScanner = ({ onScan, onClose }) => {
       qrScannerRef.current = new Html5Qrcode('barcode-scanner-container');
 
       const onScanSuccess = (decodedText, _decodedResult) => {
+        // Kamera dapat memicu callback berkali-kali sebelum berhenti: proses hanya sekali.
+        if (handledRef.current) return;
+        handledRef.current = true;
         setScanned(true);
         setIsScanning(false);
 
@@ -145,9 +150,9 @@ const CameraBarcodeScanner = ({ onScan, onClose }) => {
         }, 500);
       };
 
-      const onScanError = (errorMessage) => {
+      const onScanError = (_errorMessage) => {
         // Only log errors in development; scanning continues
-        if (import.meta.env.DEV) void 0 && ('Scanner error:', errorMessage);
+        
       };
 
       // Start scanning with the selected camera
@@ -158,7 +163,7 @@ const CameraBarcodeScanner = ({ onScan, onClose }) => {
           cameraId,
           {
             fps: 15,
-            qrbox: { width: 300, height: 200 },
+            qrbox: (w, h) => ({ width: Math.max(150, Math.min(300, w - 24)), height: Math.max(100, Math.min(200, h - 24)) }),
             formatsToSupport: [
               'CODE_128',
               'CODE_39',
@@ -261,6 +266,7 @@ const CameraBarcodeScanner = ({ onScan, onClose }) => {
       } finally {
         qrScannerRef.current = null;
         setIsInitialized(false);
+        handledRef.current = false;
         setScanned(false);
         setError('');
       }
@@ -286,6 +292,7 @@ const CameraBarcodeScanner = ({ onScan, onClose }) => {
     // Reset state and set new camera
     setSelectedCamera(cameraId);
     setIsInitialized(false);
+    handledRef.current = false;
     setScanned(false);
     setError('');
     setIsScanning(false);
@@ -306,7 +313,7 @@ const CameraBarcodeScanner = ({ onScan, onClose }) => {
             onClick={handleClose}
             className="text-gray-500 hover:text-gray-700 text-xl font-bold"
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -369,8 +376,8 @@ const CameraBarcodeScanner = ({ onScan, onClose }) => {
               {/* Status */}
               <div className="mb-4 text-center">
                 {isScanning && !scanned && !isInitialized && (
-                  <p className="text-blue-600 font-semibold">
-                    ⚙️ Memulai scanner...
+                  <p className="text-blue-600 font-semibold flex items-center justify-center gap-1.5">
+                    <Settings className="w-4 h-4" /> Memulai scanner...
                   </p>
                 )}
                 {isScanning && !scanned && isInitialized && (
@@ -379,23 +386,23 @@ const CameraBarcodeScanner = ({ onScan, onClose }) => {
                   </p>
                 )}
                 {scanned && (
-                  <p className="text-green-600 font-semibold">
-                    ✓ Barcode berhasil dipindai!
+                  <p className="text-green-600 font-semibold flex items-center justify-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4" /> Barcode berhasil dipindai!
                   </p>
                 )}
                 {!isScanning && !scanned && isInitialized && (
-                  <p className="text-gray-600">
-                    📷 Kamera aktif - siap memindai
+                  <p className="text-gray-600 flex items-center justify-center gap-1.5">
+                    <Camera className="w-4 h-4" /> Kamera aktif - siap memindai
                   </p>
                 )}
                 {!isInitialized && !error && !isScanning && selectedCamera && (
-                  <p className="text-orange-600">
-                    🔄 Memulai scanner dengan kamera {cameraOptions.find(c => c.id === selectedCamera)?.label || selectedCamera}...
+                  <p className="text-orange-600 flex items-center justify-center gap-1.5">
+                    <RefreshCw className="w-4 h-4" /> Memulai scanner dengan kamera {cameraOptions.find(c => c.id === selectedCamera)?.label || selectedCamera}...
                   </p>
                 )}
                 {!isInitialized && !error && !isScanning && !selectedCamera && (
-                  <p className="text-orange-600">
-                    🔄 Pilih kamera dan klik "Mulai Scan"
+                  <p className="text-orange-600 flex items-center justify-center gap-1.5">
+                    <RefreshCw className="w-4 h-4" /> Pilih kamera dan klik "Mulai Scan"
                   </p>
                 )}
               </div>

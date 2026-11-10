@@ -48,7 +48,7 @@ class SearchStrategy {
     const cacheKey = `${cleanQuery}:${isBarcode}`;
     const searchLimit = getSearchLimit(isBarcode ? 'barcode' : (isOnline ? 'online' : 'offline'), cleanQuery);
 
-    // 1️⃣ CHECK MEMORY CACHE FIRST (instant, no await)
+    // 1. CHECK MEMORY CACHE FIRST (instant, no await)
     if (queryCache.has(cacheKey)) {
       const cached = queryCache.get(cacheKey);
       if (Date.now() - cached.time < SEARCH_CACHE_TTL) {
@@ -59,7 +59,7 @@ class SearchStrategy {
       }
     }
 
-    // 2️⃣ CHECK PENDING REQUEST (deduplicate)
+    // 2. CHECK PENDING REQUEST (deduplicate)
     if (pendingRequests.has(cacheKey)) {
       try {
         return await pendingRequests.get(cacheKey);
@@ -68,7 +68,7 @@ class SearchStrategy {
       }
     }
 
-    // 3️⃣ CREATE NEW REQUEST & STORE PENDING
+    // 3. CREATE NEW REQUEST & STORE PENDING
     const searchPromise = this._executeSearch(cleanQuery, { isOnline, isBarcode, electronSearch, memoryProducts, startTime, searchLimit });
     pendingRequests.set(cacheKey, searchPromise);
 
@@ -91,7 +91,7 @@ class SearchStrategy {
    * Execute actual search
    */
   async _executeSearch(cleanQuery, { isOnline, isBarcode, electronSearch, memoryProducts, _startTime, searchLimit = MAX_SEARCH_RESULTS }) {
-    // 1️⃣ ONLINE - langsung ke API
+    // 1. ONLINE - langsung ke API
     if (isOnline) {
       try {
         const apiResults = await apiSearch(cleanQuery, searchLimit);
@@ -107,7 +107,7 @@ class SearchStrategy {
       }
     }
 
-    // 2️⃣ OFFLINE - langsung ke SQLite DB (prioritas sebelum memory cache)
+    // 2. OFFLINE - langsung ke SQLite DB (prioritas sebelum memory cache)
     if (electronSearch) {
       try {
         const dbResults = await electronSearch({
@@ -125,7 +125,7 @@ class SearchStrategy {
       }
     }
 
-    // 3️⃣ MEMORY - fallback filter
+    // 3. MEMORY - fallback filter
     if (memoryProducts && Array.isArray(memoryProducts) && memoryProducts.length > 0) {
       const allResults = this._searchMemory(cleanQuery, memoryProducts, isBarcode);
       
@@ -147,7 +147,7 @@ class SearchStrategy {
     const matched = [];
     
     if (!products || products.length === 0) {
-      console.warn(`⚠️ Products array empty`);
+      console.warn(`Products array empty`);
       return matched;
     }
     for (let i = 0; i < products.length && matched.length < 50; i++) {

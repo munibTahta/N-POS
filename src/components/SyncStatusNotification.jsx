@@ -4,28 +4,29 @@
  */
 
 import React from 'react';
+import { RefreshCw, CheckCircle2, XCircle, AlertTriangle, Send } from 'lucide-react';
 
 export const SyncStatusNotification = ({ syncStatus, isSyncing, queueSize }) => {
   if (!syncStatus && queueSize === 0) return null;
 
   let bgColor = 'bg-blue-500';
-  let icon = '🔄';
+  let Icon = RefreshCw;
 
   if (isSyncing) {
     bgColor = 'bg-blue-500';
-    icon = '🔄';
+    Icon = RefreshCw;
   } else if (syncStatus?.status === 'success') {
     bgColor = 'bg-green-500';
-    icon = '✅';
+    Icon = CheckCircle2;
   } else if (syncStatus?.status === 'error') {
     bgColor = 'bg-red-500';
-    icon = '❌';
+    Icon = XCircle;
   } else if (syncStatus?.status === 'partial') {
     bgColor = 'bg-yellow-500';
-    icon = '⚠️';
+    Icon = AlertTriangle;
   } else if (queueSize > 0) {
     bgColor = 'bg-orange-500';
-    icon = '📤';
+    Icon = Send;
   }
 
   return (
@@ -33,14 +34,14 @@ export const SyncStatusNotification = ({ syncStatus, isSyncing, queueSize }) => 
       {isSyncing ? (
         <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
       ) : (
-        <span>{icon}</span>
+        <Icon className="w-4 h-4" />
       )}
       <div className="flex-1">
         {syncStatus?.message && (
           <p className="text-sm font-semibold">{syncStatus.message}</p>
         )}
         {queueSize > 0 && !isSyncing && !syncStatus && (
-          <p className="text-sm">📤 {queueSize} data menunggu sinkronisasi</p>
+          <p className="text-sm flex items-center gap-1"><Send className="w-3.5 h-3.5" /> {queueSize} data menunggu sinkronisasi</p>
         )}
       </div>
     </div>

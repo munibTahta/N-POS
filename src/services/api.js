@@ -235,7 +235,7 @@ apiClient.interceptors.response.use(
           data: {
             success: true,
             offline: true,
-            message: '✓ Data tersimpan (akan disinkronkan saat online)',
+            message: 'Data tersimpan (akan disinkronkan saat online)',
             queued: true
           },
           status: 202,
@@ -290,8 +290,18 @@ export const login = (credentials) => {
   return apiClient.post('/auth/login', credentials);
 };
 
+// Gabungkan GET identik yang sedang berjalan menjadi satu permintaan (tanpa cache: begitu selesai, panggilan berikut ke server lagi).
+// Beberapa pemanggil (halaman, sinkronisasi, hook) meminta data master yang sama pada saat bersamaan saat aplikasi dimulai.
+const inflightGets = new Map();
+const coalesceGet = (key, fn) => {
+  if (inflightGets.has(key)) return inflightGets.get(key);
+  const p = Promise.resolve().then(fn).finally(() => inflightGets.delete(key));
+  inflightGets.set(key, p);
+  return p;
+};
+
 export const getMySettings = () => {
-  return apiClient.get('/auth/my-settings');
+  return coalesceGet('my-settings', () => apiClient.get('/auth/my-settings'));
 };
 
 // --- User Management (via CRUD factory) ---
@@ -304,8 +314,8 @@ export const deleteUser = (id) => usersCRUD.delete(id);
 
 // --- Cabang / Branches (via CRUD factory) ---
 const branchesCRUD = createCRUDOperations('/cabang', { useRateLimit: true });
-export const getBranches = () => branchesCRUD.getAll();
-export const getBranchById = (id) => branchesCRUD.getById(id);
+export const getBranches = () => coalesceGet('branches', () => branchesCRUD.getAll());
+export const getBranchById = (id) => coalesceGet(`branch:${id}`, () => branchesCRUD.getById(id));
 export const addBranch = (branchData) => branchesCRUD.create(branchData);
 export const updateBranch = (id, branchData) => branchesCRUD.update(id, branchData);
 export const deleteBranch = (id) => branchesCRUD.delete(id);
@@ -347,14 +357,24 @@ const searchCache = new Map();
 let searchCacheTimer = null;
 
 // Fungsi untuk mencari produk dengan aggressive caching dan size limit
-export const searchProducts = (query, limit = 100) => {
+// `options.katalogFilter`/`options.idCabang` scope results to a branch's catalog
+// (see ProductsPage/PosPage). GET /produk/search supports the same
+// katalog_filter/id_cabang params as GET /produk (confirmed against the
+// backend's produkController.js), so scoped searches still use the fast
+// search endpoint rather than falling back to the heavier full listing.
+export const searchProducts = (query, limit = 100, options = {}) => {
   if (!query || query.trim().length === 0) {
     return Promise.resolve([]);
   }
-  
+
+  const { katalogFilter, idCabang } = options;
+  const catalogParams = katalogFilter
+    ? { katalog_filter: katalogFilter, id_cabang: katalogFilter === 'terpisah' ? idCabang : undefined }
+    : {};
+
   const q = query.trim().toLowerCase();
-  const cacheKey = `search:${q}:${limit}`;
-  
+  const cacheKey = `search:${q}:${limit}:${katalogFilter ? `${katalogFilter}:${idCabang || ''}` : 'unscoped'}`;
+
   if (searchCache.has(cacheKey)) {
     const cached = searchCache.get(cacheKey);
     // TTL: 2 seconds for search cache
@@ -363,21 +383,21 @@ export const searchProducts = (query, limit = 100) => {
     }
     searchCache.delete(cacheKey);
   }
-  
-  const promise = apiClient.get('/produk/search', { 
-    params: { q, limit: Math.min(limit, 50) } 
+
+  const promise = apiClient.get('/produk/search', {
+    params: { q, limit: Math.min(limit, 50), ...catalogParams }
   }).then(res => {
     const arr = Array.isArray(res) ? res : res?.data || [];
-    
+
     searchCache.set(cacheKey, { data: arr, time: Date.now() });
-    
+
     // Enforce max cache size limit (LRU eviction)
     if (searchCache.size > MAX_SEARCH_CACHE_SIZE) {
       // Remove oldest entry (first one in insertion order)
       const firstKey = searchCache.keys().next().value;
       searchCache.delete(firstKey);
     }
-    
+
     // Setup periodic cache cleanup for expired entries
     if (searchCacheTimer) clearTimeout(searchCacheTimer);
     searchCacheTimer = setTimeout(() => {
@@ -389,20 +409,21 @@ export const searchProducts = (query, limit = 100) => {
         }
       }
     }, 30000);
-    
+
     return arr;
   }).catch(_err => {
-    return getProducts({ 
-      search: q, 
+    return getProducts({
+      search: q,
       limit: Math.min(limit, 50),
       page: 1,
       sortBy: 'nama_produk',
-      sortOrder: 'asc'
+      sortOrder: 'asc',
+      ...catalogParams
     }).then(res => {
       const arr = Array.isArray(res) ? res : res?.data?.data || res?.data || [];
       if (!Array.isArray(arr)) return [];
-      
-      return arr.filter(p => 
+
+      return arr.filter(p =>
         (p.nama_produk || '').toLowerCase().includes(q) ||
         (p.kode_produk || '').toLowerCase().includes(q) ||
         (p.barcode || '').toLowerCase().includes(q) ||
@@ -422,7 +443,11 @@ const categoriesCRUD = createCRUDOperations('/kategori', {
   useRateLimit: true, 
   skipPaginationByDefault: true 
 });
-export const getCategories = () => categoriesCRUD.getAll();
+export const getCategories = () => coalesceGet('categories', () => categoriesCRUD.getAll());
+
+// Kategori yang punya produk aktif pada katalog cabang pemanggil (dengan jumlah_produk). Untuk chip kategori di kasir.
+// Cabang berkatalog terpisah hanya melihat kategori dari produknya sendiri; GET /kategori mengembalikan SEMUA kategori master.
+export const getCatalogCategories = (params = {}) => coalesceGet(`catalog-categories:${JSON.stringify(params)}`, () => apiClient.get('/kategori/katalog', { params }));
 export const getCategoryById = (id) => categoriesCRUD.getById(id);
 export const addCategory = (categoryData) => categoriesCRUD.create(categoryData);
 export const updateCategory = (id, categoryData) => categoriesCRUD.update(id, categoryData);
@@ -434,7 +459,7 @@ const unitsCRUD = createCRUDOperations('/satuan', {
   useRateLimit: true, 
   skipPaginationByDefault: true 
 });
-export const getUnits = () => unitsCRUD.getAll();
+export const getUnits = () => coalesceGet('units', () => unitsCRUD.getAll());
 export const getUnitById = (id) => unitsCRUD.getById(id);
 export const addUnit = (unitData) => unitsCRUD.create(unitData);
 export const updateUnit = (id, unitData) => unitsCRUD.update(id, unitData);
@@ -462,12 +487,26 @@ export const getSales = (params = {}) => {
   return limitedGet('/penjualan', { params });
 };
 
+// Ringkasan agregat penjualan (jumlah, total, belum lunas) untuk rentang tanggal; cakupan cabang ditentukan server.
+// Pola penjualan: kalender harian + heatmap hari x jam (agregat; cakupan cabang oleh server; tz_offset = menit di depan UTC)
+export const getSalesPattern = (params = {}) => apiClient.get('/laporan/pola-penjualan', { params });
+
+// Stok tidak wajar (stok sangat besar seperti 9999, atau minus) + nilai persediaan tercatat
+export const getStockAnomalies = (params = {}) => apiClient.get('/laporan/stok-anomali', { params });
+
+export const getSalesSummary = (params = {}) => coalesceGet(`sales-summary:${JSON.stringify(params)}`, () => apiClient.get('/penjualan/ringkasan', { params }));
+
 export const getSaleById = (id) => {
   return apiClient.get(`/penjualan/${id}`);
 };
 
 export const recordPayment = (id_penjualan, paymentData) => {
   return apiClient.post(`/penjualan/${id_penjualan}/bayar`, paymentData);
+};
+
+// Atur (YYYY-MM-DD) atau hapus (null) tanggal jatuh tempo penjualan yang belum lunas.
+export const setSaleDueDate = (id_penjualan, tanggal_jatuh_tempo) => {
+  return apiClient.put(`/penjualan/${id_penjualan}/jatuh-tempo`, { tanggal_jatuh_tempo });
 };
 
 export const createPaymentPending = (id_penjualan, paymentData) => {
@@ -517,11 +556,11 @@ export const getPaymentMethodStatsExtended = () => {
 };
 
 export const getPaymentMethods = () => {
-  return limitedGet('/metode-pembayaran', {
+  return coalesceGet('payment-methods', () => limitedGet('/metode-pembayaran', {
     params: {
       skip_pagination: true
     }
-  });
+  }));
 };
 
 // --- LAPORAN ---
@@ -532,7 +571,7 @@ export const getSalesReport = (params) => {
 
 // Laporan stok
 export const getStockReport = (params = {}) => {
-  return apiClient.get('/laporan/stok', { params });
+  return coalesceGet(`stock-report:${JSON.stringify(params)}`, () => apiClient.get('/laporan/stok', { params }));
 };
 
 // Get stock data (alternative endpoint)
@@ -720,7 +759,7 @@ export const updateSetting = (key, value) => {
 
 // Fungsi untuk mendapatkan metode pembayaran
 export const getMetodePembayaran = () => {
-  return apiClient.get('/metode-pembayaran');
+  return coalesceGet('metode-pembayaran', () => apiClient.get('/metode-pembayaran'));
 };
 
 // Fungsi untuk mendapatkan satu metode pembayaran by ID
@@ -745,7 +784,7 @@ export const deleteMetodePembayaran = (id) => {
 
 // Fungsi untuk mendapatkan default payment method
 export const getDefaultPaymentMethod = () => {
-  return apiClient.get('/metode-pembayaran/default');
+  return coalesceGet('payment-default', () => apiClient.get('/metode-pembayaran/default'));
 };
 
 // Fungsi untuk mengatur metode pembayaran sebagai default
@@ -1105,7 +1144,7 @@ export const healthCheck = () => {
 
 // --- ROLE MANAGEMENT ---
 export const getRoles = () => {
-  return apiClient.get('/roles');
+  return coalesceGet('roles', () => apiClient.get('/roles'));
 };
 
 export const getRoleById = (id) => {
@@ -1169,3 +1208,9 @@ export const updateMenuPermissionsForRole = (roleId, menuPermissions) => {
 export const resetDatabase = (confirmReset) => {
   return apiClient.post('/util/reset-database', { confirmReset });
 };
+
+// --- STOK OPNAME & SARAN RESTOK ---
+export const getOpnameList = (params = {}) => apiClient.get('/stok-opname/daftar', { params });
+export const previewOpname = (payload) => apiClient.post('/stok-opname/pratinjau', payload);
+export const applyOpname = (payload) => apiClient.post('/stok-opname', payload);
+export const getRestockSuggestions = (params = {}) => apiClient.get('/laporan/saran-restok', { params });

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getPajak, addPajak, updatePajak, deletePajak } from '../services/api';
 import { formatCurrency } from '../utils/formatHelper';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts/index.jsx';
+import PageLoading from '../components/PageLoading';
 import HeaderActionButton from '../components/HeaderActionButton';
 import DataTable from '../components/DataTable';
 import ActionButton from '../components/ActionButton';
@@ -94,7 +95,7 @@ const TaxSettingsPage = () => {
     setShowForm(false);
   };
 
-  if (loading) return <div className="text-center mt-10">Memuat data pengaturan pajak...</div>;
+  if (loading) return <PageLoading title="Manajemen Pajak & Biaya Tambahan" />;
 
   return (
     <PageLayout>
@@ -108,7 +109,6 @@ const TaxSettingsPage = () => {
               label="Tambah Pengaturan Pajak"
               variant="blue"
               onClick={() => setShowForm(true)}
-              hideLabel={true}
             />
           }
         />

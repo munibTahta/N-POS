@@ -12,7 +12,12 @@
 
 import PQueue from 'p-queue';
 import { ReceiptFormatter } from './ReceiptFormatter';
-import { detectPaperWidth } from '../utils/printerUtils';
+import { detectPaperWidth, resolvePaperWidth } from '../utils/printerUtils';
+import { textToEscPosBytes, bytesToBase64, sendToRawBT } from './escPosEncoder';
+
+// Pseudo-printer identifiers used when running outside Electron (web/Android/tablet).
+export const WEB_DIALOG_PRINTER = 'Sistem Cetak Browser (Bluetooth/Android/Wi-Fi)';
+export const RAWBT_PRINTER = 'RawBT - Printer Bluetooth/USB (Android)';
 
 class ProfessionalPrinterManager {
   constructor() {
@@ -35,7 +40,7 @@ class ProfessionalPrinterManager {
   _initializeFromStorage() {
     this.defaultPrinter = localStorage.getItem('defaultPrinterName') || null;
     if (!this.defaultPrinter && !window.electronAPI) {
-      this.defaultPrinter = 'Sistem Cetak Browser (Bluetooth/Android/Wi-Fi)';
+      this.defaultPrinter = WEB_DIALOG_PRINTER;
     }
   }
 
@@ -45,6 +50,7 @@ class ProfessionalPrinterManager {
   _setupDebugListener() {
     if (window.electronAPI?.onPrintDebug) {
       window.electronAPI.onPrintDebug((message) => {
+        console.debug('[print]', message);
       });
     }
   }
@@ -71,13 +77,22 @@ class ProfessionalPrinterManager {
     try {
       if (!window.electronAPI?.getPrinters) {
         // Web / Android / Tablet Browser Fallback
-        this.printerList = [{
-          name: 'Sistem Cetak Browser (Bluetooth/Android/Wi-Fi)',
-          displayName: 'Sistem Cetak Browser',
-          type: 'web',
-          capabilities: { thermal: true },
-          status: 'ready'
-        }];
+        this.printerList = [
+          {
+            name: RAWBT_PRINTER,
+            displayName: 'RawBT - Printer Bluetooth/USB (perlu install app RawBT)',
+            type: 'rawbt',
+            capabilities: { thermal: true },
+            status: 'ready'
+          },
+          {
+            name: WEB_DIALOG_PRINTER,
+            displayName: 'Dialog Cetak Browser (printer harus terdaftar di sistem/OS)',
+            type: 'web',
+            capabilities: { thermal: true },
+            status: 'ready'
+          }
+        ];
         return this.printerList;
       }
 
@@ -163,12 +178,7 @@ class ProfessionalPrinterManager {
    * Get printer paper width override or detect from printer name
    */
   _getPaperWidth(printerName = '') {
-    const overrideWidth = localStorage.getItem('printerPaperWidth');
-    if (overrideWidth && typeof overrideWidth === 'string' && overrideWidth.trim()) {
-      return overrideWidth.trim();
-    }
-    const detectedWidth = detectPaperWidth(printerName);
-    return detectedWidth;
+    return resolvePaperWidth(printerName);
   }
 
   /**
@@ -194,7 +204,10 @@ class ProfessionalPrinterManager {
     const printer = printerName || this.defaultPrinter;
     if (!printer) throw new Error('Printer tidak dikonfigurasi');
 
-    if (!window.electronAPI || printer === 'Sistem Cetak Browser (Bluetooth/Android/Wi-Fi)') {
+    if (!window.electronAPI || printer === WEB_DIALOG_PRINTER || printer === RAWBT_PRINTER) {
+      if (printer === RAWBT_PRINTER) {
+        return await this._printRawBT(saleData, storeInfo, printer);
+      }
       return await this._printWeb(saleData, storeInfo, printer);
     }
 
@@ -315,6 +328,25 @@ class ProfessionalPrinterManager {
     } catch (error) {
       console.error('[PrinterManager] Browser print error:', error);
       throw new Error(`Gagal cetak browser: ${error.message}`);
+    }
+  }
+
+  /**
+   * Print via RawBT (Android bridge app) — sends raw ESC/POS bytes so the
+   * receipt goes straight to a Bluetooth/USB/Wi-Fi thermal printer that
+   * has been configured inside RawBT, bypassing the OS print dialog.
+   */
+  async _printRawBT(saleData, storeInfo, printerName) {
+    try {
+      const paperWidth = this._getPaperWidth(printerName);
+      const receiptData = this.formatter.formatReceipt(saleData, storeInfo, { paperWidth });
+      const escBytes = textToEscPosBytes(receiptData.content);
+      const base64Data = bytesToBase64(escBytes);
+      sendToRawBT(base64Data);
+      return { success: true, method: 'rawbt-bluetooth' };
+    } catch (error) {
+      console.error('[PrinterManager] RawBT print error:', error);
+      throw new Error(`Gagal cetak via RawBT: ${error.message}. Pastikan aplikasi RawBT sudah terinstall dan printer sudah dikonfigurasi di dalamnya.`);
     }
   }
 
@@ -513,6 +545,14 @@ class ProfessionalPrinterManager {
   }
 
   async _printText(printerName, content, paperWidth = null) {
+    if (printerName === RAWBT_PRINTER) {
+      const trimmed = String(content || '').trim();
+      if (!trimmed) throw new Error('Konten cetak kosong');
+      const escBytes = textToEscPosBytes(trimmed);
+      const base64Data = bytesToBase64(escBytes);
+      sendToRawBT(base64Data);
+      return { success: true, method: 'rawbt-bluetooth-text' };
+    }
     if (!window.electronAPI?.printThermal) {
       const htmlContent = this._convertToHTML(content);
       const printWindow = window.open('', '_blank', 'width=350,height=600');

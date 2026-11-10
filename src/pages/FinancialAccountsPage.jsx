@@ -4,7 +4,7 @@ import HeaderActionButton from '../components/HeaderActionButton';
 import DataTable from '../components/DataTable';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import { getFinancialAccounts, createFinancialAccount, updateFinancialAccount, deleteFinancialAccount, getBranches } from '../services/api';
-import { extractArray, extractData } from '../utils/apiResponseHelper';
+import { extractArray } from '../utils/apiResponseHelper';
 import { toast } from 'react-toastify';
 
 const FinancialAccountsPage = () => {

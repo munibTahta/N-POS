@@ -1,10 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, Store, AlertCircle, Loader2, Wifi, WifiOff } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useSync } from '../context/SyncContext';
+import { FloatingLabelInput } from '../components/common/FloatingLabelField';
+import safeStorage from '../utils/safeStorage';
+
+const REMEMBER_KEY = 'rememberedUsername';
 
 const LoginPage = () => {
-  const [username, setUsername] = useState('');
+  // "Ingat saya" hanya menyimpan username (tidak pernah password).
+  const [username, setUsername] = useState(() => safeStorage.getItem(REMEMBER_KEY) || '');
+  const [remember, setRemember] = useState(() => !!safeStorage.getItem(REMEMBER_KEY));
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isDuplicateLogin, setIsDuplicateLogin] = useState(false);
@@ -23,6 +30,8 @@ const LoginPage = () => {
 
     try {
       await login({ username, password });
+      if (remember && username.trim()) safeStorage.setItem(REMEMBER_KEY, username.trim());
+      else safeStorage.removeItem(REMEMBER_KEY);
       navigate('/', { replace: true }); // Selalu arahkan ke menu
     } catch (err) {
       setIsLoading(false);
@@ -36,7 +45,14 @@ const LoginPage = () => {
       } else if (err.response) {
         // Server merespons dengan status error (4xx, 5xx)
         const responseData = err.response.data;
-        errorMessage = responseData.message || responseData.error || "Username atau password salah.";
+        errorMessage = responseData?.message || responseData?.error || "Username atau password salah.";
+        if (err.response.status === 429) {
+          // Pembatas laju server: beri tahu berapa lama harus menunggu (header Retry-After, detik)
+          const secs = Number(err.response.headers?.['retry-after']);
+          if (Number.isFinite(secs) && secs > 0) {
+            errorMessage = `${errorMessage} Coba lagi dalam ${secs >= 90 ? `${Math.ceil(secs / 60)} menit` : `${Math.ceil(secs)} detik`}.`;
+          }
+        }
       } else if (err.request) {
         // Request dikirim tapi tidak ada respons (masalah jaringan atau DevTools blocking)
         if (!navigator.onLine) {
@@ -59,89 +75,103 @@ const LoginPage = () => {
   }, []);
 
   return (
-    <div className="flex justify-center items-center min-h-screen">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-center">Login</h2>
-        {error && (
-          <div className={`p-3 rounded text-center ${isDuplicateLogin ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-500'}`}>
-            <p className="font-semibold">{error}</p>
-            {isDuplicateLogin && (
-              <p className="text-sm mt-2 opacity-80">
-                Silakan logout terlebih dahulu dari device lain atau tunggu session expire.
-              </p>
-            )}
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-gray-50 dark:bg-zinc-950">
+      <main className="w-full max-w-md">
+        <div className="card card-elevated p-6 sm:p-8">
+          <div className="flex flex-col items-center text-center mb-6">
+            <span className="mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200">
+              <Store className="h-7 w-7" aria-hidden="true" />
+            </span>
+            <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-zinc-100">Masuk ke N-POS</h1>
+            <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">Gunakan akun kasir atau admin Anda.</p>
           </div>
-        )}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium">Username</label>
-            <input 
+
+          {error && (
+            <div
+              role="alert"
+              className={`mb-5 flex items-start gap-3 rounded-xl p-3 text-sm ${isDuplicateLogin ? 'bg-yellow-50 text-yellow-900 dark:bg-yellow-900/20 dark:text-yellow-200' : 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-200'}`}
+            >
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+              <div>
+                <p className="font-medium">{error}</p>
+                {isDuplicateLogin && (
+                  <p className="mt-1 opacity-80">
+                    Silakan logout terlebih dahulu dari device lain atau tunggu session expire.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate={false}>
+            <FloatingLabelInput
               ref={usernameRef}
-              type="text" 
-              value={username} 
-              onChange={(e) => setUsername(e.target.value)} 
+              label="Username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               disabled={isLoading}
               required
               autoComplete="username"
-              aria-label="username"
-              className="w-full px-3 py-2 mt-1 border rounded-md focus:outline-none focus:ring focus:ring-blue-200 disabled:bg-gray-100" 
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              aria-label="Username"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium">Password</label>
-            <div className="mt-1 relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-                required
-                autoComplete="current-password"
-                aria-label="password"
-                className="w-full pr-12 px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-blue-200 disabled:bg-gray-100"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((s) => !s)}
-                aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900 p-1 h-9 w-9 flex items-center justify-center bg-transparent focus:outline-none rounded"
+            <FloatingLabelInput
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+              required
+              autoComplete="current-password"
+              aria-label="Password"
+              rightElement={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                  aria-pressed={showPassword}
+                  className="btn-icon !min-h-0 h-9 w-9 text-gray-500 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800 focus-visible:ring-blue-500"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />}
+                </button>
+              }
+            />
+
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <label className="inline-flex min-h-[44px] items-center gap-2 cursor-pointer select-none text-gray-700 dark:text-zinc-300">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>Ingat username</span>
+              </label>
+              <span
+                className={`inline-flex items-center gap-1.5 text-xs ${isOnline ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}
+                role="status"
               >
-                {showPassword ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10a9.97 9.97 0 012.122-5.937M6.18 6.18A9.953 9.953 0 0112 5c5.523 0 10 4.477 10 10 0 1.036-.168 2.036-.48 2.94M3 3l18 18" />
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    <circle cx="12" cy="12" r="3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                  </svg>
-                )}
-              </button>
+                {isOnline ? <Wifi className="h-4 w-4" aria-hidden="true" /> : <WifiOff className="h-4 w-4" aria-hidden="true" />}
+                {isOnline ? 'Online' : 'Offline'}
+              </span>
             </div>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <label className="inline-flex items-center gap-2">
-              <input type="checkbox" className="form-checkbox" />
-              <span>Remember me</span>
-            </label>
-            <div className="text-gray-500">{isOnline ? 'Online' : 'Offline'}</div>
-          </div>
-          <button 
-            type="submit"
-            disabled={isLoading}
-            className="w-full px-4 py-2 font-bold text-white bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {isLoading ? (
-              <>
-                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
-                Loading...
-              </>
-            ) : (
-              'Login'
-            )}
-          </button>
-        </form>
-      </div>
+
+            <button type="submit" disabled={isLoading} aria-busy={isLoading} className="btn-primary btn-lg btn-block">
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                  Memproses...
+                </>
+              ) : (
+                'Masuk'
+              )}
+            </button>
+          </form>
+        </div>
+      </main>
     </div>
   );
 };

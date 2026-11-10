@@ -2,9 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getStockHistory } from '../services/api';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import PageLoading from '../components/PageLoading';
 import DataTable from '../components/DataTable';
 import { SearchFilterBar, FilterPanel, FilterPanelGrid, FilterField } from '../components/SearchFilterBar';
 import { ArrowLeft, TrendingUp, TrendingDown, Package } from 'lucide-react';
+import DateRangeFilter from '../components/common/DateRangeFilter';
+import RelativeDate from '../components/common/RelativeDate';
+import { isDateInRange } from '../utils/dateRange';
 
 const StockHistoryPage = () => {
   const { id_cabang, id_produk } = useParams();
@@ -49,18 +53,6 @@ const StockHistoryPage = () => {
     fetchHistory();
   }, [id_cabang, id_produk]);
 
-  const formatDate = (dateString) => {
-    try {
-      return new Date(dateString).toLocaleDateString('id-ID', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch {
-      return 'N/A';
-    }
-  };
-
   const formatTime = (dateString) => {
     try {
       return new Date(dateString).toLocaleTimeString('id-ID', {
@@ -83,9 +75,7 @@ const StockHistoryPage = () => {
 
       // Date range filter
       if (filterDateFrom || filterDateTo) {
-        const logDate = new Date(log.created_at).toISOString().split('T')[0];
-        if (filterDateFrom && logDate < filterDateFrom) return false;
-        if (filterDateTo && logDate > filterDateTo) return false;
+        if (!isDateInRange(log.created_at, filterDateFrom, filterDateTo)) return false;
       }
 
       // Search filter (keterangan)
@@ -125,7 +115,7 @@ const StockHistoryPage = () => {
     return badge;
   };
 
-  if (loading) return <div className="text-center mt-10">Loading...</div>;
+  if (loading) return <PageLoading title="Riwayat Stok" />;
 
   return (
     <PageLayout>
@@ -210,23 +200,12 @@ const StockHistoryPage = () => {
                 </select>
               </FilterField>
 
-              <FilterField label="Dari Tanggal">
-                <input
-                  type="date"
-                  value={filterDateFrom}
-                  onChange={(e) => setFilterDateFrom(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </FilterField>
-
-              <FilterField label="Sampai Tanggal">
-                <input
-                  type="date"
-                  value={filterDateTo}
-                  onChange={(e) => setFilterDateTo(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </FilterField>
+              <DateRangeFilter
+                className="sm:col-span-2"
+                start={filterDateFrom}
+                end={filterDateTo}
+                onChange={({ start, end }) => { setFilterDateFrom(start); setFilterDateTo(end); }}
+              />
             </FilterPanelGrid>
           </FilterPanel>
         </div>
@@ -251,7 +230,7 @@ const StockHistoryPage = () => {
               header: 'Tanggal & Waktu',
               render: (item) => (
                 <div>
-                  <div className="font-medium text-sm">{formatDate(item.created_at)}</div>
+                  <div className="font-medium text-sm"><RelativeDate value={item.created_at} withTime={false} /></div>
                   <div className="text-xs text-gray-600">{formatTime(item.created_at)}</div>
                 </div>
               )

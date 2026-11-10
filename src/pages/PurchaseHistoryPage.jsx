@@ -8,11 +8,15 @@ import { UniversalPrintModal, PRINT_TYPES } from '../components/UniversalPrintMo
 import ResponsiveTable from '../components/common/ResponsiveTable';
 import { SearchFilterBar, FilterPanel } from '../components/SearchFilterBar';
 import useSearchAndFilter from '../hooks/useSearchAndFilter';
-import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import { PageLayout, PageContainer, PageHeader, MetaLine } from '../components/layouts';
 import ActionButton from '../components/ActionButton';
 import DropdownActionMenu from '../components/common/DropdownActionMenu';
 import HeaderActionButton from '../components/HeaderActionButton';
 import { FileText, ArrowLeft, Eye, Printer, X, Download } from 'lucide-react';
+import DateRangeFilter from '../components/common/DateRangeFilter';
+import RelativeDate from '../components/common/RelativeDate';
+import { isDateInRange, formatShortDate, todayISO } from '../utils/dateRange';
+import { describeRange } from '../utils/dateRange';
 
 const PurchaseHistoryPage = () => {
   const { storeInfo } = useSettings();
@@ -60,8 +64,8 @@ const PurchaseHistoryPage = () => {
               }
 
               data = localPurchases;
-            } catch (_dbError) {
-              if (import.meta.env.DEV) void 0 && ('Failed to load purchases from local db');
+            } catch (_dbError) { /* noop */ 
+              
             }
           }
         }
@@ -117,8 +121,8 @@ const PurchaseHistoryPage = () => {
               // branches likely not available locally
               branchesData = [];
             }
-          } catch (_localError) {
-            if (import.meta.env.DEV) void 0 && ('Failed to load masters from local db');
+          } catch (_localError) { /* noop */ 
+            
           }
         }
 
@@ -197,23 +201,8 @@ const PurchaseHistoryPage = () => {
     }
   };
 
-  const applyDateFilter = (items) => {
-    if (!filterStart && !filterEnd) return items;
-    const start = filterStart ? new Date(filterStart) : null;
-    const end = filterEnd ? new Date(filterEnd) : null;
-    return items.filter(p => {
-      const d = new Date(p.tanggal || p.created_at || p.createdAt);
-      if (isNaN(d)) return false;
-      if (start && d < start) return false;
-      if (end) {
-        // include whole day
-        const endOfDay = new Date(end);
-        endOfDay.setHours(23,59,59,999);
-        if (d > endOfDay) return false;
-      }
-      return true;
-    });
-  };
+  // Hari LOKAL, inklusif di kedua ujung (dulu: new Date('YYYY-MM-DD') = tengah malam UTC, sehingga transaksi dini hari WIB di hari awal terlewat).
+  const applyDateFilter = (items) => items.filter((p) => isDateInRange(p.tanggal || p.created_at || p.createdAt, filterStart, filterEnd));
 
   const { filteredItems: searchedPurchases } = useSearchAndFilter(purchases, {
     searchTerm: searchQuery,
@@ -251,7 +240,7 @@ const PurchaseHistoryPage = () => {
     }
     
     try {
-      await exportToExcel(exportData, `pembelian_${new Date().toISOString().slice(0,10)}.xlsx`);
+      await exportToExcel(exportData, `pembelian_${todayISO()}.xlsx`);
     } catch (err) {
       console.error('Export error:', err);
       alert('Gagal mengekspor data ke Excel. Cek console untuk detail.');
@@ -263,7 +252,7 @@ const PurchaseHistoryPage = () => {
       <PageContainer>
         <PageHeader
           title="Riwayat Pembelian"
-          subtitle="Lihat, filter, dan cetak riwayat pembelian dengan cepat."
+          subtitle={<MetaLine parts={[describeRange(filterStart, filterEnd), `${filteredPurchases.length.toLocaleString('id-ID')} pembelian`]} />}
           actions={
             <div className="flex gap-2">
               <HeaderActionButton
@@ -299,7 +288,7 @@ const PurchaseHistoryPage = () => {
           <div className="bg-white p-4 rounded-lg border border-gray-200">
             <p className="text-sm text-gray-600">Periode</p>
             <p className="text-base text-gray-900">
-              {filterStart || filterEnd ? `${filterStart || 'Awal'} — ${filterEnd || 'Akhir'}` : 'Semua waktu'}
+              {filterStart || filterEnd ? `${filterStart ? formatShortDate(filterStart) : 'Awal'} — ${filterEnd ? formatShortDate(filterEnd) : 'Akhir'}` : 'Semua waktu'}
             </p>
           </div>
         </div>
@@ -323,26 +312,11 @@ const PurchaseHistoryPage = () => {
             />
 
             <FilterPanel visible={showFilters} className="mb-4 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Dari</label>
-                  <input
-                    type="date"
-                    value={filterStart}
-                    onChange={(e) => setFilterStart(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Sampai</label>
-                  <input
-                    type="date"
-                    value={filterEnd}
-                    onChange={(e) => setFilterEnd(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
+              <DateRangeFilter
+                start={filterStart}
+                end={filterEnd}
+                onChange={({ start, end }) => { setFilterStart(start); setFilterEnd(end); }}
+              />
             </FilterPanel>
 
             <ResponsiveTable>
@@ -370,8 +344,8 @@ const PurchaseHistoryPage = () => {
                     filteredPurchases.map((p) => (
                       <tr key={p.id_pembelian || p.id || p.kode_pembelian || p.no_struk} className="hover:bg-gray-50">
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">{p.kode_pembelian || p.no_struk || p.id}</td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">{new Date(p.tanggal || p.created_at || p.createdAt).toLocaleString('id-ID')}</td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 text-right">Rp {formatCurrency(p.total || p.grand_total || 0)}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700"><RelativeDate value={p.tanggal || p.created_at || p.createdAt} /></td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 text-right tabular-nums">Rp {formatCurrency(p.total || p.grand_total || 0)}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">{getSupplierName(p)}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">{getDestinationName(p)}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-center">
@@ -468,9 +442,9 @@ const PurchaseHistoryPage = () => {
                           <tr key={idx} className="border-b border-gray-200">
                             <td className="px-4 py-3 text-sm text-gray-900">{idx + 1}</td>
                             <td className="px-4 py-3 text-sm text-gray-900">{getProductName(it)}</td>
-                            <td className="px-4 py-3 text-sm text-right text-gray-900">{qty}</td>
-                            <td className="px-4 py-3 text-sm text-right text-gray-900">Rp {formatCurrency(price)}</td>
-                            <td className="px-4 py-3 text-sm text-right font-medium text-gray-900">Rp {formatCurrency(qty * price)}</td>
+                            <td className="px-4 py-3 text-sm text-right text-gray-900 tabular-nums">{qty}</td>
+                            <td className="px-4 py-3 text-sm text-right text-gray-900 tabular-nums">Rp {formatCurrency(price)}</td>
+                            <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 tabular-nums">Rp {formatCurrency(qty * price)}</td>
                           </tr>
                         );
                       })

@@ -55,17 +55,25 @@ export default defineConfig(({ mode }) => ({
       overlay: false
     }
   },
+  // Produksi: buang console.log/debug/info (dan debugger) saat build. console.warn/error TETAP ada.
+  // Menggantikan scripts/remove-console.cjs yang menulis ulang file sumber secara permanen.
+  esbuild: {
+    pure: mode === 'production' ? ['console.log', 'console.debug', 'console.info'] : [],
+    drop: mode === 'production' ? ['debugger'] : [],
+  },
   build: {
+    // Jangan menghapus berkas build sebelumnya: tab yang masih terbuka memakai chunk ber-hash lama. Dibersihkan oleh scripts/prune-dist.mjs.
+    emptyOutDir: false,
+    manifest: true,
     minify: 'esbuild',
-    esbuild: {
-      drop: ['console', 'debugger']
-    },
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
-          ui: ['axios', 'chart.js', 'react-chartjs-2', 'jsbarcode'],
+          ui: ['axios'],
+          // chart.js dan jsbarcode sengaja tidak dikelompokkan manual: manualChunks membuatnya ikut
+          // di-preload saat startup. Biarkan Rollup menaruhnya di chunk halaman yang memakainya (lazy).
           qrcode: ['html5-qrcode'],
           excel: ['exceljs'],
           utils: ['jwt-decode', 'file-saver'],

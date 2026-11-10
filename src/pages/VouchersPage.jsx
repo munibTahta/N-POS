@@ -3,10 +3,12 @@ import { getVouchers, addVoucher, updateVoucher, deleteVoucher } from '../servic
 import { formatCurrency } from '../utils/formatHelper';
 import LoadingPage from '../components/common/LoadingPage';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts/index.jsx';
+import PageLoading from '../components/PageLoading';
 import HeaderActionButton from '../components/HeaderActionButton';
 import DataTable from '../components/DataTable';
 import ActionButton from '../components/ActionButton';
 import { Plus, Edit, Trash2 } from 'lucide-react';
+import { toDateInputValue } from '../utils/dateRange';
 
 const VouchersPage = () => {
   const [vouchers, setVouchers] = useState([]);
@@ -71,8 +73,8 @@ const VouchersPage = () => {
       // Format dates for API
       const submitData = {
         ...formData,
-        tanggal_mulai: formData.tanggal_mulai ? new Date(formData.tanggal_mulai).toISOString().split('T')[0] : null,
-        tanggal_berakhir: formData.tanggal_berakhir ? new Date(formData.tanggal_berakhir).toISOString().split('T')[0] : null
+        tanggal_mulai: toDateInputValue(formData.tanggal_mulai) || null,
+        tanggal_berakhir: toDateInputValue(formData.tanggal_berakhir) || null
       };
 
       if (editingVoucher) {
@@ -155,7 +157,7 @@ const VouchersPage = () => {
     return <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-800">Aktif</span>;
   };
 
-  if (loading) return <LoadingPage message="Memuat data voucher..." />;
+  if (loading) return <PageLoading title="Manajemen Voucher & Diskon" />;
 
   return (
     <PageLayout>
@@ -169,7 +171,6 @@ const VouchersPage = () => {
               label="Tambah Voucher"
               variant="blue"
               onClick={() => setShowForm(true)}
-              hideLabel={true}
             />
           }
         />

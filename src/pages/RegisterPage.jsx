@@ -44,12 +44,12 @@ const RegisterPage = () => {
           <div>
             <label className="block text-sm font-medium">Nama Lengkap</label>
             <input type="text" name="nama_lengkap" value={nama_lengkap} onChange={handleChange} required
-              className="w-full px-3 py-2 mt-1 border rounded-md focus:outline-none focus:ring focus:ring-blue-200" />
+              className="field-control w-full mt-1" />
           </div>
           <div>
             <label className="block text-sm font-medium">Username</label>
             <input type="text" name="username" value={username} onChange={handleChange} required
-              className="w-full px-3 py-2 mt-1 border rounded-md focus:outline-none focus:ring focus:ring-blue-200" />
+              className="field-control w-full mt-1" />
           </div>
           <div>
             <label className="block text-sm font-medium">Password</label>
@@ -60,7 +60,7 @@ const RegisterPage = () => {
                 value={password}
                 onChange={handleChange}
                 required
-                className="w-full pr-12 px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-blue-200"
+                className="field-control w-full"
               />
               <button
                 type="button"

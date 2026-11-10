@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Circle, X, RefreshCw, OctagonX } from 'lucide-react';
 import usePrinter from '../hooks/usePrinter';
 
 /**
@@ -43,15 +44,15 @@ const PrinterStatusIndicator = () => {
   const getStatusInfo = () => {
     switch (printerStatus) {
       case 'healthy':
-        return { color: '#22c55e', text: 'Siap', icon: '🟢' };
+        return { color: '#22c55e', text: 'Siap', dotColor: 'text-green-500 fill-green-500' };
       case 'unhealthy':
-        return { color: '#eab308', text: 'Offline', icon: '🟡' };
+        return { color: '#eab308', text: 'Offline', dotColor: 'text-yellow-500 fill-yellow-500' };
       case 'no_printer':
-        return { color: '#9ca3af', text: 'Tidak dipilih', icon: '⚪' };
+        return { color: '#9ca3af', text: 'Tidak dipilih', dotColor: 'text-gray-300 fill-gray-300' };
       case 'error':
-        return { color: '#ef4444', text: 'Error', icon: '🔴' };
+        return { color: '#ef4444', text: 'Error', dotColor: 'text-red-500 fill-red-500' };
       default:
-        return { color: '#6b7280', text: 'Memeriksa...', icon: '⚪' };
+        return { color: '#6b7280', text: 'Memeriksa...', dotColor: 'text-gray-300 fill-gray-300' };
     }
   };
 
@@ -113,13 +114,13 @@ const PrinterStatusIndicator = () => {
                 onClick={() => setShowDetails(false)}
                 className="text-gray-400 hover:text-gray-600"
               >
-                ×
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
-                <span className="text-sm">{statusInfo.icon}</span>
+                <Circle className={`w-3 h-3 ${statusInfo.dotColor}`} />
                 <span className="text-sm">{statusInfo.text}</span>
               </div>
 
@@ -143,7 +144,7 @@ const PrinterStatusIndicator = () => {
                 className="w-full text-left text-xs text-blue-600 hover:text-blue-700"
                 onClick={refreshStatus}
               >
-                🔄 Refresh Status
+                <span className="inline-flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5" /> Refresh Status</span>
               </button>
 
               {hasQueue && (
@@ -154,7 +155,7 @@ const PrinterStatusIndicator = () => {
                     alert('Emergency stop functionality would clear all print queues');
                   }}
                 >
-                  🛑 Stop All Prints
+                  <span className="inline-flex items-center gap-1"><OctagonX className="w-3.5 h-3.5" /> Stop All Prints</span>
                 </button>
               )}
             </div>

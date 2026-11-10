@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getCategoryById, addCategory, updateCategory } from '../services/api';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import FormActionBar from '../components/common/FormActionBar';
 
 const BackIcon = ({ className = '' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -136,7 +137,7 @@ const CategoryFormPage = () => {
                   onChange={handleChange}
                   placeholder="Contoh: Minuman, Makanan, Elektronik"
                   required
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-control w-full"
                 />
                 <p className="mt-1 text-xs text-slate-500">Berikan nama kategori yang deskriptif dan mudah diingat</p>
               </div>
@@ -152,27 +153,12 @@ const CategoryFormPage = () => {
                   onChange={handleChange}
                   placeholder="Deskripsi singkat kategori ini (misal: Minuman segar tanpa alkohol)"
                   rows="4"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="field-control w-full"
                 />
                 <p className="mt-1 text-xs text-slate-500">Jelaskan maksud kategori ini agar pengguna lebih paham</p>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4">
-                <button
-                  type="submit"
-                  disabled={submitting || loading}
-                  className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-6 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-                >
-                  <SaveIcon className="w-4 h-4 mr-2" />
-                  {submitting ? 'Menyimpan...' : isEditMode ? 'Simpan Perubahan' : 'Simpan Kategori'}
-                </button>
-                <Link
-                  to="/kategori"
-                  className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-6 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                >
-                  Batal
-                </Link>
-              </div>
+              <FormActionBar cancelTo="/kategori" submitting={submitting || loading} submitLabel={isEditMode ? 'Simpan Perubahan' : 'Simpan Kategori'} />
             </form>
           </div>
         </div>

@@ -51,16 +51,13 @@ class PerformanceMonitor {
    * Log all metrics to console
    */
   log() {
-    console.group(`📊 ${this.name} Performance Metrics`);
+    console.group(`${this.name} Performance Metrics`);
     
     const totalTime = performance.now() - this.startTime;
     Object.entries(this.metrics).forEach(([label, duration]) => {
       const percentage = ((duration / totalTime) * 100).toFixed(1);
       const color = duration > 1000 ? '#ff6b6b' : duration > 500 ? '#ffa500' : '#51cf66';
-      void 0 && (`  %c${label}%c: ${duration.toFixed(2)}ms (${percentage}%)`,
-        `color: ${color}; font-weight: bold;`,
-        'color: inherit; font-weight: normal;'
-      );
+      console.log(`  %c${label}%c: ${duration.toFixed(2)}ms (${percentage}%)`, `color: ${color}; font-weight: bold`, 'color: inherit');
     });
     
     console.groupEnd();

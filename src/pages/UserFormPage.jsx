@@ -6,9 +6,11 @@ import { useRoleContext } from '../context/RoleContext.jsx';
 import { PermissionError } from '../components/PermissionGuard';
 import LoadingPage from '../components/common/LoadingPage';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import FormActionBar from '../components/common/FormActionBar';
 
 const UserFormPage = () => {
   const { id } = useParams();
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const { canManageUsers } = usePermissions();
   const { getAvailableRoles } = useRoleContext();
@@ -61,6 +63,7 @@ const UserFormPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;                       // cegah klik ganda membuat pengguna dua kali
     setError('');
     setSuccess('');
 
@@ -79,6 +82,7 @@ const UserFormPage = () => {
       return;
     }
 
+    setSubmitting(true);
     try {
       if (isEditMode) {
         const { nama_lengkap, printer_nama, printer_tipe } = userData;
@@ -110,6 +114,7 @@ const UserFormPage = () => {
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.response?.data?.error || `Gagal ${isEditMode ? 'memperbarui' : 'menambahkan'} data pengguna.`;
       setError(errorMessage);
+      setSubmitting(false);                       // sukses: tetap terkunci sampai pindah halaman
     }
   };
 
@@ -169,7 +174,7 @@ const UserFormPage = () => {
                       value={userData.password}
                       onChange={handleChange}
                       required
-                      className="w-full pr-12 rounded-lg border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                      className="field-control w-full"
                     />
                     <button
                       type="button"
@@ -200,7 +205,7 @@ const UserFormPage = () => {
                   value={userData.nama_lengkap}
                   onChange={handleChange}
                   required
-                  className="w-full rounded-lg border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  className="field-control w-full"
                 />
               </div>
 
@@ -254,7 +259,7 @@ const UserFormPage = () => {
                     name="printer_nama"
                     value={userData.printer_nama || ''}
                     onChange={handleChange}
-                    className="w-full rounded-lg border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    className="field-control w-full"
                     placeholder="Contoh: EPSON TM-T88V"
                   />
                 </div>
@@ -265,7 +270,7 @@ const UserFormPage = () => {
                     name="printer_tipe"
                     value={userData.printer_tipe || 'thermal'}
                     onChange={handleChange}
-                    className="w-full rounded-lg border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    className="field-select w-full"
                   >
                     <option value="thermal">Thermal</option>
                     <option value="dot_matrix">Dot Matrix</option>
@@ -275,14 +280,7 @@ const UserFormPage = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  className="inline-flex items-center justify-center rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-                >
-                  {isEditMode ? 'Simpan Perubahan' : 'Tambah Pengguna'}
-                </button>
-              </div>
+              <FormActionBar cancelTo="/pengguna" submitting={submitting} submitLabel={isEditMode ? 'Simpan Perubahan' : 'Tambah Pengguna'} />
             </form>
           </div>
         </PageContainer>

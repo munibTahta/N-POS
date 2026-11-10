@@ -1,39 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const { execSync } = require('child_process');
 
-// Helper to query WMIC for a printer's port given its friendly name. This
-// duplicates the logic used in the renderer's `get-printers` handler but is
-// executed on-demand when we actually print.  If anything goes wrong we
-// quietly return null so printing can still proceed using the friendly name.
-function lookupPortForPrinter(name) {
-  if (os.platform() !== 'win32' || !name) return null;
-  // if we already ran the printer enumeration, we might have a port map
-  if (global.lastPrinterPortMap && global.lastPrinterPortMap[name]) {
-    return global.lastPrinterPortMap[name];
-  }
-  try {
-    // escaping quotes inside name to avoid WMIC syntax errors
-    const escaped = name.replace(/"/g, '\\"');
-    const raw = execSync(
-      `wmic printer where name="${escaped}" get PortName /format:csv`,
-      { encoding: 'utf8', timeout: 2000 }
-    );
-    // output like: Node,PortName\r\nHOST,USB008\r\n
-    const lines = raw.split(/\r?\n/);
-    for (const line of lines) {
-      const parts = line.split(',');
-      if (parts.length >= 2) {
-        const port = parts[1].trim();
-        if (port && port.toUpperCase() !== 'PORTNAME') {
-          return port;
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('WMIC port lookup failed during print', err && err.message ? err.message : err);
-  }
-  return null;
-}
+const { lookupPortForPrinter } = require('./lib/printerPort.cjs');
 
 // helper for broadcasting print-related debug messages to renderer windows
 function broadcastDebug(msg, extra = '') {
@@ -60,6 +28,9 @@ function qzTrayWarn(msg, extra = '') {
 const path = require('node:path');
 const fs = require('node:fs');
 const os = require('os');
+// printUtils sebelumnya dipakai tanpa diimpor (ReferenceError saat mencetak struk).
+const printUtils = require('./printUtils.cjs');
+const { getPrinterCharWidth, getPrinterPaperWidth, formatPrintItem } = require('./receiptFormat.cjs');
 
 function getWritableCertDir() {
   const userDataPath = app.getPath('userData');
@@ -70,16 +41,7 @@ function getWritableCertDir() {
   return certDir;
 }
 
-function isValidQzTrayCertificate(certificate) {
-  return typeof certificate === 'string'
-    && certificate.includes('-----BEGIN CERTIFICATE-----')
-    && certificate.includes('-----END CERTIFICATE-----');
-}
-
-function isValidQzTrayPrivateKey(privateKey) {
-  return typeof privateKey === 'string'
-    && (privateKey.includes('-----BEGIN RSA PRIVATE KEY-----') || privateKey.includes('-----BEGIN PRIVATE KEY-----'));
-}
+const { isValidQzTrayCertificate, isValidQzTrayPrivateKey } = require('./lib/qzCert.cjs');
 
 // try to load the modern forked POS printer library; if it's not installed
 // we fall back to our own routines.
@@ -328,147 +290,6 @@ async function printThermalSimple(printerName, content, paperWidth = '58mm') {
   }
 }
 
-function getPrinterCharWidth(printerName) {
-  const name = String(printerName || '').toLowerCase();
-
-  if (name.includes('100mm')) return 60;
-  if (name.includes('80mm') || name.includes('80x80') || name.includes('star') || name.includes('seagull')) return 48;
-  if (name.includes('58mm') || name.includes('pos-58') || name.includes('yw58') || name.includes('blueprint') || /\b58\b/.test(name)) return 32;
-
-  const printerType = printUtils.detectPrinterType(printerName);
-  return printerType === printUtils.PRINTER_TYPES.THERMAL ? 32 : 80;
-}
-
-function getPrinterPaperWidth(printerName) {
-  const name = String(printerName || '').toLowerCase();
-
-  if (name.includes('100mm')) return '100mm';
-  if (name.includes('80mm') || name.includes('80x80') || name.includes('star') || name.includes('seagull')) return '80mm';
-  if (name.includes('58mm') || name.includes('pos-58') || name.includes('yw58') || name.includes('blueprint') || /\b58\b/.test(name)) return '58mm';
-
-  return printUtils.detectPrinterType(printerName) === printUtils.PRINTER_TYPES.THERMAL ? '58mm' : '80mm';
-}
-
-function wrapTextToWidth(text, maxWidth) {
-  const normalized = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  return normalized.split('\n').flatMap(line => {
-    const words = line.trim().split(/\s+/);
-    const lines = [];
-    let current = '';
-
-    for (const word of words) {
-      if (!word) continue;
-
-      if (!current) {
-        if (word.length <= maxWidth) {
-          current = word;
-        } else {
-          for (let pos = 0; pos < word.length; pos += maxWidth) {
-            const chunk = word.slice(pos, pos + maxWidth);
-            if (chunk.length === maxWidth) {
-              lines.push(chunk);
-            } else {
-              current = chunk;
-            }
-          }
-        }
-        continue;
-      }
-
-      if (current.length + 1 + word.length <= maxWidth) {
-        current += ' ' + word;
-      } else {
-        lines.push(current);
-        if (word.length <= maxWidth) {
-          current = word;
-        } else {
-          for (let pos = 0; pos < word.length; pos += maxWidth) {
-            const chunk = word.slice(pos, pos + maxWidth);
-            if (chunk.length === maxWidth) {
-              lines.push(chunk);
-            } else {
-              current = chunk;
-            }
-          }
-        }
-      }
-    }
-
-    if (current) {
-      lines.push(current);
-    }
-
-    return lines.length > 0 ? lines : [''];
-  });
-}
-
-function formatColumns(columns, maxWidth) {
-  const sanitized = columns.map(c => ({
-    text: String((c && c.text) || ''),
-    align: String((c && c.align) || 'left')
-  }));
-
-  if (sanitized.length === 0) {
-    return '';
-  }
-
-  if (sanitized.length === 1) {
-    return wrapTextToWidth(sanitized[0].text, maxWidth).join('\n');
-  }
-
-  const leftText = sanitized.slice(0, -1).map(c => c.text).join(' ');
-  const rightText = sanitized[sanitized.length - 1].text;
-
-  const leftLines = wrapTextToWidth(leftText, maxWidth);
-  const rightLines = wrapTextToWidth(rightText, maxWidth);
-  const lines = [];
-
-  if (leftLines.length > 0) {
-    const firstLeft = leftLines[0];
-    const firstRight = rightLines[0] || '';
-    if (firstLeft.length + firstRight.length + 1 <= maxWidth) {
-      const spaces = maxWidth - firstLeft.length - firstRight.length;
-      lines.push(firstLeft + ' '.repeat(spaces) + firstRight);
-    } else {
-      lines.push(firstLeft);
-      if (firstRight) {
-        lines.push(firstRight);
-      }
-    }
-    if (leftLines.length > 1) {
-      lines.push(...leftLines.slice(1));
-    }
-    if (rightLines.length > 1) {
-      lines.push(...rightLines.slice(1));
-    }
-  } else {
-    lines.push(...rightLines);
-  }
-
-  return lines.join('\n');
-}
-
-function formatPrintItem(item, maxWidth) {
-  if (!item || typeof item !== 'object') {
-    return '';
-  }
-
-  if (item.type === 'line') {
-    return '-'.repeat(maxWidth);
-  }
-
-  const value = item.value !== undefined && item.value !== null ? String(item.value) : '';
-
-  if (item.type === 'text') {
-    if (item.columns && Array.isArray(item.columns) && item.columns.length > 0) {
-      return formatColumns(item.columns, maxWidth);
-    }
-    return wrapTextToWidth(value, maxWidth).join('\n');
-  }
-
-  return wrapTextToWidth(value, maxWidth).join('\n');
-}
-
 // Perform structured receipt printing
 async function performPrintReceipt(printerName, printData) {
   
@@ -562,6 +383,13 @@ async function performPrintReceipt(printerName, printData) {
   }
 }
 
+// --- SHARED DB VALIDATION HELPERS (module scope: used both by the generic
+// db-insert/db-update/db-delete/db-select handlers registered inside
+// registerDatabaseHandlers(), and by the db-batch-* handlers registered at
+// module scope further below) ---
+
+const { ALLOWED_COLUMNS, ALLOWED_TABLES, validateColumns, validateWhereClause } = require('./lib/dbValidation.cjs');
+
 // --- FUNCTION TO REGISTER DATABASE IPC HANDLERS ---
 // This must be called AFTER database initialization but BEFORE the window is created
 // so that the renderer can access these handlers immediately
@@ -582,52 +410,6 @@ function registerDatabaseHandlers() {
     } catch (schemaError) {
       console.error(`❌ Failed to ensure sales column ${columnName}:`, schemaError.message);
       throw schemaError;
-    }
-  }
-
-  // ✅ FIX #3: Define allowed columns for each table (prevent SQL injection)
-  const ALLOWED_COLUMNS = {
-    products: ['id_produk', 'kode_produk', 'nama_produk', 'id_kategori', 'id_satuan', 'harga_beli', 'harga_jual', 'harga_grosir', 'min_qty_grosir', 'stok_minimum', 'status', 'gambar', 'barcode', 'merek', 'lokasi_rak', 'deskripsi', 'foto_produk', 'created_at', 'updated_at', 'synced', 'sync_version', 'id_cabang_pemilik', 'urutan'],
-    branches: ['id_cabang', 'kode_cabang', 'nama_cabang', 'alamat', 'kota', 'no_telp', 'status', 'tipe_katalog', 'created_at'],
-    sales: ['id_penjualan', 'kode_transaksi', 'id_cabang', 'id_pelanggan', 'id_user', 'tanggal', 'total', 'total_diskon', 'pajak', 'metode_pembayaran', 'status', 'status_pembayaran', 'catatan', 'tanggal_transaksi', 'created_at', 'updated_at', 'synced', 'sync_version', 'bayar', 'diskon'],
-    sale_items: ['id', 'id_penjualan', 'id_produk', 'jumlah', 'harga_satuan', 'subtotal', 'diskon_item', 'created_at', 'tipe_harga', 'harga_produk'],
-    payment_details: ['id', 'id_penjualan', 'metode_pembayaran', 'shadow_pay', 'jumlah_bayar', 'created_at'],
-    sync_queue: ['id', 'table_name', 'operation', 'record_id', 'data', 'status', 'error_message', 'created_at', 'updated_at', 'server_id', 'retry_count'],
-    sync_metadata: ['key', 'value', 'created_at', 'updated_at'],
-    categories: ['id_kategori', 'nama_kategori', 'created_at', 'updated_at', 'synced', 'sync_version'],
-    units: ['id_satuan', 'nama_satuan', 'created_at', 'updated_at', 'synced', 'sync_version'],
-    customers: ['id_pelanggan', 'nama_pelanggan', 'nomor_hp', 'email', 'alamat', 'created_at', 'updated_at', 'synced', 'sync_version'],
-    supplier: ['id_supplier', 'nama_supplier', 'alamat', 'telepon', 'email', 'created_at', 'updated_at', 'synced', 'sync_version'],
-    suppliers: ['id_supplier', 'nama_supplier', 'alamat', 'telepon', 'email', 'created_at', 'updated_at', 'synced', 'sync_version'],
-    purchases: ['id_pembelian', 'kode_pembelian', 'id_supplier', 'id_cabang', 'tanggal', 'total', 'status', 'masuk_gudang', 'catatan', 'id_user', 'created_at', 'updated_at', 'synced', 'sync_version'],
-    purchase_items: ['id', 'id_pembelian', 'id_produk', 'jumlah', 'harga_beli', 'subtotal', 'created_at'],
-    metode_pembayaran: ['id_metode', 'kode_metode', 'nama_metode', 'tipe_metode', 'aktif', 'konfigurasi', 'is_default', 'urutan_tampil', 'biaya_tambahan_persen', 'biaya_tambahan_nominal', 'minimum_transaksi', 'maksimum_transaksi', 'created_at', 'updated_at', 'synced', 'sync_version'],
-    warehouse_stock: ['id', 'id_produk', 'id_cabang', 'stok', 'lokasi_rak', 'updated_at']
-  };
-
-  // Validate column names (prevent SQL injection via column names)
-  function validateColumns(table, columns) {
-    const allowedCols = ALLOWED_COLUMNS[table] || [];
-    for (const col of columns) {
-      if (!allowedCols.includes(col)) {
-        throw new Error(`⚠️ SQL Injection Attempt: Column "${col}" not allowed in table "${table}"`);
-      }
-    }
-  }
-
-  const ALLOWED_TABLES = Object.keys(ALLOWED_COLUMNS);
-
-  function validateWhereClause(whereClause) {
-    if (!whereClause || typeof whereClause !== 'string') {
-      throw new Error('WHERE clause must be a non-empty string');
-    }
-    const forbidden = /;|--|\/\*|\*\//;
-    if (forbidden.test(whereClause)) {
-      throw new Error('Invalid WHERE clause');
-    }
-    const safePattern = /^[\w\s=<>!\.%'"(),\-?]+$/;
-    if (!safePattern.test(whereClause)) {
-      throw new Error('WHERE clause contains unsupported characters');
     }
   }
 
@@ -3462,65 +3244,7 @@ ipcMain.handle('check-printer-status', async (event) => {
   }
 });
 
-// Utility: escape HTML for safe embedding in <pre>
-function escapeHtml(str) {
-  return String(str || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-// Utility: build HTML wrapper for thermal text receipts
-function buildThermalHtml(content, paperWidth = '58mm') {
-  const width = paperWidth || '58mm';
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body {
-      font-family: Courier, monospace;
-      font-size: 18px;
-      font-weight: bold;
-      line-height: 1.1;
-      margin: 0;
-      padding: 2mm;
-      width: ${width};
-      background: white;
-      color: black;
-    }
-    pre {
-      margin: 0;
-      white-space: pre;
-      font-family: Courier, monospace;
-      font-size: 18px;
-      font-weight: bold;
-      line-height: 1.1;
-    }
-    @page {
-      size: ${width} 200mm;
-      margin: 0;
-    }
-    @media print {
-      body {
-        width: ${width};
-        padding: 1mm;
-        margin: 0;
-      }
-      pre {
-        font-size: 18px;
-        line-height: 1.0;
-      }
-    }
-  </style>
-</head>
-<body>
-  <pre>${escapeHtml(content)}</pre>
-</body>
-</html>`;
-}
+const { escapeHtml, buildThermalHtml } = require('./lib/thermalHtml.cjs');
 
 // IPC handler for thermal receipt printing
 // Accepts: { printerName, content, paperWidth }
@@ -3758,6 +3482,12 @@ ipcMain.handle('print-regular', async (event, params) => {
 */
 
 /*
+  // Orphaned fragment from a retired 'print-receipt' handler (no enclosing
+  // ipcMain.handle(...) — printerName/printData were never in scope here).
+  // Left disabled intentionally; QZ Tray (print-thermal) / print-regular are
+  // the supported print paths. The unclosed `/*` that used to start here
+  // had accidentally swallowed every handler below it up to line ~4447 —
+  // that was the real bug; this fragment itself was already dead.
   try {
     return await performPrintReceipt(printerName, printData);
   } catch (error) {
@@ -3768,7 +3498,7 @@ ipcMain.handle('print-regular', async (event, params) => {
     throw friendly;
   }
 });
-
+*/
 
 // --- IPC HANDLERS FOR OFFLINE DATABASE ---
 
@@ -3854,8 +3584,7 @@ ipcMain.handle('db-batch-insert', async (event, { table, rows }) => {
     if (!table || typeof table !== 'string') throw new Error('Invalid table name');
     if (!Array.isArray(rows) || rows.length === 0) return { inserted: 0, failed: 0, failedRows: [] };
 
-    const allowedTables = ['products', 'sales', 'sale_items', 'payment_details', 'sync_queue', 'sync_metadata', 'categories', 'units', 'customers', 'supplier', 'suppliers', 'purchases', 'purchase_items', 'metode_pembayaran', 'warehouse_stock'];
-    if (!allowedTables.includes(table)) throw new Error(`Table '${table}' not allowed`);
+    if (!ALLOWED_TABLES.includes(table)) throw new Error(`Table '${table}' not allowed`);
 
     let inserted = 0;
     let failed = 0;
@@ -3866,6 +3595,7 @@ ipcMain.handle('db-batch-insert', async (event, { table, rows }) => {
       rows.forEach((data, index) => {
         try {
           const columns = Object.keys(data);
+          validateColumns(table, columns);
           const placeholders = columns.map(() => '?').join(', ');
           const values = Object.values(data);
           const stmt = offlineDb.prepare(`INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`);
@@ -3899,8 +3629,7 @@ ipcMain.handle('db-batch-update', async (event, { table, updates }) => {
     if (!table || typeof table !== 'string') throw new Error('Invalid table name');
     if (!Array.isArray(updates) || updates.length === 0) return { updated: 0, failed: 0 };
 
-    const allowedTables = ['products', 'sales', 'sale_items', 'payment_details', 'sync_queue', 'sync_metadata', 'categories', 'units', 'customers', 'supplier', 'suppliers', 'purchases', 'purchase_items', 'metode_pembayaran', 'warehouse_stock'];
-    if (!allowedTables.includes(table)) throw new Error(`Table '${table}' not allowed`);
+    if (!ALLOWED_TABLES.includes(table)) throw new Error(`Table '${table}' not allowed`);
 
     let updated = 0;
     let failed = 0;
@@ -3908,14 +3637,17 @@ ipcMain.handle('db-batch-update', async (event, { table, updates }) => {
     const transaction = offlineDb.transaction(() => {
       updates.forEach(({ data, whereClause, whereValues }, index) => {
         try {
+          validateWhereClause(whereClause);
           // Validate whereValues count matches placeholders in whereClause
           const placeholderCount = (whereClause.match(/\?/g) || []).length;
           const actualValues = whereValues || [];
           if (actualValues.length !== placeholderCount) {
             throw new Error(`Row ${index}: WHERE values count (${actualValues.length}) does not match placeholders (${placeholderCount})`);
           }
-          
-          const setClause = Object.keys(data).map(key => `${key} = ?`).join(', ');
+
+          const columns = Object.keys(data);
+          validateColumns(table, columns);
+          const setClause = columns.map(key => `${key} = ?`).join(', ');
           const values = [...Object.values(data), ...actualValues];
           const stmt = offlineDb.prepare(`UPDATE ${table} SET ${setClause} WHERE ${whereClause}`);
           stmt.run(...values);
@@ -3941,8 +3673,8 @@ ipcMain.handle('db-batch-delete', async (event, { table, whereClause, whereValue
     if (!offlineDb) throw new Error('Database not initialized');
     if (!table || typeof table !== 'string') throw new Error('Invalid table name');
 
-    const allowedTables = ['products', 'sales', 'sale_items', 'payment_details', 'sync_queue', 'sync_metadata', 'categories', 'units', 'customers', 'supplier', 'suppliers', 'purchases', 'purchase_items', 'metode_pembayaran', 'warehouse_stock'];
-    if (!allowedTables.includes(table)) throw new Error(`Table '${table}' not allowed`);
+    if (!ALLOWED_TABLES.includes(table)) throw new Error(`Table '${table}' not allowed`);
+    validateWhereClause(whereClause);
 
     // Validate whereValues count matches placeholders in whereClause
     const placeholderCount = (whereClause.match(/\?/g) || []).length;
@@ -3991,22 +3723,14 @@ ipcMain.handle('db-update-sync-queue-server-id', async (event, { syncId, serverI
   }
 });
 
-ipcMain.handle('db-set-sync-metadata', async (event, { key, value }) => {
-  try {
-    if (!offlineDb) throw new Error('Database not initialized');
-
-    const stmt = offlineDb.prepare(`
-      INSERT OR REPLACE INTO sync_metadata (key, value, updated_at)
-      VALUES (?, ?, CURRENT_TIMESTAMP)
-    `);
-    const result = stmt.run(key, JSON.stringify(value));
-
-    return result;
-  } catch (error) {
-    console.error('❌ Failed to set sync metadata:', error);
-    throw error;
-  }
-});
+// Note: 'db-set-sync-metadata' is already registered above (see the
+// `sync_metadata` handler near the top of registerDatabaseHandlers) — that
+// version stores `value` as-is, matching what 'db-get-sync-metadata' reads
+// back (no JSON parsing). A second, inconsistent duplicate registration
+// (JSON.stringify-ing the value, which the getter never un-stringifies) used
+// to live here; removed rather than restored, since Electron throws if two
+// handlers are registered for the same channel and this one would have won
+// by registration order, silently breaking every dbGetSyncMetadata() read.
 
 // Handler for on-demand database corruption check and repair
 ipcMain.handle('db-repair-corruption', async (event) => {
@@ -4170,73 +3894,7 @@ function runDatabaseCorruptionRecovery(db) {
   }
 }
 
-function normalizeOfflineSalePayload({ saleData, items, payments }) {
-  if (!saleData || typeof saleData !== 'object') throw new Error('Invalid sale data');
-  if (!Array.isArray(items) || items.length === 0) throw new Error('Sale items are required for offline transaction');
-
-  const normalizedItems = items.map((item, index) => {
-    const idProduk = item.id_produk || item.idProduk || item.product_id;
-    const jumlah = Number(item.jumlah || item.quantity || 0);
-    const hargaSatuan = Number(item.harga_satuan || item.harga_jual || 0);
-
-    if (!idProduk) throw new Error(`Item ${index + 1}: id_produk tidak valid`);
-    if (!Number.isFinite(jumlah) || jumlah <= 0) throw new Error(`Item ${index + 1}: jumlah harus lebih dari 0`);
-    if (!Number.isFinite(hargaSatuan) || hargaSatuan < 0) throw new Error(`Item ${index + 1}: harga_satuan tidak valid`);
-
-    const expectedSubtotal = Number((jumlah * hargaSatuan).toFixed(2));
-    if (!Number.isFinite(expectedSubtotal) || expectedSubtotal < 0) {
-      throw new Error(`Item ${index + 1}: subtotal tidak valid`);
-    }
-
-    return {
-      ...item,
-      id_produk: idProduk,
-      jumlah,
-      harga_satuan: hargaSatuan,
-      subtotal: expectedSubtotal,
-      diskon_item: Number(item.diskon_item || 0),
-      pajak_item: Number(item.pajak_item || 0)
-    };
-  });
-
-  const computedTotal = normalizedItems.reduce((sum, item) => sum + item.subtotal, 0);
-  if (!Number.isFinite(computedTotal) || computedTotal < 0) {
-    throw new Error('Total transaksi tidak valid');
-  }
-
-  const normalizedPayments = Array.isArray(payments) ? payments.map((payment, index) => {
-    const amount = Number(payment.jumlah_bayar || payment.amount || 0);
-    if (!Number.isFinite(amount) || amount < 0) {
-      throw new Error(`Payment ${index + 1}: jumlah_bayar tidak valid`);
-    }
-    if (!payment.id_metode_pembayaran) {
-      throw new Error(`Payment ${index + 1}: id_metode_pembayaran diperlukan`);
-    }
-    return {
-      ...payment,
-      jumlah_bayar: amount,
-      created_at: payment.created_at || new Date().toISOString()
-    };
-  }) : [];
-
-  const paidTotal = normalizedPayments.reduce((sum, payment) => sum + payment.jumlah_bayar, 0);
-  const statusPembayaran = paidTotal >= computedTotal ? 'lunas' : 'pending';
-  const kembalian = paidTotal > computedTotal ? Number((paidTotal - computedTotal).toFixed(2)) : 0;
-  const sisaPembayaran = paidTotal < computedTotal ? Number((computedTotal - paidTotal).toFixed(2)) : 0;
-
-  return {
-    saleData: {
-      ...saleData,
-      total: computedTotal,
-      bayar: paidTotal,
-      kembalian,
-      sisa_pembayaran: sisaPembayaran,
-      status_pembayaran: saleData.status_pembayaran || statusPembayaran
-    },
-    items: normalizedItems,
-    payments: normalizedPayments
-  };
-}
+const { normalizeOfflineSalePayload } = require('./lib/offlineSale.cjs');
 
 // Handler to save complete sale with items and payments (for offline mode)
 ipcMain.handle('db-save-sale', async (event, { saleData, items, payments }) => {

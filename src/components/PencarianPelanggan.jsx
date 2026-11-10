@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, forwardRef } from 'react';
+import { X } from 'lucide-react';
 import { getPelanggan } from '../services/api'; // Use get all customers and filter client-side
 import { useDebounce } from '../hooks/useDebounce';
 
@@ -103,7 +104,7 @@ const PencarianPelanggan = forwardRef(({
             className="absolute right-2 top-2 text-gray-400 hover:text-gray-600"
             title="Hapus pelanggan"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
         )}
 
@@ -175,7 +176,7 @@ const PencarianPelanggan = forwardRef(({
               className="text-red-500 hover:text-red-700 text-xl"
               title="Hapus pelanggan"
             >
-              ✕
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>

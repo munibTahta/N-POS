@@ -1,0 +1,4 @@
+# Commit yang hanya mengubah format (abaikan di git blame).
+# Aktifkan: git config blame.ignoreRevsFile .git-blame-ignore-revs
+# normalisasi akhir baris CRLF -> LF
+f6d195cbe2ff8da48b4de8989bc410c8fa105b59

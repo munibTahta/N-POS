@@ -11,6 +11,9 @@ import { usePagination } from '../hooks/usePagination';
 import Pagination from '../components/Pagination';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import HeaderActionButton from '../components/HeaderActionButton';
+import PageLoading from '../components/PageLoading';
+import PageError from '../components/PageError';
+import HeaderActionMenu from '../components/HeaderActionMenu';
 import DropdownActionMenu from '../components/common/DropdownActionMenu';
 import { Plus, Download, Upload, FileText, Pencil, Trash2 } from 'lucide-react';
 import ExcelJS from 'exceljs';
@@ -165,7 +168,7 @@ const CategoriesPage = () => {
     filterFns: {
       category: (item, value) => {
         if (!value) return true;
-        return item.id_kategori === value;
+        return String(item.id_kategori) === String(value);
       },
     },
     debounceDelay: 300,
@@ -322,8 +325,8 @@ const CategoriesPage = () => {
     }
   };
 
-  if (loading) return <div className="text-center mt-10">Loading...</div>;
-  if (error) return <div className="text-center mt-10 text-red-500">{error}</div>;
+  if (loading) return <PageLoading title="Manajemen Kategori Produk" />;
+  if (error) return <PageError title="Manajemen Kategori Produk" message={String(error)} />;
 
   return (
     <PageLayout>
@@ -339,29 +342,12 @@ const CategoriesPage = () => {
                 variant="slate"
                 to="/kategori/tambah"
                 isLink
-                hideLabel={true}
               />
-              <HeaderActionButton
-                icon={Download}
-                label="Export"
-                variant="emerald"
-                onClick={handleExportExcel}
-                hideLabel={true}
-              />
-              <HeaderActionButton
-                icon={Upload}
-                label="Import"
-                variant="yellow"
-                onClick={() => document.getElementById('import-excel-kategori').click()}
-                hideLabel={true}
-              />
-              <HeaderActionButton
-                icon={FileText}
-                label="Template"
-                variant="gray"
-                onClick={handleDownloadTemplate}
-                hideLabel={true}
-              />
+              <HeaderActionMenu key="more" items={[
+                { id: 'export', label: 'Export', icon: Download, onClick: () => handleExportExcel() },
+                { id: 'import', label: 'Import', icon: Upload, onClick: () => document.getElementById('import-excel-kategori').click() },
+                { id: 'template', label: 'Template', icon: FileText, onClick: () => handleDownloadTemplate() }
+              ]} />
             </div>
           )
         }

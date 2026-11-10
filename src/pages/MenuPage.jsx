@@ -1,11 +1,10 @@
-import React, { useState, useMemo, useEffect, memo, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, memo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { usePermissions } from '../hooks/usePermissions';
 import { useMenuContext } from '../context/MenuContext';
 import { useRoleContext } from '../context/RoleContext';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts/index.jsx';
-import { SearchFilterBar, FilterPanel, FilterPanelGrid, FilterField } from '../components/SearchFilterBar';
 import { renderLucideIcon } from '../utils/lucideIconHelper';
 // import { getUserMenus } from '../services/api';
 
@@ -116,15 +115,8 @@ const MenuPage = () => {
   const { getRoleById } = useRoleContext();
   const { hasMenuAccess, canManage } = usePermissions();
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [filterCategory, setFilterCategory] = useState('all');
   const [menuItems, setMenuItems] = useState([]);
 
-  const handleClearFilters = useCallback(() => {
-    setFilterCategory('all');
-    setShowFilters(false);
-  }, []);
   useEffect(() => {
     const handleKeyDown = (e) => {
       // F9: Navigate to POS page
@@ -164,7 +156,7 @@ const MenuPage = () => {
       if (contextMenus && contextMenus.length > 0) {
         transformedMenus = contextMenus.map((menu, index) => ({
           to: menu.path,
-          icon: menu.icon || '📄',
+          icon: menu.icon || 'FileText',
           title: menu.nama_menu || 'Menu Item',
           description: getMenuDescription(menu.path, `Kelola ${menu.nama_menu || 'menu ini'}`),
           isPrimary: menu.path === '/pos', // POS is primary
@@ -183,17 +175,6 @@ const MenuPage = () => {
     loadMenuItems();
   }, [contextMenus, contextLoading]);
 
-  // Filter menu items based on search term
-  const filteredMenuItems = useMemo(() => {
-    return menuItems.filter(item => {
-      const title = (item.title || '').toLowerCase();
-      const description = (item.description || '').toLowerCase();
-      const search = searchTerm.toLowerCase();
-      const matchesSearch = title.includes(search) || description.includes(search);
-      return matchesSearch;
-    });
-  }, [menuItems, searchTerm]);
-
   // Group menu items by category
   const groupedMenuItems = useMemo(() => {
     const groups = {
@@ -203,7 +184,7 @@ const MenuPage = () => {
       pengaturan: { key: 'pengaturan', name: 'Pengaturan', items: [] }
     };
 
-    filteredMenuItems.forEach(item => {
+    menuItems.forEach(item => {
       // Normalize path for consistent checking
       const normalizedPath = item.to && !item.to.startsWith('/') ? `/${item.to}` : item.to;
 
@@ -220,71 +201,19 @@ const MenuPage = () => {
       }
     });
 
-    // Filter groups based on selected category
-    if (filterCategory !== 'all') {
-      const filteredGroups = {};
-      if (filterCategory === 'penjualan') filteredGroups.penjualan = groups.penjualan;
-      if (filterCategory === 'manajemen') filteredGroups.manajemen = groups.manajemen;
-      if (filterCategory === 'laporan') filteredGroups.laporan = groups.laporan;
-      if (filterCategory === 'pengaturan') filteredGroups.pengaturan = groups.pengaturan;
-      return Object.values(filteredGroups).filter(group => group.items.length > 0);
-    }
-
     // Remove empty groups
     return Object.values(groups).filter(group => group.items.length > 0);
-  }, [filteredMenuItems, filterCategory]);
+  }, [menuItems]);
 
   return (
     <PageLayout>
       <PageContainer>
         <PageHeader
           title="Menu Utama"
-          actions={(
-            <div className="flex items-center gap-3 text-right">
-              <p className="text-gray-600 text-sm whitespace-nowrap">
-                Selamat datang, <strong className="text-blue-600">{user?.nama_lengkap || user?.username}</strong>
-              </p>
-              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold whitespace-nowrap">
-                {(() => {
-                  const roleName = getRoleById(user?.id_role)?.nama_role || user?.role_display || user?.role || 'USER';
-                  return roleName.toString().toUpperCase();
-                })()}
-              </span>
-            </div>
-          )}
+          subtitle="Pilih menu di bawah, atau tekan Ctrl K untuk membuka halaman mana pun dengan cepat."
         />
         <style>{styles}</style>
         <div className="space-y-6 pt-2">
-          <SearchFilterBar
-            searchTerm={searchTerm}
-            onSearchChange={(value) => setSearchTerm(value)}
-            onClearSearch={() => setSearchTerm('')}
-            onFilterToggle={() => setShowFilters(prev => !prev)}
-            isFilterActive={showFilters}
-            hasActiveFilters={filterCategory !== 'all'}
-            onClearFilters={handleClearFilters}
-            searchPlaceholder="Cari menu berdasarkan nama..."
-          />
-
-          {showFilters && (
-            <FilterPanel>
-              <FilterPanelGrid>
-                <FilterField label="Kategori Menu">
-                  <select
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                    className="input"
-                  >
-                    <option value="all">Semua Kategori</option>
-                    <option value="penjualan">Penjualan</option>
-                    <option value="manajemen">Manajemen</option>
-                    <option value="laporan">Laporan</option>
-                    <option value="pengaturan">Pengaturan</option>
-                  </select>
-                </FilterField>
-              </FilterPanelGrid>
-            </FilterPanel>
-          )}
 
       {/* Loading State */}
       {contextLoading && (
@@ -322,14 +251,14 @@ const MenuPage = () => {
       ))}
 
       {/* No menus found */}
-      {!contextLoading && filteredMenuItems.length === 0 && (
+      {!contextLoading && menuItems.length === 0 && (
         <div className="text-center py-16">
           <div className="mb-6">
             {renderLucideIcon('Clipboard', 'w-16 h-16 mx-auto text-gray-400')}
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-4">Tidak ada menu tersedia</h3>
           <p className="text-gray-600 text-lg max-w-md mx-auto">
-            {searchTerm ? 'Tidak ada menu yang cocok dengan pencarian Anda.' : 'Belum ada menu yang dapat diakses.'}
+            Belum ada menu yang dapat diakses.
           </p>
         </div>
       )}
