@@ -15,6 +15,7 @@ import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import DataTable from '../components/DataTable';
 import Pagination from '../components/Pagination';
 import HeaderActionButton from '../components/HeaderActionButton';
+import HeaderActionMenu from '../components/HeaderActionMenu';
 import { Edit, Trash2, Printer, Eye, Plus, Download, Upload, FileText, Info, Globe, Store, Power, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import useProductOfflineDB from '../hooks/useProductOfflineDB';
 import FileViewerModal from '../components/FileViewerModal';
@@ -565,7 +566,6 @@ const ProductsPage = () => {
                     : '/produk/tambah'
                 }
                 isLink={!(activeCatalogTab === 'terpisah' && isGlobalAccess && !selectedBranchId)}
-                hideLabel={true}
                 disabled={activeCatalogTab === 'terpisah' && isGlobalAccess && !selectedBranchId}
                 title={
                   activeCatalogTab === 'terpisah' && isGlobalAccess && !selectedBranchId
@@ -574,34 +574,12 @@ const ProductsPage = () => {
                 }
               />
             )}
-            <HeaderActionButton
-              icon={Download}
-              label="Export"
-              variant="emerald"
-              onClick={handleExportExcel}
-              hideLabel={true}
-            />
-            <HeaderActionButton
-              icon={Upload}
-              label="Import"
-              variant="yellow"
-              onClick={() => document.getElementById('import-excel').click()}
-              hideLabel={true}
-            />
-            <HeaderActionButton
-              icon={FileText}
-              label="Template"
-              variant="gray"
-              onClick={handleDownloadTemplate}
-              hideLabel={true}
-            />
-            <HeaderActionButton
-              icon={Info}
-              label="Info"
-              variant="indigo"
-              onClick={() => setShowCategoryInfoModal(true)}
-              hideLabel={true}
-            />
+            <HeaderActionMenu key="more" items={[
+                { id: 'export', label: 'Export', icon: Download, onClick: () => handleExportExcel() },
+                { id: 'import', label: 'Import', icon: Upload, onClick: () => document.getElementById('import-excel').click() },
+                { id: 'template', label: 'Template', icon: FileText, onClick: () => handleDownloadTemplate() },
+                { id: 'info', label: 'Info', icon: Info, onClick: () => setShowCategoryInfoModal(true) }
+              ]} />
           </div>
         }
       />

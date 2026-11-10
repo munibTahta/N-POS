@@ -8,6 +8,7 @@ import { PageLayout, PageContainer, PageHeader } from '../components/layouts/ind
 import { logger } from '../utils/logger';
 import DataTable from '../components/DataTable';
 import HeaderActionButton from '../components/HeaderActionButton';
+import HeaderActionMenu from '../components/HeaderActionMenu';
 import { Edit, Trash2, Plus, Upload, Download, FileText } from 'lucide-react';
 
 const SuppliersPage = () => {
@@ -188,7 +189,7 @@ const SuppliersPage = () => {
       <PageContainer>
         <PageHeader
           title="Manajemen Supplier"
-          subtitle="Kelola daftar supplier, impor data, dan ekspor laporan dengan cepat"
+          subtitle={`Kelola daftar supplier · ${suppliers.length} terdaftar`}
           actions={[
             ...(hasPermission('inventory') ? [
               <HeaderActionButton
@@ -198,33 +199,13 @@ const SuppliersPage = () => {
                 variant="slate"
                 to="/supplier/tambah"
                 isLink
-                hideLabel={true}
               />
             ] : []),
-            <HeaderActionButton
-              key="export"
-              icon={Download}
-              label="Export"
-              variant="emerald"
-              onClick={handleExportExcel}
-              hideLabel={true}
-            />,
-            <HeaderActionButton
-              key="import"
-              icon={Upload}
-              label="Import"
-              variant="amber"
-              onClick={() => importInputRef.current?.click()}
-              hideLabel={true}
-            />,
-            <HeaderActionButton
-              key="template"
-              icon={FileText}
-              label="Template"
-              variant="slate"
-              onClick={handleDownloadTemplate}
-              hideLabel={true}
-            />
+            <HeaderActionMenu key="more" items={[
+                { id: 'export', label: 'Export', icon: Download, onClick: () => handleExportExcel() },
+                { id: 'import', label: 'Import', icon: Upload, onClick: () => importInputRef.current?.click() },
+                { id: 'template', label: 'Template', icon: FileText, onClick: () => handleDownloadTemplate() }
+              ]} />
           ]}
         />
 
@@ -237,16 +218,6 @@ const SuppliersPage = () => {
         />
 
         <div className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-              <p className="text-sm font-medium text-slate-500">Total Supplier</p>
-              <p className="mt-3 text-3xl font-bold text-slate-900">{suppliers.length}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-5">
-              <p className="text-sm font-medium text-slate-500">Total Supplier</p>
-              <p className="mt-3 text-3xl font-bold text-slate-900">{suppliers.length}</p>
-            </div>
-          </div>
 
           <DataTable
             data={suppliers}

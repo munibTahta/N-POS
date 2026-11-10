@@ -82,6 +82,7 @@ export function CartPanel({ dueDate, setDueDate, appliedVoucher, cart, cartFocus
                     onUpdateQuantity={handleUpdateQuantity}
                     onRemove={handleRemoveFromCart}
                     stock={stockInfo[item.id_produk] || 0}
+                    allowNegative={posSettings?.allowNegativeStock === true}
                     onSetManualPricing={handleSetManualPricing}
                     manualPricingOverride={manualPricingOverrides[item.id_produk]}
                     isFocused={cartFocusedIndex === index}

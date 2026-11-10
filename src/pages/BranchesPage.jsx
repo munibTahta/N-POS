@@ -5,6 +5,7 @@ import { useNotifications } from '../hooks/useNotifications';
 import { handleError } from '../utils/errorHandler';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts/index.jsx';
 import DataTable from '../components/DataTable';
+import PageLoading from '../components/PageLoading';
 import HeaderActionButton from '../components/HeaderActionButton';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import { Plus, Edit, Trash2, Loader } from 'lucide-react';
@@ -99,22 +100,7 @@ const BranchesPage = () => {
     fetchBranches();
   }, [showError]);
 
-  if (loading) {
-    return (
-      <PageLayout>
-        <PageContainer>
-          <div className="flex items-center justify-center min-h-96">
-            <div className="text-center">
-              <div className="inline-block">
-                <LoadingSpinner />
-              </div>
-              <p className="mt-3 text-slate-600">Memuat data cabang...</p>
-            </div>
-          </div>
-        </PageContainer>
-      </PageLayout>
-    );
-  }
+  if (loading) return <PageLoading title="Manajemen Cabang" />;
 
   if (error) {
     return (

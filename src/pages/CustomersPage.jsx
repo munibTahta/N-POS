@@ -11,6 +11,8 @@ import Pagination from '../components/Pagination';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import DataTable from '../components/DataTable';
 import HeaderActionButton from '../components/HeaderActionButton';
+import PageLoading from '../components/PageLoading';
+import HeaderActionMenu from '../components/HeaderActionMenu';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import { FloatingLabelInput, FloatingLabelSelect, FloatingLabelTextarea } from '../components/common/FloatingLabelField';
 import { Eye, Edit, Trash2, Plus, Download, Upload, FileText } from 'lucide-react';
@@ -387,7 +389,7 @@ const CustomersPage = () => {
     }, 5000);
   };
 
-  if (loading) return <div className="text-center mt-10">Memuat data pelanggan...</div>;
+  if (loading) return <PageLoading title="Manajemen Pelanggan" subtitle="Kelola data pelanggan dan informasi kontak" />;
 
   return (
     <PageLayout>
@@ -403,27 +405,11 @@ const CustomersPage = () => {
               onClick={() => setShowForm(true)}
               hideLabel={true}
             />
-            <HeaderActionButton
-              icon={Download}
-              label="Export"
-              variant="emerald"
-              onClick={handleExportExcel}
-              hideLabel={true}
-            />
-            <HeaderActionButton
-              icon={Upload}
-              label="Import"
-              variant="yellow"
-              onClick={() => document.getElementById('import-excel').click()}
-              hideLabel={true}
-            />
-            <HeaderActionButton
-              icon={FileText}
-              label="Template"
-              variant="gray"
-              onClick={handleDownloadTemplate}
-              hideLabel={true}
-            />
+            <HeaderActionMenu key="more" items={[
+                { id: 'export', label: 'Export', icon: Download, onClick: () => handleExportExcel() },
+                { id: 'import', label: 'Import', icon: Upload, onClick: () => document.getElementById('import-excel').click() },
+                { id: 'template', label: 'Template', icon: FileText, onClick: () => handleDownloadTemplate() }
+              ]} />
           </div>
         }
       />

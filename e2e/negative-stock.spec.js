@@ -21,7 +21,10 @@ test.describe('kebijakan stok minus', () => {
     await openPos(page, { allowNegativeStock: true });
     await page.locator('[data-product-id="1"]').click();
     await expect(page.locator('[data-cart-item]')).toHaveCount(1);
-    await page.locator('[data-product-id="1"]').click();                 // tambah lagi, tetap tidak diblok
-    await expect(page.locator('[data-cart-item]').first()).toContainText('2');
+    const row = page.locator('[data-cart-item]').first();
+    await expect(row).toContainText('akan menjadi minus');
+    await row.getByRole('button', { name: '+' }).click();                // tombol + tidak lagi dinonaktifkan oleh stok
+    await row.getByRole('button', { name: '+' }).click();
+    await expect(row.locator('input[type="number"]')).toHaveValue('3');
   });
 });

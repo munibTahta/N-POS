@@ -1,8 +1,9 @@
 // src/components/pos/CartItem.jsx
 import React from 'react';
 import { formatCurrency } from '../../utils/formatHelper';
+import { canSell } from '../../features/pos/stockPolicy';
 
-const CartItem = React.memo(({ item, onUpdateQuantity, onRemove, stock, onSetManualPricing, manualPricingOverride, isFocused }) => {
+const CartItem = React.memo(({ item, onUpdateQuantity, onRemove, stock, onSetManualPricing, manualPricingOverride, isFocused, allowNegative = false }) => {
   const [inputValue, setInputValue] = React.useState(item.jumlah.toString());
 
   // Update input value when item quantity changes
@@ -14,7 +15,7 @@ const CartItem = React.memo(({ item, onUpdateQuantity, onRemove, stock, onSetMan
     const newQuantity = item.jumlah + delta;
     if (newQuantity <= 0) {
       onRemove(item.id_produk);
-    } else if (newQuantity <= stock) {
+    } else if (canSell({ stock, wanted: newQuantity, allowNegative })) {
       onUpdateQuantity(item.id_produk, newQuantity);
     }
   };
@@ -29,7 +30,7 @@ const CartItem = React.memo(({ item, onUpdateQuantity, onRemove, stock, onSetMan
     
     if (newQuantity <= 0) {
       onRemove(item.id_produk);
-    } else if (newQuantity <= stock) {
+    } else if (canSell({ stock, wanted: newQuantity, allowNegative })) {
       onUpdateQuantity(item.id_produk, newQuantity);
     } else {
       // Reset to current quantity if invalid
@@ -100,7 +101,9 @@ const CartItem = React.memo(({ item, onUpdateQuantity, onRemove, stock, onSetMan
           </div>
         )}
         {stock !== undefined && item.jumlah > stock && (
-          <p className={`text-xs text-red-600`}>Stok tidak mencukupi!</p>
+          allowNegative
+            ? <p className="text-xs text-amber-700">Stok tercatat {stock}; akan menjadi minus</p>
+            : <p className="text-xs text-red-600">Stok tidak mencukupi!</p>
         )}
       </div>
 
@@ -124,14 +127,14 @@ const CartItem = React.memo(({ item, onUpdateQuantity, onRemove, stock, onSetMan
             'border border-gray-300 bg-white focus:ring-1 focus:ring-blue-500'
           }`}
           min="1"
-          max={stock}
+          max={allowNegative ? undefined : stock}
         />
         <button
           onClick={() => handleQuantityChange(1)}
           className={`w-6 h-6 sm:w-7 sm:h-7 rounded flex items-center justify-center text-xs sm:text-sm font-bold transition-colors touch-manipulation ${
             'bg-gray-200 hover:bg-gray-300'
           }`}
-          disabled={item.jumlah >= stock}
+          disabled={!canSell({ stock, wanted: item.jumlah + 1, allowNegative })}
         >
           +
         </button>
@@ -179,6 +182,7 @@ export default React.memo(CartItem, (prevProps, nextProps) => {
 
     // Stock comparison
     prevProps.stock === nextProps.stock &&
+    prevProps.allowNegative === nextProps.allowNegative &&
     
     // Manual pricing override comparison
     prevProps.manualPricingOverride === nextProps.manualPricingOverride &&
