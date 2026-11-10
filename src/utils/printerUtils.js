@@ -47,6 +47,15 @@ export const detectPrinterType = (printerName = '') => {
   return PRINTER_TYPES.REGULAR;
 };
 
+/** Lebar kertas yang dipakai SAAT MENCETAK: pilihan manual (Pengaturan) menang atas deteksi dari nama printer. Pratinjau memakai fungsi yang sama. */
+export const resolvePaperWidth = (printerName = '') => {
+  try {
+    const override = typeof localStorage !== 'undefined' ? localStorage.getItem('printerPaperWidth') : null;
+    if (override && override.trim()) return override.trim();
+  } catch (_e) { /* storage tidak tersedia */ }
+  return detectPaperWidth(printerName);
+};
+
 export const detectPaperWidth = (printerName = '') => {
   const name = normalizePrinterName(printerName);
   
@@ -74,5 +83,6 @@ export default {
   PRINTER_TYPES,
   detectPrinterType,
   detectPaperWidth,
+  resolvePaperWidth,
   DEFAULT_THERMAL_PAPER_WIDTH
 };

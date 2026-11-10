@@ -53,18 +53,22 @@ export class ReceiptFormatter {
     return `Rp ${Math.round(num || 0).toLocaleString('id-ID')}`;
   }
 
+  // Teks panjang dipecah ke beberapa baris (tidak dipotong) agar alamat/nama toko tidak hilang di kertas sempit.
   centerText(text, width = this.charWidth) {
     if (!text) return '\n';
-    const str = String(text).substring(0, width);
-    const padding = Math.max(0, Math.floor((width - str.length) / 2));
-    return `${' '.repeat(padding)}${str}\n`;
+    return this.wrapText(String(text), width).map((line) => `${' '.repeat(Math.max(0, Math.floor((width - line.length) / 2)))}${line}\n`).join('');
   }
 
+  // Kiri-kanan. Sisi KANAN (biasanya nominal uang) tidak pernah dipotong; teks kiri yang terlalu panjang dibungkus ke
+  // baris-baris sebelumnya dan baris terakhir memuat nominal.
   leftRight(left, right, width = this.charWidth) {
-    const l = String(left || '').substring(0, Math.floor(width * 0.6));
-    const r = String(right || '').substring(0, Math.floor(width * 0.4));
-    const spaces = Math.max(1, width - l.length - r.length);
-    return `${l}${' '.repeat(spaces)}${r}\n`;
+    const r = String(right || '').slice(0, Math.max(0, width - 2));
+    const avail = Math.max(1, width - r.length - (r ? 1 : 0));
+    const lines = this.wrapText(String(left || ''), avail);
+    if (lines.length === 0) lines.push('');
+    const last = lines.pop();
+    const head = lines.map((l) => `${l}\n`).join('');
+    return `${head}${last}${' '.repeat(Math.max(r ? 1 : 0, width - last.length - r.length))}${r}\n`;
   }
 
   divider(width = this.charWidth) {
@@ -102,6 +106,24 @@ export class ReceiptFormatter {
     if (str.length <= width) return str;
     const maxLength = width - suffix.length;
     return str.substring(0, Math.max(1, maxLength)) + suffix;
+  }
+
+  // Nama metode pembayaran dari tiga bentuk data yang beredar (detail_pembayaran, array metode, atau teks tunggal).
+  // Metode yang sama digabung: "Tunai (2x)".
+  paymentMethodNames(saleData) {
+    let names = [];
+    if (Array.isArray(saleData.detail_pembayaran) && saleData.detail_pembayaran.length > 0) {
+      names = saleData.detail_pembayaran.map((p) => p.metodePembayaran?.nama_metode || p.nama_metode || 'Tunai');
+    } else if (Array.isArray(saleData.metode_pembayaran) && saleData.metode_pembayaran.length > 0) {
+      names = saleData.metode_pembayaran.map((m) => (typeof m === 'string' ? m : m.nama_metode || m.nama || 'Pembayaran'));
+    } else {
+      const single = saleData.MetodePembayaran?.nama_metode
+        || (typeof saleData.metode_pembayaran === 'string' ? saleData.metode_pembayaran : saleData.metode_pembayaran?.nama_metode);
+      names = [single || 'Tunai'];
+    }
+    const counts = new Map();
+    names.forEach((n) => counts.set(n, (counts.get(n) || 0) + 1));
+    return [...counts].map(([n, c]) => (c > 1 ? `${n} (${c}x)` : n));
   }
 
   _getKasirName(saleData) {
@@ -153,11 +175,8 @@ export class ReceiptFormatter {
     // Items
     const items = saleData.items || [];
     items.forEach(item => {
-      const productName = this.truncateText(
-        item.nama_produk || item.product?.nama_produk || `Produk (ID: ${item.id_produk})`,
-        charWidth
-      );
-      receipt += `${productName}\n`;
+      const productName = item.nama_produk || item.product?.nama_produk || `Produk (ID: ${item.id_produk})`;
+      receipt += this.wrapText(productName, charWidth).map((l) => `${l}\n`).join('');
 
       const qty = item.jumlah || item.qty || 0;
       const price = item.harga_jual || item.harga_satuan || 0;
@@ -189,11 +208,15 @@ export class ReceiptFormatter {
     receipt += this.divider(charWidth);
 
     // Payment
+    this.paymentMethodNames(saleData).forEach((name) => { receipt += this.leftRight('Metode', name, charWidth); });
     receipt += this.leftRight('Bayar', this.formatCurrency(saleData.bayar || saleData.total), charWidth);
 
-    const kembali = (saleData.bayar || saleData.total) - saleData.total;
-    if (kembali > 0) {
-      receipt += this.leftRight('Kembali', this.formatCurrency(kembali), charWidth);
+    const sisa = Number(saleData.sisa_pembayaran) || 0;
+    if (saleData.status_pembayaran === 'pending' || sisa > 0) {
+      receipt += this.leftRight('Sisa', this.formatCurrency(sisa || (saleData.total - (saleData.bayar || 0))), charWidth);
+    } else {
+      const kembali = (saleData.bayar || saleData.total) - saleData.total;
+      if (kembali > 0) receipt += this.leftRight('Kembali', this.formatCurrency(kembali), charWidth);
     }
 
     // Optional customer info

@@ -12,7 +12,7 @@
 
 import PQueue from 'p-queue';
 import { ReceiptFormatter } from './ReceiptFormatter';
-import { detectPaperWidth } from '../utils/printerUtils';
+import { detectPaperWidth, resolvePaperWidth } from '../utils/printerUtils';
 import { textToEscPosBytes, bytesToBase64, sendToRawBT } from './escPosEncoder';
 
 // Pseudo-printer identifiers used when running outside Electron (web/Android/tablet).
@@ -178,12 +178,7 @@ class ProfessionalPrinterManager {
    * Get printer paper width override or detect from printer name
    */
   _getPaperWidth(printerName = '') {
-    const overrideWidth = localStorage.getItem('printerPaperWidth');
-    if (overrideWidth && typeof overrideWidth === 'string' && overrideWidth.trim()) {
-      return overrideWidth.trim();
-    }
-    const detectedWidth = detectPaperWidth(printerName);
-    return detectedWidth;
+    return resolvePaperWidth(printerName);
   }
 
   /**

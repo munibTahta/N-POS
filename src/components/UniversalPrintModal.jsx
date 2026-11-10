@@ -14,7 +14,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import usePrinter from '../hooks/usePrinter';
 import { useNotifications } from '../hooks/useNotifications';
 import { ReceiptFormatter } from '../services/ReceiptFormatter';
-import { detectPaperWidth } from '../utils/printerUtils';
+import { resolvePaperWidth } from '../utils/printerUtils';
 import { Printer } from 'lucide-react';
 
 const PRINT_TYPES = {
@@ -128,14 +128,14 @@ const UniversalPrintModal = ({
     switch (printType) {
       case PRINT_TYPES.RECEIPT:
         if (data?.items) {
-          const paperWidth = detectPaperWidth(selectedPrinter);
+          const paperWidth = resolvePaperWidth(selectedPrinter);
           const formatter = new ReceiptFormatter({ paperWidth });
           previewContent = formatter.generateReceipt(data, storeInfo);
         }
         break;
       case PRINT_TYPES.PURCHASE_RECEIPT:
         if (data?.items) {
-          const paperWidth = detectPaperWidth(selectedPrinter);
+          const paperWidth = resolvePaperWidth(selectedPrinter);
           const formatter = new ReceiptFormatter({ paperWidth });
           previewContent = formatter.generatePurchaseReceipt(data, storeInfo);
         }
