@@ -1,7 +1,7 @@
 import { Check, Flame, History, ShoppingCart } from 'lucide-react';
 import ProductGrid from '../../../components/pos/ProductGrid';
 
-export function ProductPanel({ totalProduk, activeCategory, barcodeInputRef, browseError, browseLoading, cart, cartQtyMap, categories, changeDensity, filteredProducts, focusedSection, gridDensity, handleAddToCart, handleBarcodeScan, isScannerLikeInput, loading, paymentAmountInputRef, searchInputRef, searchKeyTimesRef, searchTerm, selectedProductIndex, setActiveCategory, setBrowseRetry, setCartOpen, setFocusedSection, setSearchTerm, setSelectedProductIndex, setShowCameraScanner, setShowShortcutsModal, showCameraScanner, showCustomerPopup, showPaymentModal, showShortcutsModal, stockInfo }) {
+export function ProductPanel({ allowNegativeStock = false, totalProduk, activeCategory, barcodeInputRef, browseError, browseLoading, cart, cartQtyMap, categories, changeDensity, filteredProducts, focusedSection, gridDensity, handleAddToCart, handleBarcodeScan, isScannerLikeInput, loading, paymentAmountInputRef, searchInputRef, searchKeyTimesRef, searchTerm, selectedProductIndex, setActiveCategory, setBrowseRetry, setCartOpen, setFocusedSection, setSearchTerm, setSelectedProductIndex, setShowCameraScanner, setShowShortcutsModal, showCameraScanner, showCustomerPopup, showPaymentModal, showShortcutsModal, stockInfo }) {
   return (
 <div className="flex-1 min-w-0">
         <div 
@@ -261,6 +261,7 @@ export function ProductPanel({ totalProduk, activeCategory, barcodeInputRef, bro
               </div>
             )}
             <ProductGrid
+              allowNegativeStock={allowNegativeStock}
               products={filteredProducts}
               stockInfo={stockInfo}
               onAddToCart={handleAddToCart}

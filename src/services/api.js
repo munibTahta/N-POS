@@ -1208,3 +1208,9 @@ export const updateMenuPermissionsForRole = (roleId, menuPermissions) => {
 export const resetDatabase = (confirmReset) => {
   return apiClient.post('/util/reset-database', { confirmReset });
 };
+
+// --- STOK OPNAME & SARAN RESTOK ---
+export const getOpnameList = (params = {}) => apiClient.get('/stok-opname/daftar', { params });
+export const previewOpname = (payload) => apiClient.post('/stok-opname/pratinjau', payload);
+export const applyOpname = (payload) => apiClient.post('/stok-opname', payload);
+export const getRestockSuggestions = (params = {}) => apiClient.get('/laporan/saran-restok', { params });

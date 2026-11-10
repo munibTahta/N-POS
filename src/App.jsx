@@ -53,6 +53,8 @@ const CategoryFormPage = createLazyPage(() => import('./pages/CategoryFormPage')
 const SupplierFormPage = createLazyPage(() => import('./pages/SupplierFormPage'), 'SupplierFormPage');
 const UserFormPage = createLazyPage(() => import('./pages/UserFormPage'), 'UserFormPage');
 const PosPage = createLazyPage(() => import('./pages/PosPage'), 'PosPage');
+const StockOpnamePage = createLazyPage(() => import('./pages/StockOpnamePage'), 'StockOpnamePage');
+const RestockSuggestionsPage = createLazyPage(() => import('./pages/RestockSuggestionsPage'), 'RestockSuggestionsPage');
 const StockPage = createLazyPage(() => import('./pages/StockPage'), 'StockPage');
 const StockViewKasirPage = createLazyPage(() => import('./pages/StockViewKasirPage'), 'StockViewKasirPage');
 const StockTransferPage = createLazyPage(() => import('./pages/StockTransferPage'), 'StockTransferPage');
@@ -173,6 +175,8 @@ function App() {
                   <Route path="pelanggan" element={<ProtectedRoute menuKey="pelanggan"><CustomersPage /></ProtectedRoute>} />
                   <Route path="pelanggan/:id" element={<ProtectedRoute menuKey="pelanggan"><CustomerDetailPage /></ProtectedRoute>} />
                   <Route path="stok" element={<ProtectedRoute menuKey="stok"><StockPage /></ProtectedRoute>} />
+                  <Route path="stok/opname" element={<ProtectedRoute menuKey="stok"><StockOpnamePage /></ProtectedRoute>} />
+                  <Route path="stok/restok" element={<ProtectedRoute menuKey="stok"><RestockSuggestionsPage /></ProtectedRoute>} />
                   <Route path="stok/kasir" element={<ProtectedRoute menuKey="stok"><StockViewKasirPage /></ProtectedRoute>} />
                   <Route path="stok/gudang" element={<ProtectedRoute menuKey="stok"><StockGudangPage /></ProtectedRoute>} />
                   <Route path="stok/transfer" element={<ProtectedRoute menuKey="stok"><StockTransferPage /></ProtectedRoute>} />

@@ -10,7 +10,7 @@ import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import HeaderActionButton from '../components/HeaderActionButton';
-import { MapPin, Warehouse, Pencil, Clock, AlertCircle, AlertTriangle, Info, Download, ArrowDownUp, Share2 } from 'lucide-react';
+import { MapPin, Warehouse, Pencil, Clock, AlertCircle, AlertTriangle, Info, Download, ArrowDownUp, Share2, ClipboardCheck, ShoppingCart } from 'lucide-react';
 import { todayISO } from '../utils/dateRange';
 import StockAnomalyBanner from '../components/stock/StockAnomalyBanner';
 
@@ -266,6 +266,20 @@ const StockPage = () => {
               variant="emerald"
               onClick={handleExport}
               title="Download data stok ke Excel"
+            />
+            <HeaderActionButton
+              icon={ClipboardCheck}
+              label="Stok Opname"
+              to="/stok/opname"
+              isLink={true}
+              title="Hitung fisik dan sesuaikan stok"
+            />
+            <HeaderActionButton
+              icon={ShoppingCart}
+              label="Saran Restok"
+              to="/stok/restok"
+              isLink={true}
+              title="Barang yang perlu dibeli, dari kecepatan jual"
             />
             <HeaderActionButton
               icon={ArrowDownUp}

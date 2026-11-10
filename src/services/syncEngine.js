@@ -522,7 +522,7 @@ class SyncEngine {
       }
 
       const posSettings = safeStorage.getJSON('posSettings', {});
-      const allowOversellSync = posSettings.allowOversellSync === true;
+      const allowOversellSync = posSettings.allowOversellSync === true || posSettings.allowNegativeStock === true;
 
       if (!allowOversellSync) {
         const stockConflicts = await this.checkStockConflicts(saleItems);

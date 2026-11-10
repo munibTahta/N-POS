@@ -16,9 +16,9 @@ const initialsOf = (name = '') => {
   return ((words[0]?.[0] || '?') + (words[1]?.[0] || '')).toUpperCase();
 };
 
-const ProductCard = React.memo(({ product, stock, onAddToCart, isSelected = false, dataGridIndex, qtyInCart = 0 }) => {
-  const isOutOfStock = stock <= 0;
-  const isLowStock = !isOutOfStock && stock <= 5;
+const ProductCard = React.memo(({ product, stock, onAddToCart, isSelected = false, dataGridIndex, qtyInCart = 0, allowNegative = false }) => {
+  const isOutOfStock = stock <= 0 && !allowNegative;
+  const isLowStock = stock <= 5 && !isOutOfStock || (allowNegative && stock <= 0);
   const tile = TILE_COLORS[Math.abs(Number(product.id_produk) || 0) % TILE_COLORS.length];
 
   const tooltipContent = React.useMemo(() => {
@@ -79,7 +79,7 @@ const ProductCard = React.memo(({ product, stock, onAddToCart, isSelected = fals
           <span className={`shrink-0 whitespace-nowrap text-xs font-medium px-2 py-0.5 rounded-full tabular-nums ${
             isOutOfStock ? 'bg-red-50 text-red-600' : isLowStock ? 'bg-amber-50 text-amber-700' : 'bg-gray-100 text-gray-600'
           }`}>
-            {isOutOfStock ? 'Habis' : `Stok ${stock}`}
+            {isOutOfStock ? 'Habis' : stock < 0 ? `Minus ${stock}` : `Stok ${stock}`}
           </span>
         </div>
       </div>
@@ -93,7 +93,7 @@ const GRID_CLASS = {
   large: 'grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
 };
 
-const ProductGrid = ({ products, stockInfo, onAddToCart, loading = false, selectedProductIndex = -1, density = 'normal', cartQty = {} }) => {
+const ProductGrid = ({ allowNegativeStock = false, products, stockInfo, onAddToCart, loading = false, selectedProductIndex = -1, density = 'normal', cartQty = {} }) => {
   const hasProducts = Array.isArray(products) && products.length > 0;
   // Skeleton hanya untuk muat pertama; saat memuat ulang (ganti kategori/kata kunci) data lama tetap tampil agar tidak berkedip.
   if (loading && !hasProducts) {
@@ -118,6 +118,7 @@ const ProductGrid = ({ products, stockInfo, onAddToCart, loading = false, select
           key={product.id_produk}
           product={product}
           stock={stockInfo[product.id_produk] || 0}
+          allowNegative={allowNegativeStock}
           onAddToCart={onAddToCart}
           isSelected={index === selectedProductIndex}
           dataGridIndex={index}

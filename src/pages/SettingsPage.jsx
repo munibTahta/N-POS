@@ -48,6 +48,7 @@ const SettingsPage = () => {
       showVoucherInput: true,
       enablePPN: false,
       allowOversellSync: false,
+      allowNegativeStock: false,
       ...(posSettings || {})
     };
   });
@@ -863,6 +864,7 @@ const SettingsPage = () => {
                   { name: 'showCustomerSearch', label: 'Tampilkan Pencarian Pelanggan', desc: 'Aktifkan fitur pencarian dan tracking pelanggan' },
                   { name: 'showVoucherInput', label: 'Tampilkan Input Voucher', desc: 'Aktifkan input kode voucher dan diskon' },
                   { name: 'enablePPN', label: 'Aktifkan Kalkulator PPN', desc: 'Aktifkan perhitungan pajak otomatis' },
+                  { name: 'allowNegativeStock', label: 'Izinkan Jual Saat Stok Kurang (Stok Minus)', desc: 'Kasir tetap bisa menjual walau stok tercatat habis; stok jadi minus dan dirapikan lewat restok/opname. Pengganti kebiasaan mengisi stok 9999.' },
                   { name: 'allowOversellSync', label: 'Loloskan Transaksi Oversell saat Sync', desc: 'Ijinkan sinkronisasi penjualan offline meskipun stok di server kurang' },
                 ].map(({ name, label, desc }) => (
                   <label key={name} className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors">

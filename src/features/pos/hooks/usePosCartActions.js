@@ -1,9 +1,10 @@
+import { canSell } from '../stockPolicy';
 import { useCallback, useRef } from 'react';
 import { formatCurrency } from '../../../utils/formatHelper';
 import { logger } from '../../../utils/logger';
 import { getProducts } from '../../../services/api';
 
-export function usePosCartActions({ barcodeInputRef, belongsToCatalog, getProductPricing, idCabangPengguna, isOnline, lastScanTimeRef, loading, products, recordUsage, saveCartSnapshot, searchInputRef, searchOfflineProducts, setCart, setProducts, setSearchTerm, setSelectedProductIndex, showErrorDebounced, showSuccess, stockInfo, timeoutManager, tipeKatalog }) {
+export function usePosCartActions({ allowNegativeStock = false, barcodeInputRef, belongsToCatalog, getProductPricing, idCabangPengguna, isOnline, lastScanTimeRef, loading, products, recordUsage, saveCartSnapshot, searchInputRef, searchOfflineProducts, setCart, setProducts, setSearchTerm, setSelectedProductIndex, showErrorDebounced, showSuccess, stockInfo, timeoutManager, tipeKatalog }) {
   const getProductStock = useCallback((id_produk) => {
     return stockInfo[id_produk] || 0;
   }, [stockInfo]);
@@ -22,7 +23,7 @@ export function usePosCartActions({ barcodeInputRef, belongsToCatalog, getProduc
     
     try {
       const currentStock = getProductStock(product.id_produk);
-      if (currentStock <= 0) {
+      if (!canSell({ stock: currentStock, wanted: 1, allowNegative: allowNegativeStock })) {
         showErrorDebounced(`Stok produk ${product.nama_produk} habis.`);
         return;
       }
@@ -41,7 +42,7 @@ export function usePosCartActions({ barcodeInputRef, belongsToCatalog, getProduc
         const existingItem = prevCart.find(item => item.id_produk === product.id_produk);
         if (existingItem) {
           const newQuantity = existingItem.jumlah + 1;
-          if (newQuantity > currentStock) {
+          if (!canSell({ stock: currentStock, wanted: newQuantity, allowNegative: allowNegativeStock })) {
             showErrorDebounced(`Stok tidak mencukupi. Maksimal ${currentStock} item.`);
             hasInsufficientStock = true;
             return prevCart;
@@ -124,13 +125,13 @@ export function usePosCartActions({ barcodeInputRef, belongsToCatalog, getProduc
         cartLockRef.current = false;
       }, 100);
     }
-  }, [getProductStock, showErrorDebounced, showSuccess, getProductPricing, saveCartSnapshot, recordUsage, belongsToCatalog, searchInputRef, setCart, setSearchTerm, setSelectedProductIndex]);
+  }, [allowNegativeStock, getProductStock, showErrorDebounced, showSuccess, getProductPricing, saveCartSnapshot, recordUsage, belongsToCatalog, searchInputRef, setCart, setSearchTerm, setSelectedProductIndex]);
 
   const handleUpdateQuantity = useCallback((productId, newQuantity) => {
     saveCartSnapshot();
     const currentStock = getProductStock(productId);
 
-    if (newQuantity > currentStock) {
+    if (!canSell({ stock: currentStock, wanted: newQuantity, allowNegative: allowNegativeStock })) {
       const productInStock = products.find(p => p.id_produk === productId);
       const nama = productInStock ? productInStock.nama_produk : 'Unknown';
       showErrorDebounced(`Stok untuk produk ${nama} tidak mencukupi.`);
@@ -177,7 +178,7 @@ export function usePosCartActions({ barcodeInputRef, belongsToCatalog, getProduc
     if (shouldShowWholesaleMessage) {
       showSuccess(`Harga grosir aktif! ${wholesaleProductName} sekarang ${formatCurrency(wholesalePrice)} per item.`);
     }
-  }, [getProductStock, products, showErrorDebounced, showSuccess, getProductPricing, saveCartSnapshot, setCart]);
+  }, [allowNegativeStock, getProductStock, products, showErrorDebounced, showSuccess, getProductPricing, saveCartSnapshot, setCart]);
 
   // Track input timing to detect rapid scanner input vs manual typing
   const handleBarcodeScan = useCallback(async (barcode) => {

@@ -1,3 +1,4 @@
+import { canSell } from '../stockPolicy';
 import { useCallback } from 'react';
 import { createLogAktivitas, createPaymentPending, createSale, getProductById, getStockReport, recordPayment } from '../../../services/api';
 import { logger } from '../../../utils/logger';
@@ -32,7 +33,7 @@ export function usePosCheckout({ dueDate, setDueDate, cart, createTemporarySaleI
         const currentStock = getProductStock(item.id_produk);
         const requiredQuantity = item.jumlah;
 
-        if (currentStock < requiredQuantity) {
+        if (!canSell({ stock: currentStock, wanted: requiredQuantity, allowNegative: posSettings?.allowNegativeStock === true })) {
           const errorMsg = `Stok ${item.nama_produk} tidak mencukupi. Tersedia: ${currentStock}, dibutuhkan: ${requiredQuantity}`;
           showError(errorMsg);
           return false;
@@ -55,7 +56,7 @@ export function usePosCheckout({ dueDate, setDueDate, cart, createTemporarySaleI
         const currentStock = getProductStock(item.id_produk);
         const requiredQuantity = item.jumlah;
 
-        if (currentStock < requiredQuantity) {
+        if (!canSell({ stock: currentStock, wanted: requiredQuantity, allowNegative: posSettings?.allowNegativeStock === true })) {
           const errorMsg = `Stok ${item.nama_produk} tidak mencukupi (data cache). Tersedia: ${currentStock}, dibutuhkan: ${requiredQuantity}`;
           showError(errorMsg);
           return false;

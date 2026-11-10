@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AlertTriangle, ChevronDown, X } from 'lucide-react';
 import { getStockAnomalies } from '../../services/api';
 import { formatCurrency } from '../../utils/formatHelper';
@@ -48,6 +49,7 @@ export default function StockAnomalyBanner({ ambang = 5000, className = '' }) {
             {besar > 0 && <>Nilai persediaan tercatat dari stok sebesar ini <strong>Rp {formatCurrency(nilai)}</strong>{total > 0 && <> ({pct}% dari persediaan Rp {formatCurrency(total)})</>}. </>}
             Angka seperti 9999 biasanya isian agar barang tidak cepat habis, bukan hasil hitung; itu menggelembungkan nilai persediaan di laporan keuangan. Rapikan dengan menghitung fisik lalu menyesuaikan stok, dan catat pembelian saat barang masuk.
           </p>
+          <Link to="/stok/opname?filter=tidak_wajar" className="btn-tonal mt-3 mr-3 inline-flex">Mulai opname produk ini</Link>
           <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="mt-2 inline-flex items-center gap-1 font-medium underline underline-offset-2">
             {open ? 'Sembunyikan daftar' : 'Lihat produk terbesar'} <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
           </button>

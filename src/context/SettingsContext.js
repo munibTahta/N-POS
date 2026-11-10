@@ -17,7 +17,8 @@ export const SettingsProvider = ({ children }) => {
     showCustomerSearch: true,
     enablePPN: false,
     showVoucherInput: true,
-    allowOversellSync: false
+    allowOversellSync: false,
+    allowNegativeStock: false
   });
   const [loading, setLoading] = useState(true);
   const { user, token, logout } = useContext(AuthContext);
