@@ -380,7 +380,7 @@ export function CartPanel({ dueDate, setDueDate, appliedVoucher, cart, cartFocus
               disabled={isSubmitting || cart.length === 0 || isSyncLocked()}
               className={`w-full py-3 sm:py-4 rounded-xl font-bold text-base transition-all duration-200 shadow-md ${
                 isSubmitting || isSyncLocked()
-                  ? 'bg-slate-400 dark:bg-zinc-800 text-slate-200 dark:text-zinc-400 cursor-not-allowed' 
+                  ? 'bg-slate-600 dark:bg-zinc-800 text-white dark:text-zinc-400 cursor-not-allowed' 
                   : cart.length === 0
                     ? 'bg-slate-300 dark:bg-zinc-800/50 text-slate-700 dark:text-zinc-400 cursor-not-allowed'
                     : paymentAmount === 0 && !isPendingPayment
