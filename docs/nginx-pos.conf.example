@@ -1,4 +1,4 @@
-# Contoh konfigurasi nginx untuk pos.nusasoft.my.id (SPA Vite). BELUM diterapkan; salin ke server {} lalu `nginx -t && systemctl reload nginx`.
+# Contoh konfigurasi nginx untuk pos.nusasoft.my.id (SPA Vite). SUDAH diterapkan di /etc/nginx/sites-enabled/pos.nusasoft.my.id.conf (2026-11-10; cadangan lama di /root/nginx-backup-pos.*). Catatan penting: `add_header` di dalam location MENIMPA header keamanan dari server{}, jadi tiap location yang menambah header harus `include /etc/nginx/global_settings;` lagi (sudah dilakukan di konfigurasi terpasang).
 #
 # Masalah yang diselesaikan:
 #  1) try_files ... /index.html membuat berkas /assets/* yang sudah tidak ada dijawab 200 berisi HTML. Browser lalu gagal memuat
