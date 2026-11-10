@@ -65,10 +65,11 @@ function StockOpnamePage() {
     try {
       const res = await getOpnameList({ id_cabang: cabang, filter, q: qDebounced || undefined, limit: PAGE, offset });
       if (id !== reqId.current) return;                       // abaikan balasan usang
-      const d = res?.data?.data || { total: 0, daftar: [] };
-      setTotal(d.total);
-      setRows((prev) => (offset === 0 ? d.daftar : [...prev, ...d.daftar]));
-      setKnown((prev) => { const n = { ...prev }; d.daftar.forEach((r) => { n[r.id_produk] = r; }); return n; });
+      const raw = res?.data?.data;
+      const daftar = Array.isArray(raw?.daftar) ? raw.daftar : [];          // bentuk tak terduga = daftar kosong, bukan layar rusak
+      setTotal(Number(raw?.total) || daftar.length);
+      setRows((prev) => (offset === 0 ? daftar : [...prev, ...daftar]));
+      setKnown((prev) => { const n = { ...prev }; daftar.forEach((r) => { n[r.id_produk] = r; }); return n; });
     } catch (_e) {
       if (id === reqId.current) setLoadErr('Daftar produk belum dapat dimuat.');
     } finally { if (id === reqId.current) setLoading(false); }

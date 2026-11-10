@@ -43,7 +43,7 @@ function RestockSuggestionsPage() {
     setLoading(true); setErr('');
     try {
       const res = await getRestockSuggestions({ id_cabang: cabang, hari, cover });
-      const list = res?.data?.data?.daftar || [];
+      const list = Array.isArray(res?.data?.data?.daftar) ? res.data.data.daftar : [];
       setData(list); setQty({});
       setPicked(new Set(list.filter((s) => s.saran > 0 && s.alasan !== 'stok_tidak_wajar').map((s) => s.id_produk)));
     } catch (_e) { setErr('Saran restok belum dapat dimuat.'); } finally { setLoading(false); }

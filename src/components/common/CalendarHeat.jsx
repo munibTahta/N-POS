@@ -4,7 +4,7 @@ import { buildMonthGrid, shiftMonth, intensityLevel, DAY_SHORT, MONTH_LONG } fro
 import { todayISO } from '../../utils/dateRange';
 
 const LEVEL = [
-  'bg-gray-50 text-gray-500 dark:bg-zinc-800/60 dark:text-zinc-500',
+  'bg-gray-50 text-gray-500 dark:bg-zinc-800/60 dark:text-zinc-300',
   'bg-blue-100 text-blue-900 dark:bg-blue-500/20 dark:text-blue-100',
   'bg-blue-200 text-blue-900 dark:bg-blue-500/35 dark:text-blue-50',
   'bg-blue-400 text-white dark:bg-blue-500/60 dark:text-white',
