@@ -1,6 +1,6 @@
 /* GENERATED oleh scripts/dark-compat.mjs - JANGAN diedit tangan. Jalankan: npm run theme:gen
  * Jaring pengaman tema gelap untuk kelas warna Tailwind pada halaman yang belum punya varian dark:. Hanya aktif di bawah .dark.
- * 184 aturan. Penjelasan prinsip ada di kepala scripts/dark-compat.mjs. */
+ * 185 aturan. Penjelasan prinsip ada di kepala scripts/dark-compat.mjs. */
 :where(.dark) .bg-amber-100 { --tw-bg-opacity: 1; background-color: rgb(245 158 11 / 0.18); }
 :where(.dark) .bg-amber-200 { --tw-bg-opacity: 1; background-color: rgb(245 158 11 / 0.26); }
 :where(.dark) .bg-amber-50 { --tw-bg-opacity: 1; background-color: rgb(245 158 11 / 0.12); }
@@ -36,6 +36,7 @@
 :where(.dark) .bg-violet-100 { --tw-bg-opacity: 1; background-color: rgb(139 92 246 / 0.18); }
 :where(.dark) .bg-white { --tw-bg-opacity: 1; background-color: #18181b; }
 :where(.dark) .bg-white\/70 { --tw-bg-opacity: 1; background-color: rgb(24 24 27 / 0.7); }
+:where(.dark) .bg-white\/95 { --tw-bg-opacity: 1; background-color: rgb(24 24 27 / 0.95); }
 :where(.dark) .bg-yellow-100 { --tw-bg-opacity: 1; background-color: rgb(234 179 8 / 0.18); }
 :where(.dark) .bg-yellow-50 { --tw-bg-opacity: 1; background-color: rgb(234 179 8 / 0.12); }
 :where(.dark) .border-amber-200 { --tw-border-opacity: 1; border-color: rgb(245 158 11 / 0.32); }

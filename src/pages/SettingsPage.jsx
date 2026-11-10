@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { updateBranch, updateUser, getSettings, updateSetting, resetDatabase } from '../services/api';
 import { useAuth } from '../hooks/useAuth'; // Impor useAuth untuk mendapatkan data user
 import { useSettings } from '../context/SettingsContext'; // Impor hook settings
@@ -8,7 +8,9 @@ import { useSync } from '../context/SyncContext';
 import { usePermissions } from '../hooks/usePermissions';
 import usePrinter from '../hooks/usePrinter';
 import { professionalPrinterManager, RAWBT_PRINTER } from '../services/PrinterManager';
-import { Printer, Trash2, Database, RefreshCw, AlertTriangle, CheckCircle, HardDrive } from 'lucide-react';
+import { Printer, Trash2, Database, RefreshCw, AlertTriangle, CheckCircle, HardDrive, Store, ShoppingCart, Percent, Settings2, Check } from 'lucide-react';
+import TabBar, { tabPanelProps } from '../components/common/TabBar';
+import SettingToggle from '../components/common/SettingToggle';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
 import CacheManager from '../utils/CacheManager';
 
@@ -61,6 +63,7 @@ const SettingsPage = () => {
   const [checkingQzTray, setCheckingQzTray] = useState(false);
   const [saving, setSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [serverData, setServerData] = useState(null);
   const [showPrinterTestModal, setShowPrinterTestModal] = useState(false);
   const [printerTestLoading, setPrinterTestLoading] = useState(false);
@@ -550,27 +553,29 @@ const SettingsPage = () => {
   if (loadingSettings) return <div className="text-center mt-10">Memuat Pengaturan...</div>;
 
   const canEditBranch = canManageBranches;
+  const reqTab = searchParams.get('tab');
+  const tab = ['toko', 'printer', 'kasir', 'data'].includes(reqTab) || (reqTab === 'sistem' && canEditBranch) ? reqTab : 'toko';
 
   return (
     <PageLayout>
       <PageHeader
         title="Pengaturan Aplikasi"
-        subtitle="Konfigurasi pengaturan sistem dan preferensi aplikasi Anda"
-        actions={
-          hasUnsavedChanges && (
-            <span className="text-sm text-orange-600 bg-orange-100 px-3 py-1 rounded-full flex items-center gap-2 flex-shrink-0">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              Belum disimpan
-            </span>
-          )
-        }
+        subtitle="Toko, printer, kasir, dan sistem"
       />
 
       <PageContainer>
-        {/* Form Content */}
+        <TabBar
+          prefix="set" label="Bagian pengaturan" value={tab} onChange={(id) => setSearchParams({ tab: id }, { replace: true })}
+          tabs={[
+            { id: 'toko', label: 'Toko & Struk', icon: Store },
+            { id: 'printer', label: 'Printer', icon: Printer },
+            { id: 'kasir', label: 'Kasir', icon: ShoppingCart },
+            ...(canEditBranch ? [{ id: 'sistem', label: 'Pajak & Loyalitas', icon: Percent }] : []),
+            { id: 'data', label: 'Data & Sistem', icon: Settings2 },
+          ]}
+        />
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div {...tabPanelProps('set', 'toko', tab)}>
           {/* Informasi Toko & Struk Section */}
           <div className="md-section-card">
             <div className="md-section-header">
@@ -584,29 +589,31 @@ const SettingsPage = () => {
             <div className="md-section-body">
               <div className={`grid grid-cols-1 md:grid-cols-2 gap-5 ${!canEditBranch ? 'opacity-50 pointer-events-none' : ''}`}>
                 <div className="md-field">
-                  <label className="md-label">Nama Toko</label>
-                  <input type="text" name="cabang.nama_cabang" value={settings.cabang?.nama_cabang || ''} onChange={handleChange} className="md-input" disabled={!canEditBranch} placeholder="Nama toko Anda" />
+                  <label className="md-label" htmlFor="set-cabang-nama_cabang">Nama Toko</label>
+                  <input type="text" name="cabang.nama_cabang" id="set-cabang-nama_cabang" value={settings.cabang?.nama_cabang || ''} onChange={handleChange} className="md-input" disabled={!canEditBranch} placeholder="Nama toko Anda" />
                 </div>
                 <div className="md-field">
-                  <label className="md-label">Telepon Toko</label>
-                  <input type="text" name="cabang.no_telp" value={settings.cabang?.no_telp || ''} onChange={handleChange} className="md-input" disabled={!canEditBranch} placeholder="+62-21-xxxxxxx" />
+                  <label className="md-label" htmlFor="set-cabang-no_telp">Telepon Toko</label>
+                  <input type="text" name="cabang.no_telp" id="set-cabang-no_telp" value={settings.cabang?.no_telp || ''} onChange={handleChange} className="md-input" disabled={!canEditBranch} placeholder="+62-21-xxxxxxx" />
                 </div>
                 <div className="md-field">
-                  <label className="md-label">Header Struk</label>
-                  <input type="text" name="cabang.struk_header" value={settings.cabang?.struk_header || ''} onChange={handleChange} className="md-input" disabled={!canEditBranch} placeholder="Selamat Datang!" />
+                  <label className="md-label" htmlFor="set-cabang-struk_header">Header Struk</label>
+                  <input type="text" name="cabang.struk_header" id="set-cabang-struk_header" value={settings.cabang?.struk_header || ''} onChange={handleChange} className="md-input" disabled={!canEditBranch} placeholder="Selamat Datang!" />
                 </div>
                 <div className="md-field">
-                  <label className="md-label">Footer Struk</label>
-                  <input type="text" name="cabang.struk_footer" value={settings.cabang?.struk_footer || ''} onChange={handleChange} className="md-input" disabled={!canEditBranch} placeholder="Terima Kasih!" />
+                  <label className="md-label" htmlFor="set-cabang-struk_footer">Footer Struk</label>
+                  <input type="text" name="cabang.struk_footer" id="set-cabang-struk_footer" value={settings.cabang?.struk_footer || ''} onChange={handleChange} className="md-input" disabled={!canEditBranch} placeholder="Terima Kasih!" />
                 </div>
               </div>
               <div className="md-field">
-                <label className="md-label">Alamat Toko</label>
-                <textarea name="cabang.alamat" value={settings.cabang?.alamat || ''} onChange={handleChange} className="md-input" rows="3" disabled={!canEditBranch} placeholder="Alamat lengkap toko"></textarea>
+                <label className="md-label" htmlFor="set-cabang-alamat">Alamat Toko</label>
+                <textarea name="cabang.alamat" id="set-cabang-alamat" value={settings.cabang?.alamat || ''} onChange={handleChange} className="md-input" rows="3" disabled={!canEditBranch} placeholder="Alamat lengkap toko"></textarea>
               </div>
             </div>
           </div>
+          </div>
 
+          <div {...tabPanelProps('set', 'printer', tab)}>
           {/* Printer Configuration Section */}
           <div className="md-section-card">
             <div className="md-section-header">
@@ -619,7 +626,7 @@ const SettingsPage = () => {
             </div>
             <div className="md-section-body">
               <div className="md-field">
-                <label className="md-label">Printer Kasir Default</label>
+                <label className="md-label" htmlFor="set-printer-paperWidth">Printer Kasir Default</label>
                 <div className="flex gap-2 items-center">
                   <select
                     name="printer.nama"
@@ -670,7 +677,7 @@ const SettingsPage = () => {
               <div className="md-field">
                 <label className="md-label">Lebar Kertas Struk</label>
                 <select
-                  name="printer.paperWidth"
+                  name="printer.paperWidth" id="set-printer-paperWidth"
                   value={settings.printer?.paperWidth || ''}
                   onChange={handleChange}
                   className="md-select"
@@ -777,7 +784,7 @@ const SettingsPage = () => {
 
                     <div className="space-y-3">
                       <div className="md-field">
-                        <label className="md-label">Digital Certificate</label>
+                        <label className="md-label" htmlFor="set-pajak_default_persen">Digital Certificate</label>
                         <textarea
                           value={qzCertificate}
                           onChange={(e) => setQzCertificate(e.target.value)}
@@ -846,7 +853,9 @@ const SettingsPage = () => {
               </div>
             </div>
           </div>
+          </div>
 
+          <div {...tabPanelProps('set', 'kasir', tab)}>
           {/* Pengaturan POS */}
           <div className="md-section-card">
             <div className="md-section-header">
@@ -858,7 +867,7 @@ const SettingsPage = () => {
               </h2>
             </div>
             <div className="md-section-body">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="divide-y divide-gray-100 dark:divide-zinc-800">
                 {[
                   { name: 'showPaymentSelector', label: 'Tampilkan Pemilih Metode Pembayaran', desc: 'Aktifkan pemilihan metode pembayaran di kasir' },
                   { name: 'showCustomerSearch', label: 'Tampilkan Pencarian Pelanggan', desc: 'Aktifkan fitur pencarian dan tracking pelanggan' },
@@ -867,24 +876,14 @@ const SettingsPage = () => {
                   { name: 'allowNegativeStock', label: 'Izinkan Jual Saat Stok Kurang (Stok Minus)', desc: 'Kasir tetap bisa menjual walau stok tercatat habis; stok jadi minus dan dirapikan lewat restok/opname. Pengganti kebiasaan mengisi stok 9999.' },
                   { name: 'allowOversellSync', label: 'Loloskan Transaksi Oversell saat Sync', desc: 'Ijinkan sinkronisasi penjualan offline meskipun stok di server kurang' },
                 ].map(({ name, label, desc }) => (
-                  <label key={name} className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors">
-                    <input
-                      type="checkbox"
-                      name={name}
-                      checked={posSettingsForm[name] || false}
-                      onChange={handlePosSettingsChange}
-                      className="mt-0.5 rounded border-gray-300 dark:border-zinc-600 text-blue-600 focus:ring-2 focus:ring-blue-500"
-                    />
-                    <div>
-                      <span className="text-sm font-semibold text-gray-800 dark:text-zinc-200 block">{label}</span>
-                      <span className="text-xs text-gray-500 dark:text-zinc-400">{desc}</span>
-                    </div>
-                  </label>
+                  <SettingToggle key={name} name={name} label={label} desc={desc} checked={posSettingsForm[name] || false} onChange={handlePosSettingsChange} />
                 ))}
               </div>
             </div>
           </div>
+          </div>
 
+          <div {...tabPanelProps('set', 'sistem', tab)}>
           {/* Pengaturan Sistem */}
           {canEditBranch && (
             <div className="md-section-card">
@@ -902,7 +901,7 @@ const SettingsPage = () => {
                     <label className="md-label">Pajak Default (%)</label>
                     <input
                       type="number"
-                      name="pajak_default_persen"
+                      name="pajak_default_persen" id="set-pajak_default_persen"
                       value={systemSettings.pajak_default_persen}
                       onChange={handleSystemSettingsChange}
                       className="md-input"
@@ -913,10 +912,10 @@ const SettingsPage = () => {
                     />
                   </div>
                   <div className="md-field">
-                    <label className="md-label">Conversion Rate Loyalitas (Rp/Poin)</label>
+                    <label className="md-label" htmlFor="set-conversion_rate_loyalitas">Conversion Rate Loyalitas (Rp/Poin)</label>
                     <input
                       type="number"
-                      name="conversion_rate_loyalitas"
+                      name="conversion_rate_loyalitas" id="set-conversion_rate_loyalitas"
                       value={systemSettings.conversion_rate_loyalitas}
                       onChange={handleSystemSettingsChange}
                       className="md-input"
@@ -925,10 +924,10 @@ const SettingsPage = () => {
                     />
                   </div>
                   <div className="md-field">
-                    <label className="md-label">Poin Kadaluarsa (Bulan)</label>
+                    <label className="md-label" htmlFor="set-poin_kadaluarsa_bulan">Poin Kadaluarsa (Bulan)</label>
                     <input
                       type="number"
-                      name="poin_kadaluarsa_bulan"
+                      name="poin_kadaluarsa_bulan" id="set-poin_kadaluarsa_bulan"
                       value={systemSettings.poin_kadaluarsa_bulan}
                       onChange={handleSystemSettingsChange}
                       className="md-input"
@@ -936,24 +935,14 @@ const SettingsPage = () => {
                       placeholder="12"
                     />
                   </div>
-                  <label className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors">
-                    <input
-                      type="checkbox"
-                      name="loyalitas_aktif"
-                      checked={systemSettings.loyalitas_aktif}
-                      onChange={handleSystemSettingsChange}
-                      className="mt-0.5 rounded border-gray-300 dark:border-zinc-600 text-amber-600 focus:ring-2 focus:ring-amber-500"
-                    />
-                    <div>
-                      <span className="text-sm font-semibold text-gray-800 dark:text-zinc-200 block">Aktifkan Sistem Loyalitas</span>
-                      <span className="text-xs text-gray-500 dark:text-zinc-400">Aktifkan fitur point loyalitas untuk pelanggan</span>
-                    </div>
-                  </label>
+                  <div className="md:col-span-2"><SettingToggle name="loyalitas_aktif" label="Aktifkan Sistem Loyalitas" desc="Aktifkan fitur point loyalitas untuk pelanggan" checked={systemSettings.loyalitas_aktif} onChange={handleSystemSettingsChange} /></div>
                 </div>
               </div>
             </div>
           )}
+          </div>
 
+          <div {...tabPanelProps('set', 'data', tab)}>
           {/* ============================================================
                CACHE MANAGEMENT SECTION
           ============================================================ */}
@@ -1178,18 +1167,16 @@ const SettingsPage = () => {
             </div>
           </div>
         )}
+          </div>
 
-        {/* Footer - Submit Button */}
-        <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
-          <button 
-            type="submit" 
-            disabled={saving} 
-            className="inline-flex items-center justify-center rounded-lg px-6 py-2 bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:text-gray-200"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-            </svg>
-            {saving ? 'Menyimpan...' : 'Simpan Pengaturan'}
+        {/* Bilah simpan menempel di bawah: selalu terjangkau, status perubahan terlihat di satu tempat */}
+        <div className="sticky bottom-0 z-10 -mx-4 mt-6 flex items-center justify-between gap-3 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/95" role="status" aria-live="polite">
+          <span className={`text-sm ${hasUnsavedChanges ? 'font-medium text-amber-700 dark:text-amber-300' : 'text-gray-500 dark:text-zinc-400'}`}>
+            {hasUnsavedChanges ? 'Ada perubahan yang belum disimpan' : 'Semua perubahan tersimpan'}
+          </span>
+          <button type="submit" disabled={saving} className="btn-primary">
+            <Check className="h-4 w-4" aria-hidden="true" />
+            {saving ? 'Menyimpan…' : 'Simpan'}
           </button>
         </div>
       </form>

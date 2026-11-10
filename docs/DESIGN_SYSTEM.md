@@ -105,3 +105,21 @@ Untuk hasil terbaik, ekspor ulang dari berkas desain asli (vektor atau minimal 1
 - Prinsip pemetaan: latar terang (50-300) menjadi permukaan gelap atau tint translusen dari warna 500; teks gelap (600-900) menjadi terang; isian solid (`bg-blue-600 text-white`) dan `text-white` tidak diubah.
 - Kontras: teks kecil minimal 4,5:1, teks besar 3:1, di kedua tema. Palet terang dikoreksi di `tailwind.config.js` (`green/red/emerald/amber/yellow/orange` 600, `gray/slate` 500). Audit otomatis: `CONTRAST_OUT=hasil.json npx playwright test e2e/contrast-audit.spec.js` (laporan per halaman dan tema, memakai data contoh `e2e/richData.js`).
 - Jangan memakai gradien pastel + kartu di dalam kartu untuk ringkasan angka; pakai blok tonal datar (`bg-gray-50 dark:bg-zinc-800/60 rounded-xl`).
+
+
+## 9. Pola halaman (agar seluruh aplikasi terasa satu)
+
+Setiap halaman memakai kerangka yang sama, dari atas ke bawah:
+
+1. **`PageHeader`**: judul (kata benda singkat), satu baris `subtitle`/`description` (apa yang bisa dilakukan atau ringkasan status, bukan nama pengguna). Aksi di kanan: **satu** `btn-primary`, sisanya `btn-outlined`; bila lebih dari 3 aksi, sisanya masuk menu "Lainnya".
+2. **Peringatan/ringkasan** (opsional): banner `amber` untuk hal yang perlu tindakan, kartu angka tonal datar. Maksimal satu banner sekaligus.
+3. **`TabBar`** bila halaman punya lebih dari satu bagian yang sejajar (Pengaturan, Stok Cabang/Gudang). Aturan: 2-6 tab, label 1-3 kata, tab aktif tersimpan di URL (`?tab=`), panel disembunyikan dengan `hidden` agar isian form tidak hilang.
+4. **Bilah filter** (daftar): pencarian di kiri (`/` memfokuskannya), filter cepat berupa chip, rentang tanggal memakai `QuickDateRange`. Filter aktif harus terlihat dan bisa dihapus sekali klik.
+5. **Isi**: tabel (`DataTable`, angka dan uang rata kanan `tabular-nums`) atau formulir.
+6. **Bilah aksi bawah yang menempel** (`sticky bottom-0`) untuk halaman kerja (Opname, Saran Restok, Pengaturan): ringkasan di kiri, satu aksi utama di kanan.
+
+Formulir: label selalu terhubung ke isiannya (`htmlFor`/`id`), satu kolom di layar sempit dan dua kolom di lebar; pilihan on/off memakai `SettingToggle` (bukan kotak centang di dalam kartu); kartu tidak bersarang; jarak antarbagian `space-y-4`, isi kartu `px-5 py-4`.
+
+Status dan warna: hijau = berhasil/normal, amber = perlu perhatian, merah = bahaya/merusak, biru = aksi/terpilih, abu = netral. Jangan memakai warna hanya sebagai dekorasi, dan jangan mengandalkan warna saja (sertakan teks/ikon).
+
+Komponen bersama: `PageHeader`, `MetaLine`, `TabBar`, `SettingToggle`, `BulkActionBar`, `ConfirmDialog`, `CalendarHeat`/`HeatmapGrid`, `DataTable`.
