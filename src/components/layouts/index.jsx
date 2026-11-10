@@ -82,7 +82,7 @@ export const MetaLine = ({ parts = [], className = '' }) => {
         const obj = typeof p === 'object' && p && 'text' in p ? p : { text: p };
         return (
           <React.Fragment key={i}>
-            {i > 0 && <span aria-hidden="true" className="text-gray-400">&bull;</span>}
+            {i > 0 && <span aria-hidden="true" className="text-gray-500">&bull;</span>}
             <span className={obj.tone === 'warn' ? 'font-medium text-amber-700 dark:text-amber-300' : undefined}>{obj.text}</span>
           </React.Fragment>
         );

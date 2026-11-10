@@ -64,7 +64,7 @@ export function CartPanel({ dueDate, setDueDate, appliedVoucher, cart, cartFocus
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 5H19M7 13l-1.1 5M7 13h10m0 0v8a2 2 0 01-2 2H9a2 2 0 01-2-2v-8z" />
                 </svg>
                 <p className="text-gray-500 text-sm">Keranjang kosong</p>
-                <p className="text-gray-400 text-xs mt-1">Klik produk untuk menambah ke keranjang</p>
+                <p className="text-gray-500 text-xs mt-1">Klik produk untuk menambah ke keranjang</p>
               </div>
             ) : (
               cart.map((item, index) => (
@@ -378,16 +378,16 @@ export function CartPanel({ dueDate, setDueDate, appliedVoucher, cart, cartFocus
               ref={submitButtonRef}
               onClick={handleSubmit}
               disabled={isSubmitting || cart.length === 0 || isSyncLocked()}
-              className={`w-full py-3 sm:py-4 rounded-xl font-bold text-white text-base transition-all duration-200 shadow-md ${
+              className={`w-full py-3 sm:py-4 rounded-xl font-bold text-base transition-all duration-200 shadow-md ${
                 isSubmitting || isSyncLocked()
                   ? 'bg-slate-400 dark:bg-zinc-800 text-slate-200 dark:text-zinc-400 cursor-not-allowed' 
                   : cart.length === 0
-                    ? 'bg-slate-300 dark:bg-zinc-800/50 text-slate-500 dark:text-zinc-400 cursor-not-allowed'
+                    ? 'bg-slate-300 dark:bg-zinc-800/50 text-slate-700 dark:text-zinc-400 cursor-not-allowed'
                     : paymentAmount === 0 && !isPendingPayment
-                      ? 'bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 shadow-blue-500/20'
+                      ? 'text-white bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 shadow-blue-500/20'
                       : paymentAmount < finalTotal && !isPendingPayment
-                        ? 'bg-amber-600 dark:bg-amber-500 hover:bg-amber-700 dark:hover:bg-amber-600 shadow-amber-500/20'
-                        : 'bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-600 shadow-emerald-500/20'
+                        ? 'text-white bg-amber-600 dark:bg-amber-500 hover:bg-amber-700 dark:hover:bg-amber-600 shadow-amber-500/20'
+                        : 'text-white bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-600 shadow-emerald-500/20'
               } touch-manipulation`}
               title="F12/End: Selesaikan transaksi (Ctrl+Enter juga bekerja)"
             >

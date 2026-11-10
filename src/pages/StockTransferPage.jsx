@@ -435,7 +435,7 @@ const StockTransferPage = () => {
               <button 
                 type="submit" 
                 disabled={!transfer.cabang_asal || !transfer.id_produk || !transfer.cabang_tujuan || !transfer.jumlah || !transfer.keterangan}
-                className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
+                className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition disabled:bg-gray-600 disabled:cursor-not-allowed text-sm font-medium"
               >
                 Transfer
               </button>

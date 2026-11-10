@@ -368,7 +368,7 @@ const Layout = () => {
                 <span className="shrink-0">{formatWeekdayDate(new Date())}</span>
                 {todaySales.data && (
                   <>
-                    <span aria-hidden="true" className="hidden text-gray-400 sm:inline">&bull;</span>
+                    <span aria-hidden="true" className="hidden text-gray-500 sm:inline">&bull;</span>
                     <span className="hidden truncate sm:inline">
                       {todaySales.data.jumlah_transaksi.toLocaleString('id-ID')} transaksi
                       {todaySales.data.jumlah_transaksi > 0 && <> &middot; Rp {formatCurrency(todaySales.data.total_penjualan)}</>}

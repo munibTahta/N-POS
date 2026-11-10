@@ -68,10 +68,10 @@ const ProductCard = React.memo(({ product, stock, onAddToCart, isSelected = fals
       </div>
 
       <div className="flex flex-col gap-1 p-2.5 sm:p-3 flex-1">
-        <h3 className={`text-sm font-semibold leading-snug line-clamp-2 min-h-[2.5rem] ${isOutOfStock ? 'text-gray-400' : 'text-gray-900'}`}>
+        <h3 className={`text-sm font-semibold leading-snug line-clamp-2 min-h-[2.5rem] ${isOutOfStock ? 'text-gray-500' : 'text-gray-900'}`}>
           {product.nama_produk}
         </h3>
-        <span className={`text-base font-bold tabular-nums mt-auto ${isOutOfStock ? 'text-gray-400' : 'text-blue-700'}`}>
+        <span className={`text-base font-bold tabular-nums mt-auto ${isOutOfStock ? 'text-gray-500' : 'text-blue-700'}`}>
           {formatCurrency(product.harga_jual)}
         </span>
         <div className="flex items-center justify-between gap-2 min-w-0">

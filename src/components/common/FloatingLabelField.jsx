@@ -48,7 +48,7 @@ const FloatingLabelShell = ({
             ${labelColor}`}
         >
           {label}
-          {required && <span className="text-red-500 ml-0.5">*</span>}
+          {required && <span className="text-red-600 ml-0.5">*</span>}
         </label>
       </div>
 

@@ -101,7 +101,7 @@ const SearchableSelect = React.memo(({
           focus:outline-none focus:ring-2 focus:ring-blue-500
         `}
       >
-        <span className={value ? 'text-slate-800 dark:text-zinc-100 font-medium' : 'text-slate-400 dark:text-zinc-400'}>
+        <span className={value ? 'text-slate-800 dark:text-zinc-100 font-medium' : 'text-slate-500 dark:text-zinc-400'}>
           {selectedLabel}
         </span>
         <div className="flex items-center gap-1">

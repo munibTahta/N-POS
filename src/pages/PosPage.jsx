@@ -1030,7 +1030,7 @@ const PosPage = () => {
               </svg>
               <span className="hidden sm:inline">Produk</span>
             </span>
-            <span className="hidden sm:inline text-gray-400">›</span>
+            <span className="hidden sm:inline text-gray-500">›</span>
             <span
               role="button"
               tabIndex={0}
@@ -1048,7 +1048,7 @@ const PosPage = () => {
               </svg>
               <span className="hidden sm:inline">Keranjang</span>
             </span>
-            <span className="hidden sm:inline text-gray-400">›</span>
+            <span className="hidden sm:inline text-gray-500">›</span>
             <span
               role="button"
               tabIndex={0}
