@@ -6,6 +6,7 @@ import HeaderActionButton from '../components/HeaderActionButton';
 import SearchableSelect from '../components/SearchableSelect';
 import { addProduct, getCategories, getUnits, getSuppliers, createLogAktivitas } from '../services/api';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import FormActionBar from '../components/common/FormActionBar';
 import CategoryInfoModal from '../components/CategoryInfoModal';
 import ImageUploader from '../components/ImageUploader';
 import { FloatingLabelInput, FloatingLabelSelect } from '../components/common/FloatingLabelField';
@@ -370,22 +371,7 @@ const AddProductPage = () => {
             </div>
 
             {/* Buttons */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-              <Link 
-                to="/produk" 
-                className="px-6 py-2 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-700 transition text-sm font-semibold"
-              >
-                Batal
-              </Link>
-              <button 
-                type="submit" 
-                disabled={isSubmitting}
-                className="inline-flex items-center justify-center px-6 py-2 rounded-full bg-blue-600 dark:bg-blue-500 text-white text-sm font-semibold hover:bg-blue-700 dark:hover:bg-blue-600 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {isSubmitting ? 'Menyimpan...' : 'Simpan Produk'}
-              </button>
-            </div>
+            <FormActionBar cancelTo="/produk" submitting={isSubmitting} submitLabel={'Simpan Produk'} />
           </form>
         </PageContainer>
 

@@ -6,9 +6,11 @@ import { useRoleContext } from '../context/RoleContext.jsx';
 import { PermissionError } from '../components/PermissionGuard';
 import LoadingPage from '../components/common/LoadingPage';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import FormActionBar from '../components/common/FormActionBar';
 
 const UserFormPage = () => {
   const { id } = useParams();
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const { canManageUsers } = usePermissions();
   const { getAvailableRoles } = useRoleContext();
@@ -61,6 +63,7 @@ const UserFormPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;                       // cegah klik ganda membuat pengguna dua kali
     setError('');
     setSuccess('');
 
@@ -79,6 +82,7 @@ const UserFormPage = () => {
       return;
     }
 
+    setSubmitting(true);
     try {
       if (isEditMode) {
         const { nama_lengkap, printer_nama, printer_tipe } = userData;
@@ -110,6 +114,7 @@ const UserFormPage = () => {
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.response?.data?.error || `Gagal ${isEditMode ? 'memperbarui' : 'menambahkan'} data pengguna.`;
       setError(errorMessage);
+      setSubmitting(false);                       // sukses: tetap terkunci sampai pindah halaman
     }
   };
 
@@ -275,14 +280,7 @@ const UserFormPage = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  className="inline-flex items-center justify-center rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-                >
-                  {isEditMode ? 'Simpan Perubahan' : 'Tambah Pengguna'}
-                </button>
-              </div>
+              <FormActionBar cancelTo="/pengguna" submitting={submitting} submitLabel={isEditMode ? 'Simpan Perubahan' : 'Tambah Pengguna'} />
             </form>
           </div>
         </PageContainer>

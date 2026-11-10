@@ -118,8 +118,8 @@ Setiap halaman memakai kerangka yang sama, dari atas ke bawah:
 5. **Isi**: tabel (`DataTable`, angka dan uang rata kanan `tabular-nums`) atau formulir.
 6. **Bilah aksi bawah yang menempel** (`sticky bottom-0`) untuk halaman kerja (Opname, Saran Restok, Pengaturan): ringkasan di kiri, satu aksi utama di kanan.
 
-Formulir: label selalu terhubung ke isiannya (`htmlFor`/`id`), satu kolom di layar sempit dan dua kolom di lebar; pilihan on/off memakai `SettingToggle` (bukan kotak centang di dalam kartu); kartu tidak bersarang; jarak antarbagian `space-y-4`, isi kartu `px-5 py-4`.
+Formulir tambah/ubah memakai `FormActionBar` (menempel di bawah: Batal di kiri, satu tombol utama "Simpan" di kanan, status "Menyimpan…" dan tombol dikunci saat mengirim). Label selalu terhubung ke isiannya (`htmlFor`/`id`), satu kolom di layar sempit dan dua kolom di lebar; pilihan on/off memakai `SettingToggle` (bukan kotak centang di dalam kartu); kartu tidak bersarang; jarak antarbagian `space-y-4`, isi kartu `px-5 py-4`.
 
 Status dan warna: hijau = berhasil/normal, amber = perlu perhatian, merah = bahaya/merusak, biru = aksi/terpilih, abu = netral. Jangan memakai warna hanya sebagai dekorasi, dan jangan mengandalkan warna saja (sertakan teks/ikon).
 
-Komponen bersama: `PageHeader`, `HeaderActionMenu`, `PageLoading`, `PageError`, `MetaLine`, `TabBar`, `SettingToggle`, `BulkActionBar`, `ConfirmDialog`, `CalendarHeat`/`HeatmapGrid`, `DataTable`.
+Komponen bersama: `PageHeader`, `HeaderActionMenu`, `PageLoading`, `PageError`, `FormActionBar`, `MetaLine`, `TabBar`, `SettingToggle`, `BulkActionBar`, `ConfirmDialog`, `CalendarHeat`/`HeatmapGrid`, `DataTable`.

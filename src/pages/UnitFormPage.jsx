@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getUnitById, addUnit, updateUnit } from '../services/api';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts/index.jsx';
+import FormActionBar from '../components/common/FormActionBar';
 import { useNotifications } from '../hooks/useNotifications';
 
 // SVG Icons
@@ -155,31 +156,7 @@ const UnitFormPage = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3 justify-end">
-              <Link
-                to="/satuan"
-                className="px-6 py-2 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition"
-              >
-                Batal
-              </Link>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="px-6 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {submitting ? (
-                  <>
-                    <LoadingSpinner />
-                    Menyimpan...
-                  </>
-                ) : (
-                  <>
-                    <SaveIcon className="w-4 h-4" />
-                    {isEditMode ? 'Simpan Perubahan' : 'Simpan Satuan'}
-                  </>
-                )}
-              </button>
-            </div>
+            <FormActionBar cancelTo="/satuan" submitting={submitting} submitLabel={isEditMode ? 'Simpan Perubahan' : 'Simpan Satuan'} />
           </form>
         </div>
       </PageContainer>

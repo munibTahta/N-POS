@@ -5,6 +5,7 @@ import { getProductById, updateProduct, getCategories, getUnits, getSuppliers } 
 import { resolveUrl } from '../utils/resolveUrl';
 import { generateBarcodeDataUrl } from '../utils/barcodeHelper';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import FormActionBar from '../components/common/FormActionBar';
 import SearchableSelect from '../components/SearchableSelect';
 import { ArrowLeft, Save, X } from 'lucide-react';
 import ImageUploader from '../components/ImageUploader';
@@ -462,25 +463,7 @@ const EditProductPage = () => {
           </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
-          <Link
-            to="/produk"
-            className="inline-flex items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 text-xs sm:text-sm font-semibold px-6 py-2 hover:bg-gray-200 dark:hover:bg-zinc-700 transition"
-            title="Batal dan kembali ke daftar produk"
-          >
-            <X className="w-4 h-4 mr-2" />
-            Batal
-          </Link>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="inline-flex items-center justify-center rounded-full bg-blue-600 dark:bg-blue-500 text-white text-xs sm:text-sm font-semibold px-6 py-2 hover:bg-blue-700 dark:hover:bg-blue-600 transition disabled:bg-gray-400"
-            title="Simpan perubahan produk"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
-          </button>
-        </div>
+        <FormActionBar cancelTo="/produk" submitting={isSubmitting} submitLabel={'Simpan Perubahan'} />
       </form>
       </PageContainer>
     </PageLayout>

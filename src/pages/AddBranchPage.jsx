@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, Globe, Store } from 'lucide-react';
 import { addBranch, getBranchById, updateBranch } from '../services/api';
 import { PageLayout, PageContainer, PageHeader } from '../components/layouts';
+import FormActionBar from '../components/common/FormActionBar';
 import { FloatingLabelInput } from '../components/common/FloatingLabelField';
 import { useNotifications } from '../hooks/useNotifications';
 
@@ -218,32 +219,7 @@ const AddBranchPage = () => {
           </div>
 
           {/* Form Actions */}
-          <div className="mt-6 pt-6 border-t border-slate-200 flex gap-3 justify-end">
-            <Link
-              to="/cabang"
-              className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-100 transition"
-            >
-              Batal
-            </Link>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="ml-2">Menyimpan...</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  <span className="hidden sm:inline ml-2">{isEditMode ? 'Perbarui Cabang' : 'Simpan Cabang'}</span>
-                  <span className="sm:hidden ml-2">{isEditMode ? 'Perbarui' : 'Simpan'}</span>
-                </>
-              )}
-            </button>
-          </div>
+          <FormActionBar cancelTo="/cabang" submitting={submitting} submitLabel={isEditMode ? 'Perbarui Cabang' : 'Simpan Cabang'} />
         </form>
       </PageContainer>
     </PageLayout>
